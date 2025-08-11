@@ -6,9 +6,9 @@
 set -e  # Exit on any error
 
 # Configuration
-PROJECT_DIR="snapdocs-frontend"  # Change this to your project folder
-IMAGE_NAME="snap-docs-app"
-CONTAINER_NAME="snap-docs"
+PROJECT_DIR="secure-docs-frontend"  # Change this to your project folder
+IMAGE_NAME="secure-docs-app"
+CONTAINER_NAME="secure-docs"
 PORT="80:80"
 
 echo "🚀 SecureDocs Auto Deploy Starting..."
