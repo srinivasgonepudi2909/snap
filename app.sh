@@ -146,21 +146,21 @@ import CTA from './CTA';
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
       <nav className="px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">SecureDocs</span>
+            <span className="text-2xl font-bold text-gray-800">SecureDocs</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login" className="px-6 py-2 text-white/80 hover:text-white transition-colors">
               Login
             </Link>
-            <Link to="/signup" className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:scale-105 transition-transform">
+            <Link to="/signup" className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg">
               Sign Up
             </Link>
           </div>
@@ -187,9 +187,9 @@ const Hero = () => {
   return (
     <div className="px-6 py-20">
       <div className="max-w-7xl mx-auto text-center">
-        <h1 className="text-6xl font-bold mb-6 text-white">
+        <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
           Your Digital Vault
-          <span className="block text-5xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="block text-4xl md:text-5xl bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
             Secured & Organized
           </span>
         </h1>
@@ -197,7 +197,7 @@ const Hero = () => {
           Store, organize, and access your valuable documents, photos, and certificates with military-grade security. 
           Create custom folders and never lose important files again.
         </p>
-        <Link to="/signup" className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold rounded-xl hover:scale-105 transition-transform">
+        <Link to="/signup" className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors shadow-xl hover:shadow-2xl">
           Get Started Free
           <ArrowRight className="ml-2 w-5 h-5" />
         </Link>
@@ -298,12 +298,12 @@ const CTA = () => {
   return (
     <div className="px-6 py-20">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-4xl font-bold text-white mb-6">Ready to Secure Your Documents?</h2>
-        <p className="text-xl text-gray-300 mb-8">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Ready to Secure Your Documents?</h2>
+        <p className="text-lg md:text-xl text-gray-600 mb-8">
           Join thousands who trust SecureDocs with their important files.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/signup" className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold rounded-xl hover:scale-105 transition-transform">
+          <Link to="/signup" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors shadow-xl hover:shadow-2xl">
             Start Free Trial
           </Link>
           <button className="px-8 py-4 bg-white/10 text-white text-lg font-semibold rounded-xl hover:bg-white/20 transition-colors">
@@ -350,26 +350,26 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-6">
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md border border-white/20">
+    <div className="min-h-screen bg-white flex items-center justify-center px-6">
+      <div className="bg-white border border-gray-200 rounded-2xl p-8 w-full max-w-md shadow-xl">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-          <p className="text-gray-300">Sign in to your SecureDocs account</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+          <p className="text-gray-600">Sign in to your SecureDocs account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your email"
                 required
               />
@@ -377,14 +377,14 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your password"
                 required
               />
@@ -394,16 +394,16 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:scale-105 transition-transform disabled:opacity-50"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-gray-300">
+          <p className="text-gray-600">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-blue-400 hover:text-blue-300 font-medium">
+            <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
               Sign up
             </Link>
           </p>
@@ -458,7 +458,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-red-900 to-red-800 flex items-center justify-center px-6">
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md border border-white/20">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -545,7 +545,7 @@ const Signup = () => {
         <div className="mt-6 text-center">
           <p className="text-gray-300">
             Already have an account?{' '}
-            <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+            <Link to="/login" className="text-red-400 hover:text-red-300 font-medium">
               Sign in
             </Link>
           </p>
@@ -654,7 +654,7 @@ const Sidebar = () => {
       {/* Logo */}
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-red-800 rounded-xl flex items-center justify-center">
             <Shield className="w-6 h-6 text-white" />
           </div>
           <span className="text-xl font-bold">SecureDocs</span>
@@ -670,7 +670,7 @@ const Sidebar = () => {
                 to={item.path}
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                   item.active 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-red-600 text-white' 
                     : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                 }`}
               >
@@ -686,7 +686,7 @@ const Sidebar = () => {
       <div className="p-4 border-t border-slate-700">
         <div className="text-sm text-gray-400 mb-2">Storage Used</div>
         <div className="w-full bg-slate-700 rounded-full h-2 mb-2">
-          <div className="bg-blue-500 h-2 rounded-full" style={{ width: '45%' }}></div>
+          <div className="bg-red-600 h-2 rounded-full" style={{ width: '45%' }}></div>
         </div>
         <div className="text-xs text-gray-400">4.5 GB of 10 GB used</div>
       </div>
@@ -727,19 +727,19 @@ const FileUpload = () => {
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
           isDragActive 
-            ? 'border-blue-500 bg-blue-50' 
+            ? 'border-red-500 bg-red-50' 
             : 'border-gray-300 hover:border-gray-400'
         }`}
       >
         <input {...getInputProps()} />
         
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <Upload className="w-8 h-8 text-blue-600" />
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+            <Upload className="w-8 h-8 text-red-600" />
           </div>
           
           {isDragActive ? (
-            <p className="text-blue-600 font-medium">Drop the files here...</p>
+            <p className="text-red-600 font-medium">Drop the files here...</p>
           ) : (
             <div className="space-y-2">
               <p className="text-gray-700 font-medium">Drag & drop files here, or click to select</p>
@@ -747,7 +747,7 @@ const FileUpload = () => {
             </div>
           )}
           
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
             Choose Files
           </button>
         </div>
@@ -939,7 +939,7 @@ const NotFound = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-6">
       <div className="text-center">
-        <div className="w-24 h-24 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-8">
+        <div className="w-24 h-24 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center mx-auto mb-8">
           <AlertCircle className="w-12 h-12 text-white" />
         </div>
         <h1 className="text-6xl font-bold text-white mb-4">404</h1>
@@ -949,7 +949,7 @@ const NotFound = () => {
         </p>
         <Link 
           to="/" 
-          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:scale-105 transition-transform"
+          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg hover:scale-105 transition-transform"
         >
           <Home className="w-5 h-5 mr-2" />
           Back to Home
@@ -1219,11 +1219,11 @@ FROM node:18-alpine as build
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package.json
+COPY package.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -1237,8 +1237,8 @@ FROM nginx:alpine
 # Copy built app to nginx
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Copy nginx configuration (optional)
-# COPY nginx.conf /etc/nginx/nginx.conf
+# Create nginx config for React Router
+RUN echo 'server { listen 80; root /usr/share/nginx/html; index index.html; location / { try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 80
