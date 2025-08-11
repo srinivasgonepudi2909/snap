@@ -4,10 +4,10 @@
 # Creates folder structure first, then populates with code
 
 set -e
-PROJECT_NAME="secure-docs-frontend"
+PROJECT_NAME="snapdocs-frontend"
 
-echo "🚀 Generating SecureDocs Frontend (Violet Theme)..."
-echo "==================================================="
+echo "🚀 Generating SnapDocs Frontend (Violet Theme)..."
+echo "================================================="
 
 # Check if project exists
 if [ -d "$PROJECT_NAME" ]; then
@@ -39,7 +39,7 @@ echo "✅ All folders created/verified"
 echo "📦 Creating package.json..."
 cat > package.json << 'EOF'
 {
-  "name": "secure-docs-frontend",
+  "name": "snapdocs-frontend",
   "version": "1.0.0",
   "private": true,
   "dependencies": {
@@ -79,8 +79,8 @@ cat > public/index.html << 'EOF'
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="SecureDocs - Secure Document Storage Platform" />
-    <title>SecureDocs - Secure Document Storage</title>
+    <meta name="description" content="SnapDocs - Secure Document Storage Platform" />
+    <title>SnapDocs - Secure Document Storage</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
@@ -349,7 +349,7 @@ const About = () => {
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">SecureDocs</span>
+            <span className="text-2xl font-bold text-white tracking-wide">SnapDocs</span>
           </Link>
           <div className="flex items-center space-x-6">
             <Link to="/" className="text-white/80 hover:text-white transition-colors">Home</Link>
@@ -366,7 +366,7 @@ const About = () => {
       <div className="px-6 py-20">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            About <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">SecureDocs</span>
+            About <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">SnapDocs</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
             We revolutionize how people store, organize, and access their important documents with security and simplicity.
@@ -387,7 +387,7 @@ const About = () => {
             <p className="text-lg text-blue-400 mb-4">Founder & Lead Developer</p>
             <p className="text-gray-300 mb-6">
               Passionate about creating secure applications that solve real-world problems. 
-              Srinivas founded SecureDocs to help people organize their digital lives safely.
+              Srinivas founded SnapDocs to help people organize their digital lives safely.
             </p>
             <Link 
               to="/contact" 
@@ -465,7 +465,7 @@ const HowItWorks = () => {
       <div className="px-6 py-20">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            How <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">SecureDocs</span> Works
+            How <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">SnapDocs</span> Works
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
             User signs up first, then logs into the app where they can create folders and upload valuable documents to access anywhere.
@@ -571,7 +571,7 @@ const Contact = () => {
             Get in <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Touch</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Have questions about SecureDocs? We're here to help you secure your digital life.
+            Have questions about SnapDocs? We're here to help you secure your digital life.
           </p>
         </div>
       </div>
@@ -594,7 +594,7 @@ const Contact = () => {
                 </a>
               </div>
               <p className="text-gray-300 text-center">
-                Passionate about creating secure applications. Contact me directly for any questions about SecureDocs!
+                Passionate about creating secure applications. Contact me directly for any questions about SnapDocs!
               </p>
             </div>
           </div>
@@ -708,11 +708,16 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-6">
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md border border-white/20">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 relative">
+            {/* Document Icon */}
+            <div className="absolute inset-2 bg-white/20 rounded-lg"></div>
+            <div className="absolute top-3 left-3 w-6 h-4 bg-white rounded-sm"></div>
+            <div className="absolute top-4 left-4 w-4 h-0.5 bg-blue-600"></div>
+            <div className="absolute top-5 left-4 w-3 h-0.5 bg-blue-600"></div>
+            <div className="absolute bottom-3 right-2 w-3 h-3 bg-gradient-to-br from-cyan-400 to-blue-500 rounded transform rotate-45"></div>
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-          <p className="text-gray-300">Sign in to your SecureDocs account</p>
+          <p className="text-gray-300">Sign in to your SnapDocs account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -818,7 +823,7 @@ const Signup = () => {
             <Shield className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">Create Account</h2>
-          <p className="text-gray-300">Join SecureDocs today</p>
+          <p className="text-gray-300">Join SnapDocs today</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -1003,10 +1008,15 @@ const LandingPage = () => {
       <nav className="px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center relative shadow-lg">
+              {/* Document Icon */}
+              <div className="absolute inset-1 bg-white/20 rounded-lg"></div>
+              <div className="absolute top-2 left-2 w-6 h-4 bg-white rounded-sm"></div>
+              <div className="absolute top-3 left-3 w-4 h-0.5 bg-blue-600"></div>
+              <div className="absolute top-4 left-3 w-3 h-0.5 bg-blue-600"></div>
+              <div className="absolute bottom-2 right-1 w-3 h-3 bg-gradient-to-br from-cyan-400 to-blue-500 rounded transform rotate-45"></div>
             </div>
-            <span className="text-2xl font-bold text-white">SecureDocs</span>
+            <span className="text-2xl font-bold text-white tracking-wide">SnapDocs</span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
             <Link to="/about" className="text-white/80 hover:text-white transition-colors font-medium">
@@ -1051,7 +1061,7 @@ const Hero = () => {
         <h1 className="text-6xl font-bold mb-6 text-white">
           Your Digital Vault
           <span className="block text-5xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Secured & Organized
+            Snap & Organize
           </span>
         </h1>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
@@ -1131,7 +1141,7 @@ const Benefits = () => {
   return (
     <div className="px-6 py-10">
       <div className="max-w-7xl mx-auto bg-white/5 backdrop-blur-sm rounded-3xl p-12">
-        <h2 className="text-4xl font-bold text-white text-center mb-12">Why Choose SecureDocs?</h2>
+        <h2 className="text-4xl font-bold text-white text-center mb-12">Why Choose SnapDocs?</h2>
         <div className="grid md:grid-cols-4 gap-8 text-center">
           {benefits.map((benefit, index) => (
             <div key={index}>
@@ -1161,7 +1171,7 @@ const CTA = () => {
       <div className="max-w-7xl mx-auto text-center">
         <h2 className="text-4xl font-bold text-white mb-6">Ready to Secure Your Documents?</h2>
         <p className="text-xl text-gray-300 mb-8">
-          Join thousands who trust SecureDocs with their important files.
+          Join thousands who trust SnapDocs with their important files.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/signup" className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold rounded-xl hover:scale-105 transition-transform">
@@ -1246,10 +1256,15 @@ const Sidebar = () => {
     <div className="w-64 bg-slate-900 text-white flex flex-col">
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <Shield className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center relative shadow-lg">
+            {/* Document Icon */}
+            <div className="absolute inset-1 bg-white/20 rounded-lg"></div>
+            <div className="absolute top-2 left-2 w-6 h-4 bg-white rounded-sm"></div>
+            <div className="absolute top-3 left-3 w-4 h-0.5 bg-blue-600"></div>
+            <div className="absolute top-4 left-3 w-3 h-0.5 bg-blue-600"></div>
+            <div className="absolute bottom-2 right-1 w-3 h-3 bg-gradient-to-br from-cyan-400 to-blue-500 rounded transform rotate-45"></div>
           </div>
-          <span className="text-xl font-bold">SecureDocs</span>
+          <span className="text-xl font-bold tracking-wide">SnapDocs</span>
         </div>
       </div>
       <nav className="flex-1 p-4">
@@ -1378,7 +1393,7 @@ build/
 EOF
 
 cat > README.md << 'EOF'
-# SecureDocs Frontend (Violet Theme)
+# SnapDocs Frontend (Violet Theme)
 
 Beautiful violet-themed document storage platform.
 
@@ -1388,25 +1403,26 @@ Email: srigonepudi@gmail.com
 
 ## Quick Start
 ```bash
-docker build -t secure-docs .
-docker run -p 80:80 secure-docs
+docker build -t snapdocs .
+docker run -p 80:80 snapdocs
 ```
 
 ## Features
-- Beautiful violet theme
+- Beautiful violet theme with custom SnapDocs logo
 - About Us, How It Works, Contact pages
 - Authentication system
 - File upload dashboard
 EOF
 
 echo ""
-echo "🎉 COMPLETE VIOLET FRONTEND GENERATED!"
-echo "====================================="
+echo "🎉 COMPLETE SNAPDOCS FRONTEND GENERATED!"
+echo "======================================="
 echo "📁 Project: $PROJECT_NAME"
 echo "📄 Total files: $(find . -type f | wc -l)"
 echo ""
 echo "✨ Features:"
 echo "   🎨 Beautiful violet/purple theme"
+echo "   📝 Custom SnapDocs logo design"
 echo "   🏠 Landing page with navigation"
 echo "   📄 About Us, How It Works, Contact pages"
 echo "   🔐 Login/Signup with violet glassmorphism"
@@ -1415,10 +1431,10 @@ echo "   🐳 Docker ready"
 echo ""
 echo "🚀 To deploy:"
 echo "   cd $PROJECT_NAME"
-echo "   docker build -t secure-docs ."
-echo "   docker run -p 80:80 secure-docs"
+echo "   docker build -t snapdocs ."
+echo "   docker run -p 80:80 snapdocs"
 echo ""
 echo "🌐 Access at: http://localhost"
 echo "👤 Author: Gonepudi Srinivas (srigonepudi@gmail.com)"
 echo ""
-echo "🎯 Your violet SecureDocs app is ready!"
+echo "🎯 Your violet SnapDocs app is ready!"
