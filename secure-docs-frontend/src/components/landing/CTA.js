@@ -5,8 +5,8 @@ const CTA = () => {
   return (
     <div className="px-6 py-20">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-4xl font-bold text-gray-900 mb-6">Ready to Secure Your Documents?</h2>
-        <p className="text-xl text-gray-700 mb-8">
+        <h2 className="text-4xl font-bold text-gray-800 mb-6">Ready to Secure Your Documents?</h2>
+        <p className="text-xl text-gray-600 mb-8">
           Join thousands who trust SecureDocs with their important files.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

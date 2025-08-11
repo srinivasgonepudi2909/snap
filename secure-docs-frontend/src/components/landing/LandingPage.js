@@ -16,7 +16,7 @@ const LandingPage = () => {
             <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-orange-500 rounded-xl flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">SecureDocs</span>
+            <span className="text-2xl font-bold text-gray-800">SecureDocs</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login" className="px-6 py-2 text-white/80 hover:text-white transition-colors">

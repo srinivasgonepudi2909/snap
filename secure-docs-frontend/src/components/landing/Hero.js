@@ -6,7 +6,7 @@ const Hero = () => {
   return (
     <div className="px-6 py-20">
       <div className="max-w-7xl mx-auto text-center">
-        <h1 className="text-6xl font-bold mb-6 text-gray-900">
+        <h1 className="text-6xl font-bold mb-6 text-gray-800">
           Your Digital Vault
           <span className="block text-5xl bg-gradient-to-r from-purple-600 to-orange-600 bg-clip-text text-transparent">
             Secured & Organized

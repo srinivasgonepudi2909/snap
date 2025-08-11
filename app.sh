@@ -154,7 +154,7 @@ const LandingPage = () => {
             <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-orange-500 rounded-xl flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">SecureDocs</span>
+            <span className="text-2xl font-bold text-gray-800">SecureDocs</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/login" className="px-6 py-2 text-white/80 hover:text-white transition-colors">
@@ -187,7 +187,7 @@ const Hero = () => {
   return (
     <div className="px-6 py-20">
       <div className="max-w-7xl mx-auto text-center">
-        <h1 className="text-6xl font-bold mb-6 text-gray-900">
+        <h1 className="text-6xl font-bold mb-6 text-gray-800">
           Your Digital Vault
           <span className="block text-5xl bg-gradient-to-r from-purple-600 to-orange-600 bg-clip-text text-transparent">
             Secured & Organized
@@ -298,8 +298,8 @@ const CTA = () => {
   return (
     <div className="px-6 py-20">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-4xl font-bold text-gray-900 mb-6">Ready to Secure Your Documents?</h2>
-        <p className="text-xl text-gray-700 mb-8">
+        <h2 className="text-4xl font-bold text-gray-800 mb-6">Ready to Secure Your Documents?</h2>
+        <p className="text-xl text-gray-600 mb-8">
           Join thousands who trust SecureDocs with their important files.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
