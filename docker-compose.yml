@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: securedocs-db
+    environment:
+      POSTGRES_DB: securedocs
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: securepass123
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - securedocs-network
+    restart: unless-stopped
+
+  # Python FastAPI Auth Service
+  auth-service:
+    build: 
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: securedocs-auth
+    environment:
+      DATABASE_URL: postgresql://postgres:securepass123@postgres:5432/securedocs
+      SECRET_KEY: super-secret-jwt-key-for-securedocs-2024
+      ACCESS_TOKEN_EXPIRE_HOURS: 24
+      PORT: 8000
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    networks:
+      - securedocs-network
+    restart: unless-stopped
+    volumes:
+      - ./services/auth-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./secure-docs-frontend
+      dockerfile: Dockerfile
+    container_name: securedocs-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - securedocs-network
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+
+networks:
+  securedocs-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
