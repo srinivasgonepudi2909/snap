@@ -6,7 +6,7 @@
 set -e  # Exit on any error
 
 # Configuration
-PROJECT_DIR="snap-docs-frontend"  # Change this to your project folder
+PROJECT_DIR="snapdocs-frontend"  # Change this to your project folder
 IMAGE_NAME="snap-docs-app"
 CONTAINER_NAME="snap-docs"
 PORT="80:80"
