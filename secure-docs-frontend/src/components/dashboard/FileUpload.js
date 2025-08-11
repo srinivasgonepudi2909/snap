@@ -27,19 +27,19 @@ const FileUpload = () => {
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
           isDragActive 
-            ? 'border-red-500 bg-red-50' 
+            ? 'border-blue-500 bg-blue-50' 
             : 'border-gray-300 hover:border-gray-400'
         }`}
       >
         <input {...getInputProps()} />
         
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-            <Upload className="w-8 h-8 text-red-600" />
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+            <Upload className="w-8 h-8 text-blue-600" />
           </div>
           
           {isDragActive ? (
-            <p className="text-red-600 font-medium">Drop the files here...</p>
+            <p className="text-blue-600 font-medium">Drop the files here...</p>
           ) : (
             <div className="space-y-2">
               <p className="text-gray-700 font-medium">Drag & drop files here, or click to select</p>
@@ -47,7 +47,7 @@ const FileUpload = () => {
             </div>
           )}
           
-          <button className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             Choose Files
           </button>
         </div>

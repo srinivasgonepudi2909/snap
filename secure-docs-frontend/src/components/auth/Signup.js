@@ -39,7 +39,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-red-900 to-red-800 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-6">
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md border border-white/20">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -126,7 +126,7 @@ const Signup = () => {
         <div className="mt-6 text-center">
           <p className="text-gray-300">
             Already have an account?{' '}
-            <Link to="/login" className="text-red-400 hover:text-red-300 font-medium">
+            <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium">
               Sign in
             </Link>
           </p>
