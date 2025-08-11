@@ -13,7 +13,6 @@ const Dashboard = () => {
       <Sidebar />
       
       <div className="flex-1 flex flex-col">
-        {/* Header */}
         <header className="bg-white shadow-sm border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -36,7 +35,6 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto space-y-6">
             <FileUpload />

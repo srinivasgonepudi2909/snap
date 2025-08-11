@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored auth token on mount
     const token = localStorage.getItem('authToken');
     const userData = localStorage.getItem('userData');
     
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Simulate API call
       const mockUser = {
         id: 1,
         name: 'John Doe',
@@ -50,7 +48,6 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (userData) => {
     try {
-      // Simulate API call
       const newUser = {
         id: Date.now(),
         ...userData

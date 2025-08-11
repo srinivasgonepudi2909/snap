@@ -18,7 +18,16 @@ const LandingPage = () => {
             </div>
             <span className="text-2xl font-bold text-white">SecureDocs</span>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-6">
+            <Link to="/about" className="text-white/80 hover:text-white transition-colors font-medium">
+              About Us
+            </Link>
+            <Link to="/how-it-works" className="text-white/80 hover:text-white transition-colors font-medium">
+              How It Works
+            </Link>
+            <Link to="/contact" className="text-white/80 hover:text-white transition-colors font-medium">
+              Contact
+            </Link>
             <Link to="/login" className="px-6 py-2 text-white/80 hover:text-white transition-colors">
               Login
             </Link>
