@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_DIR="snapdocs-frontend"
+PROJECT_DIR="secure-docs-frontend"
 
 echo "🔧 Fixing all SnapDocs references..."
 echo "===================================="
