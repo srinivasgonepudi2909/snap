@@ -1142,6 +1142,30 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail, User, MapPin, Clock, Phone, MessageCircle, Calendar, Award } from 'lucide-react';
 
 const Contact = () => {
+  const contactMethods = [
+    {
+      icon: Mail,
+      title: "General Support",
+      description: "Questions about features, billing, or technical issues",
+      contact: "srigonepudi@gmail.com",
+      color: "from-blue-500 to-blue-600"
+    },
+    {
+      icon: MessageCircle,
+      title: "Feedback & Suggestions", 
+      description: "Share your ideas for improving SnapDocs",
+      contact: "srigonepudi@gmail.com",
+      color: "from-green-500 to-green-600"
+    },
+    {
+      icon: Award,
+      title: "Business Partnerships",
+      description: "Collaboration opportunities and enterprise solutions", 
+      contact: "srigonepudi@gmail.com",
+      color: "from-purple-500 to-purple-600"
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 page-transition">
       <header className="bg-gray-900/95 backdrop-blur-md">
@@ -1219,7 +1243,7 @@ const Contact = () => {
               </div>
             </div>
 
-            {/* Business Inquiries */}
+            {/* Business Hours */}
             <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 backdrop-blur-sm rounded-3xl p-8 border border-white/20 group hover:from-purple-600/30 hover:to-pink-600/30 transition-all duration-300">
               <div className="text-center">
                 <Phone className="w-16 h-16 text-purple-400 mx-auto mb-6 group-hover:scale-110 transition-transform duration-300" />
@@ -1281,29 +1305,7 @@ const Contact = () => {
               Get in <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Touch</span>
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  icon: Mail,
-                  title: "General Support",
-                  description: "Questions about features, billing, or technical issues",
-                  contact: "srigonepudi@gmail.com",
-                  color: "from-blue-500 to-blue-600"
-                },
-                {
-                  icon: MessageCircle,
-                  title: "Feedback & Suggestions",
-                  description: "Share your ideas for improving SnapDocs",
-                  contact: "srigonepudi@gmail.com",
-                  color: "from-green-500 to-green-600"
-                },
-                {
-                  icon: Award,
-                  title: "Business Partnerships",
-                  description: "Collaboration opportunities and enterprise solutions",
-                  contact: "srigonepudi@gmail.com",
-                  color: "from-purple-500 to-purple-600"
-                }
-              ].map((method, index) => (
+              {contactMethods.map((method, index) => (
                 <div key={index} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 text-center group hover:bg-white/15 transition-all duration-300">
                   <div className={`w-16 h-16 bg-gradient-to-r ${method.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     <method.icon className="w-8 h-8 text-white" />
@@ -1332,15 +1334,15 @@ const Contact = () => {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                 <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-green-400">< 4 hours</div>
+                  <div className="text-2xl font-bold text-green-400">&lt; 4 hours</div>
                   <div className="text-gray-400">Business Hours</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-blue-400">< 24 hours</div>
+                  <div className="text-2xl font-bold text-blue-400">&lt; 24 hours</div>
                   <div className="text-gray-400">General Inquiries</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-purple-400">< 1 hour</div>
+                  <div className="text-2xl font-bold text-purple-400">&lt; 1 hour</div>
                   <div className="text-gray-400">Critical Issues</div>
                 </div>
               </div>
