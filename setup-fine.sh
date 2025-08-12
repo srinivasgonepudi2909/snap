@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Deploy Styled SnapDocs (SecureDocs Style)
-# Complete deployment script with the new purple gradient design
+# Deploy Enhanced SnapDocs with improved header styling
+# - Larger app name (20% increase)
+# - Bold navigation items
+# - Zoom effects for all header elements
 
 set -e
 
-echo "🚀 Deploying Styled SnapDocs"
-echo "============================"
+echo "🚀 Deploying Enhanced SnapDocs"
+echo "=============================="
 
 # Configuration
 IMAGE_NAME="snapdocs-app"
@@ -156,8 +158,8 @@ html {
 }
 EOF
 
-# Create src/App.jsx with the styled design
-echo -e "${BLUE}⚛️ Creating styled App.jsx...${NC}"
+# Create enhanced src/App.jsx
+echo -e "${BLUE}⚛️ Creating enhanced App.jsx...${NC}"
 cat > src/App.jsx << 'EOF'
 import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Upload, Folder, Shield, Check, Star, Lock, ArrowRight } from 'lucide-react';
@@ -176,25 +178,25 @@ const SnapDocs = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // SnapDocs Logo Component
+  // Enhanced SnapDocs Logo Component (20% larger)
   const SnapDocsLogo = () => {
     return (
-      <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg">
-          <div className="absolute top-0 right-0 w-6 h-6 bg-gradient-to-bl from-cyan-400 to-cyan-600 transform rotate-45 translate-x-2 -translate-y-2"></div>
-          <div className="text-white font-bold text-sm z-10">SD</div>
-          <div className="absolute bottom-1 right-1 w-3 h-2 bg-white rounded-sm opacity-80"></div>
-          <div className="absolute bottom-1 right-1 w-3 h-0.5 bg-blue-600 rounded-sm"></div>
-          <div className="absolute bottom-0.5 right-1 w-3 h-0.5 bg-blue-600 rounded-sm"></div>
+      <div className="flex items-center space-x-3 group cursor-pointer">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg group-hover:scale-110 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-7 h-7 bg-gradient-to-bl from-cyan-400 to-cyan-600 transform rotate-45 translate-x-2 -translate-y-2"></div>
+          <div className="text-white font-bold text-base z-10">SD</div>
+          <div className="absolute bottom-1 right-1 w-4 h-2 bg-white rounded-sm opacity-80"></div>
+          <div className="absolute bottom-1 right-1 w-4 h-0.5 bg-blue-600 rounded-sm"></div>
+          <div className="absolute bottom-0.5 right-1 w-4 h-0.5 bg-blue-600 rounded-sm"></div>
         </div>
-        <span className="text-xl font-bold text-white">
+        <span className="text-2xl font-bold text-white group-hover:scale-110 transition-all duration-300">
           SnapDocs
         </span>
       </div>
     );
   };
 
-  // Header Component
+  // Enhanced Header Component
   const Header = () => (
     <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
       isScrolled ? 'bg-gray-900/95 backdrop-blur-md' : 'bg-transparent'
@@ -204,21 +206,36 @@ const SnapDocs = () => {
           <SnapDocsLogo />
           
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#about" className="text-gray-300 hover:text-white transition-colors font-medium">About Us</a>
-            <a href="#how-it-works" className="text-gray-300 hover:text-white transition-colors font-medium">How It Works</a>
-            <a href="#contact" className="text-gray-300 hover:text-white transition-colors font-medium">Contact</a>
+            <a 
+              href="#about" 
+              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
+            >
+              About Us
+            </a>
+            <a 
+              href="#how-it-works" 
+              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
+            >
+              How It Works
+            </a>
+            <a 
+              href="#contact" 
+              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
+            >
+              Contact
+            </a>
           </nav>
 
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setIsLoginOpen(true)}
-              className="text-gray-300 hover:text-white font-medium transition-colors"
+              className="text-gray-300 hover:text-white font-bold text-lg transition-all duration-300 hover:scale-110 transform"
             >
               Login
             </button>
             <button
               onClick={() => setIsSignupOpen(true)}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg font-bold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-110 transition-all duration-300 shadow-lg"
             >
               Sign Up
             </button>
@@ -250,7 +267,7 @@ const SnapDocs = () => {
           <div className="pt-4">
             <button
               onClick={() => setIsSignupOpen(true)}
-              className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-2xl"
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-110 transition-all duration-300 shadow-2xl"
             >
               <span>Get Started Free</span>
               <ArrowRight className="w-5 h-5" />
@@ -267,7 +284,7 @@ const SnapDocs = () => {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
           {/* Easy Upload */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-green-500/50 transition-all duration-300 group">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-green-500/50 transition-all duration-300 group hover:scale-105">
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <Upload className="w-8 h-8 text-white" />
             </div>
@@ -278,7 +295,7 @@ const SnapDocs = () => {
           </div>
 
           {/* Smart Organization */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-orange-500/50 transition-all duration-300 group">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-orange-500/50 transition-all duration-300 group hover:scale-105">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <Folder className="w-8 h-8 text-white" />
             </div>
@@ -289,7 +306,7 @@ const SnapDocs = () => {
           </div>
 
           {/* Bank-Level Security */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 group">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 group hover:scale-105">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <Lock className="w-8 h-8 text-white" />
             </div>
@@ -313,7 +330,7 @@ const SnapDocs = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-20">
           {/* 99.9% Uptime */}
-          <div className="text-center group">
+          <div className="text-center group cursor-pointer hover:scale-110 transition-all duration-300">
             <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
               <Check className="w-8 h-8 text-white" />
             </div>
@@ -322,7 +339,7 @@ const SnapDocs = () => {
           </div>
 
           {/* 5-Star Rated */}
-          <div className="text-center group">
+          <div className="text-center group cursor-pointer hover:scale-110 transition-all duration-300">
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
               <Star className="w-8 h-8 text-white" />
             </div>
@@ -331,7 +348,7 @@ const SnapDocs = () => {
           </div>
 
           {/* Enterprise Security */}
-          <div className="text-center group">
+          <div className="text-center group cursor-pointer hover:scale-110 transition-all duration-300">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
               <Shield className="w-8 h-8 text-white" />
             </div>
@@ -340,7 +357,7 @@ const SnapDocs = () => {
           </div>
 
           {/* Unlimited Storage */}
-          <div className="text-center group">
+          <div className="text-center group cursor-pointer hover:scale-110 transition-all duration-300">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
               <Upload className="w-8 h-8 text-white" />
             </div>
@@ -366,11 +383,11 @@ const SnapDocs = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <button
             onClick={() => setIsSignupOpen(true)}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-2xl"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-110 transition-all duration-300 shadow-2xl"
           >
             Start Free Trial
           </button>
-          <button className="bg-gray-800 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-700 transition-all duration-300">
+          <button className="bg-gray-800 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-700 transform hover:scale-110 transition-all duration-300">
             Watch Demo
           </button>
         </div>
@@ -384,12 +401,12 @@ const SnapDocs = () => {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl max-w-md w-full p-6 transform transition-all duration-300 scale-100">
+        <div className="bg-white rounded-2xl max-w-md w-full p-6 transform transition-all duration-300 scale-100 hover:scale-105">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
+              className="text-gray-500 hover:text-gray-700 transition-colors hover:scale-110 transform duration-200"
             >
               <X className="w-6 h-6" />
             </button>
@@ -407,7 +424,7 @@ const SnapDocs = () => {
         <div className="block text-sm font-medium text-gray-700 mb-1">Email</div>
         <input
           type="email"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:scale-105 focus:scale-105"
           placeholder="your@email.com"
         />
       </div>
@@ -416,13 +433,13 @@ const SnapDocs = () => {
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12 hover:scale-105 focus:scale-105"
             placeholder="••••••••"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 hover:scale-110 transition-all duration-200"
           >
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
@@ -442,7 +459,7 @@ const SnapDocs = () => {
             setIsLoginOpen(false);
             setIsSignupOpen(true);
           }}
-          className="text-blue-600 hover:text-blue-700 font-medium"
+          className="text-blue-600 hover:text-blue-700 font-medium hover:scale-110 transition-all duration-200 inline-block transform"
         >
           Sign up
         </button>
@@ -458,7 +475,7 @@ const SnapDocs = () => {
           <div className="block text-sm font-medium text-gray-700 mb-1">First Name</div>
           <input
             type="text"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:scale-105 focus:scale-105"
             placeholder="John"
           />
         </div>
@@ -466,7 +483,7 @@ const SnapDocs = () => {
           <div className="block text-sm font-medium text-gray-700 mb-1">Last Name</div>
           <input
             type="text"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:scale-105 focus:scale-105"
             placeholder="Doe"
           />
         </div>
@@ -475,7 +492,7 @@ const SnapDocs = () => {
         <div className="block text-sm font-medium text-gray-700 mb-1">Email</div>
         <input
           type="email"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:scale-105 focus:scale-105"
           placeholder="your@email.com"
         />
       </div>
@@ -484,13 +501,13 @@ const SnapDocs = () => {
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12 hover:scale-105 focus:scale-105"
             placeholder="••••••••"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 hover:scale-110 transition-all duration-200"
           >
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
@@ -510,7 +527,7 @@ const SnapDocs = () => {
             setIsSignupOpen(false);
             setIsLoginOpen(true);
           }}
-          className="text-blue-600 hover:text-blue-700 font-medium"
+          className="text-blue-600 hover:text-blue-700 font-medium hover:scale-110 transition-all duration-200 inline-block transform"
         >
           Sign in
         </button>
@@ -583,7 +600,7 @@ echo -e "${BLUE}✅ Verifying deployment...${NC}"
 sleep 5
 
 if docker ps | grep -q $CONTAINER_NAME; then
-    echo -e "${GREEN}🎉 SUCCESS! Styled SnapDocs is running!${NC}"
+    echo -e "${GREEN}🎉 SUCCESS! Enhanced SnapDocs is running!${NC}"
     echo ""
     echo -e "${GREEN}🌐 Access URLs:${NC}"
     echo -e "   Local: ${YELLOW}http://localhost:$PORT${NC}"
@@ -597,17 +614,13 @@ if docker ps | grep -q $CONTAINER_NAME; then
     docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
     
     echo ""
-    echo -e "${BLUE}📋 Recent logs:${NC}"
-    docker logs --tail 5 $CONTAINER_NAME
-    
-    echo ""
-    echo -e "${GREEN}✨ Features deployed:${NC}"
-    echo "   🎨 Purple gradient background (SecureDocs style)"
-    echo "   🏠 'Your Digital Vault' hero section"
-    echo "   📁 Three feature cards (Upload, Organization, Security)"
-    echo "   ⭐ Four benefit cards (Uptime, Rating, Security, Storage)"
-    echo "   📞 CTA section with trial buttons"
-    echo "   🔐 Working login/signup modals"
+    echo -e "${GREEN}✨ Enhanced Features:${NC}"
+    echo "   📏 App name increased by 20% (text-2xl)"
+    echo "   🔤 Navigation items in BOLD (font-bold)"
+    echo "   🔍 Zoom effects on hover for all header elements"
+    echo "   📱 Login/Signup buttons with zoom effects"
+    echo "   🎨 Enhanced hover animations throughout"
+    echo "   💫 Interactive elements scale on hover"
     
 else
     echo -e "${RED}❌ Container failed to start!${NC}"
@@ -620,7 +633,7 @@ echo -e "${BLUE}🧹 Cleaning up...${NC}"
 docker image prune -f 2>/dev/null || true
 docker container prune -f 2>/dev/null || true
 
-echo -e "${GREEN}🎉 Styled SnapDocs deployment completed!${NC}"
+echo -e "${GREEN}🎉 Enhanced SnapDocs deployment completed!${NC}"
 echo ""
 echo -e "${BLUE}💡 Management commands:${NC}"
 echo -e "   📊 View logs: ${YELLOW}docker logs -f $CONTAINER_NAME${NC}"

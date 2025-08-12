@@ -1,12 +1,9 @@
 node_modules
 npm-debug.log
-Dockerfile
-.dockerignore
-README.md
-.env
+build
 .git
 .gitignore
-build
-.nyc_output
+README.md
+.env
 coverage
 .DS_Store
