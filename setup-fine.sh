@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# SnapDocs Setup and Deploy Script
-# This script ensures all required files exist before deployment
+# SnapDocs Fix and Deploy Script
+# Fixes the npm ci issue and deploys successfully
 
 set -e
 
@@ -18,28 +18,38 @@ IMAGE_VERSION="latest"
 CONTAINER_NAME="snapdocs-container"
 PORT="3000"
 
-echo -e "${BLUE}🚀 SnapDocs Setup & Deploy${NC}"
-echo "============================="
+echo -e "${BLUE}🔧 SnapDocs Fix & Deploy${NC}"
+echo "=========================="
 
-# Function to create missing files
-create_missing_files() {
-    echo -e "${BLUE}📋 Checking required files...${NC}"
+# Function to check if Node.js is available
+check_node() {
+    if command -v node >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ Node.js is available$(NC)"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  Node.js not found locally, will use Docker for everything${NC}"
+        return 1
+    fi
+}
+
+# Function to create/fix all required files
+create_and_fix_files() {
+    echo -e "${BLUE}📋 Creating/fixing required files...${NC}"
     
-    # Check and create Dockerfile
-    if [ ! -f "Dockerfile" ]; then
-        echo -e "${YELLOW}⚠️  Dockerfile missing, creating...${NC}"
-        cat > Dockerfile << 'EOF'
+    # Create Dockerfile with correct npm commands
+    echo -e "${YELLOW}📄 Creating optimized Dockerfile...${NC}"
+    cat > Dockerfile << 'EOF'
 # Multi-stage build for production
 FROM node:18-alpine as build
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package.json first for better layer caching
+COPY package.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (will create package-lock.json)
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -59,15 +69,18 @@ COPY --from=build /app/build /usr/share/nginx/html
 # Expose port 80
 EXPOSE 80
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
+
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
 EOF
-        echo -e "${GREEN}✅ Dockerfile created${NC}"
-    fi
+    echo -e "${GREEN}✅ Dockerfile created${NC}"
     
-    # Check and create package.json
+    # Create package.json
     if [ ! -f "package.json" ]; then
-        echo -e "${YELLOW}⚠️  package.json missing, creating...${NC}"
+        echo -e "${YELLOW}📄 Creating package.json...${NC}"
         cat > package.json << 'EOF'
 {
   "name": "snapdocs-app",
@@ -112,10 +125,9 @@ EOF
         echo -e "${GREEN}✅ package.json created${NC}"
     fi
     
-    # Check and create nginx.conf
-    if [ ! -f "nginx.conf" ]; then
-        echo -e "${YELLOW}⚠️  nginx.conf missing, creating...${NC}"
-        cat > nginx.conf << 'EOF'
+    # Create nginx.conf
+    echo -e "${YELLOW}📄 Creating nginx.conf...${NC}"
+    cat > nginx.conf << 'EOF'
 events {
     worker_connections 1024;
 }
@@ -168,17 +180,13 @@ http {
     }
 }
 EOF
-        echo -e "${GREEN}✅ nginx.conf created${NC}"
-    fi
+    echo -e "${GREEN}✅ nginx.conf created${NC}"
     
-    # Check and create public directory and files
-    if [ ! -d "public" ]; then
-        echo -e "${YELLOW}⚠️  public directory missing, creating...${NC}"
-        mkdir -p public
-    fi
+    # Create public directory and files
+    mkdir -p public
     
     if [ ! -f "public/index.html" ]; then
-        echo -e "${YELLOW}⚠️  public/index.html missing, creating...${NC}"
+        echo -e "${YELLOW}📄 Creating public/index.html...${NC}"
         cat > public/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
@@ -202,14 +210,34 @@ EOF
         echo -e "${GREEN}✅ public/index.html created${NC}"
     fi
     
-    # Check and create src directory and files
-    if [ ! -d "src" ]; then
-        echo -e "${YELLOW}⚠️  src directory missing, creating...${NC}"
-        mkdir -p src
+    # Create basic manifest.json
+    if [ ! -f "public/manifest.json" ]; then
+        echo -e "${YELLOW}📄 Creating public/manifest.json...${NC}"
+        cat > public/manifest.json << 'EOF'
+{
+  "short_name": "SnapDocs",
+  "name": "SnapDocs - Document Management",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
+EOF
+        echo -e "${GREEN}✅ public/manifest.json created${NC}"
     fi
     
+    # Create src directory and files
+    mkdir -p src
+    
     if [ ! -f "src/index.js" ]; then
-        echo -e "${YELLOW}⚠️  src/index.js missing, creating...${NC}"
+        echo -e "${YELLOW}📄 Creating src/index.js...${NC}"
         cat > src/index.js << 'EOF'
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -227,7 +255,7 @@ EOF
     fi
     
     if [ ! -f "src/index.css" ]; then
-        echo -e "${YELLOW}⚠️  src/index.css missing, creating...${NC}"
+        echo -e "${YELLOW}📄 Creating src/index.css...${NC}"
         cat > src/index.css << 'EOF'
 @tailwind base;
 @tailwind components;
@@ -250,40 +278,16 @@ body {
 html {
   scroll-behavior: smooth;
 }
-
-/* Custom animations */
-@keyframes bounce {
-  0%, 20%, 53%, 80%, 100% {
-    transform: translate3d(0,0,0);
-  }
-  40%, 43% {
-    transform: translate3d(0,-10px,0);
-  }
-  70% {
-    transform: translate3d(0,-5px,0);
-  }
-  90% {
-    transform: translate3d(0,-2px,0);
-  }
-}
-
-.group:hover .group-hover\:bounce {
-  animation: bounce 1s;
-}
 EOF
         echo -e "${GREEN}✅ src/index.css created${NC}"
     fi
     
     if [ ! -f "src/App.jsx" ]; then
-        echo -e "${YELLOW}⚠️  src/App.jsx missing, creating minimal version...${NC}"
+        echo -e "${YELLOW}📄 Creating src/App.jsx...${NC}"
         cat > src/App.jsx << 'EOF'
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Upload, Folder, Shield, Zap, Users, Star, ArrowRight, X, Eye, EyeOff } from 'lucide-react';
 
 const SnapDocs = () => {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -294,18 +298,15 @@ const SnapDocs = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const SnapDocsLogo = ({ size = 'normal' }) => {
-    const logoSize = size === 'large' ? 'w-12 h-12' : 'w-8 h-8';
-    const textSize = size === 'large' ? 'text-2xl' : 'text-xl';
-    
+  const SnapDocsLogo = () => {
     return (
       <div className="flex items-center space-x-3">
-        <div className={`${logoSize} bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg`}>
+        <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg">
           <div className="absolute top-0 right-0 w-6 h-6 bg-gradient-to-bl from-cyan-400 to-cyan-600 transform rotate-45 translate-x-2 -translate-y-2"></div>
           <div className="text-white font-bold text-sm z-10">SD</div>
           <div className="absolute bottom-1 right-1 w-3 h-2 bg-white rounded-sm opacity-80"></div>
         </div>
-        <span className={`${textSize} font-bold bg-gradient-to-r from-blue-700 to-blue-900 bg-clip-text text-transparent`}>
+        <span className="text-xl font-bold bg-gradient-to-r from-blue-700 to-blue-900 bg-clip-text text-transparent">
           SnapDocs
         </span>
       </div>
@@ -335,8 +336,8 @@ const SnapDocs = () => {
       <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
-          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse delay-1000"></div>
-          <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse delay-500"></div>
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
+          <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
@@ -356,25 +357,86 @@ const SnapDocs = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-3xl flex items-center space-x-2">
                 <span>Get Started Free</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
 
             <div className="pt-8">
               <div className="flex flex-wrap justify-center items-center space-x-8 text-gray-500">
                 <div className="flex items-center space-x-2">
-                  <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                  <svg className="w-5 h-5 text-yellow-500 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
                   <span className="text-sm font-medium">4.9/5 Rating</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-blue-500" />
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
                   <span className="text-sm font-medium">50K+ Users</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-green-500" />
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
                   <span className="text-sm font-medium">100% Secure</span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Powerful Features for
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Modern Teams</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Everything you need to manage, organize, and collaborate on documents in one beautiful platform.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="group p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 hover:from-blue-100 hover:to-indigo-200 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl">
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Custom Folders</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Create unlimited folders with custom names to organize your documents exactly how you want them.
+              </p>
+            </div>
+
+            <div className="group p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-100 hover:from-purple-100 hover:to-pink-200 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl">
+              <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Easy Upload</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Drag and drop or click to upload any document format. Support for PDFs, images, Word docs, and more.
+              </p>
+            </div>
+
+            <div className="group p-8 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-100 hover:from-green-100 hover:to-emerald-200 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-xl">
+              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Secure Storage</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Your documents are encrypted and stored securely with enterprise-grade security and privacy protection.
+              </p>
             </div>
           </div>
         </div>
@@ -389,9 +451,7 @@ EOF
     fi
     
     # Create .dockerignore
-    if [ ! -f ".dockerignore" ]; then
-        echo -e "${YELLOW}⚠️  .dockerignore missing, creating...${NC}"
-        cat > .dockerignore << 'EOF'
+    cat > .dockerignore << 'EOF'
 node_modules
 npm-debug.log
 Dockerfile
@@ -404,52 +464,97 @@ build
 .nyc_output
 coverage
 .DS_Store
+*.log
 EOF
-        echo -e "${GREEN}✅ .dockerignore created${NC}"
-    fi
+    echo -e "${GREEN}✅ .dockerignore created${NC}"
     
-    echo -e "${GREEN}✅ All required files checked/created${NC}"
+    echo -e "${GREEN}✅ All files created successfully${NC}"
 }
 
-# Function to run quick deployment
+# Function to generate package-lock.json locally if possible
+generate_package_lock() {
+    if check_node; then
+        echo -e "${BLUE}📦 Generating package-lock.json locally...${NC}"
+        if [ ! -f "package-lock.json" ]; then
+            npm install --package-lock-only
+            echo -e "${GREEN}✅ package-lock.json generated${NC}"
+        else
+            echo -e "${GREEN}✅ package-lock.json already exists${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  Will generate package-lock.json during Docker build${NC}"
+    fi
+}
+
+# Function to run deployment
 run_deployment() {
     echo -e "${BLUE}📥 Pulling latest code...${NC}"
-    git pull origin main 2>/dev/null || git pull origin master 2>/dev/null || echo "Git pull completed"
+    git pull origin main 2>/dev/null || git pull origin master 2>/dev/null || echo -e "${YELLOW}Git pull completed (no changes or no remote)${NC}"
 
-    echo -e "${BLUE}🛑 Stopping existing container...${NC}"
+    echo -e "${BLUE}🛑 Stopping existing containers...${NC}"
     docker stop $CONTAINER_NAME 2>/dev/null || true
     docker rm $CONTAINER_NAME 2>/dev/null || true
 
-    echo -e "${BLUE}🔨 Building new image...${NC}"
-    docker build -t $IMAGE_NAME:$IMAGE_VERSION .
+    echo -e "${BLUE}🧹 Cleaning old images...${NC}"
+    docker rmi $IMAGE_NAME:$IMAGE_VERSION 2>/dev/null || true
+
+    echo -e "${BLUE}🔨 Building new image (this may take a few minutes)...${NC}"
+    docker build --no-cache -t $IMAGE_NAME:$IMAGE_VERSION . || {
+        echo -e "${RED}❌ Docker build failed!${NC}"
+        echo -e "${RED}📋 Check the error above and ensure all files are correct${NC}"
+        exit 1
+    }
 
     echo -e "${BLUE}🚀 Starting new container...${NC}"
     docker run -d \
         --name $CONTAINER_NAME \
         --restart unless-stopped \
         -p $PORT:80 \
-        $IMAGE_NAME:$IMAGE_VERSION
+        $IMAGE_NAME:$IMAGE_VERSION || {
+        echo -e "${RED}❌ Failed to start container!${NC}"
+        docker logs $CONTAINER_NAME 2>/dev/null || true
+        exit 1
+    }
 
     echo -e "${BLUE}✅ Verifying deployment...${NC}"
-    sleep 3
+    sleep 5
+    
     if docker ps | grep -q $CONTAINER_NAME; then
         echo -e "${GREEN}✅ Deployment successful!${NC}"
-        echo -e "${GREEN}🌐 Access: http://localhost:$PORT${NC}"
-        echo -e "${GREEN}🌐 Network: http://$(hostname -I | awk '{print $1}' 2>/dev/null || echo 'YOUR_IP'):$PORT${NC}"
+        echo -e "${GREEN}🌐 Local: http://localhost:$PORT${NC}"
+        
+        # Try to get network IP
+        NETWORK_IP=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "YOUR_SERVER_IP")
+        echo -e "${GREEN}🌐 Network: http://$NETWORK_IP:$PORT${NC}"
+        
+        # Show container status
+        echo -e "${BLUE}📊 Container Status:${NC}"
+        docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+        
+        # Show recent logs
+        echo -e "${BLUE}📋 Recent logs:${NC}"
+        docker logs --tail 5 $CONTAINER_NAME
+        
     else
         echo -e "${RED}❌ Deployment failed!${NC}"
         echo -e "${RED}📋 Container logs:${NC}"
-        docker logs $CONTAINER_NAME
+        docker logs $CONTAINER_NAME 2>/dev/null || true
         exit 1
     fi
 
-    echo -e "${BLUE}🧹 Cleaning up...${NC}"
+    echo -e "${BLUE}🧹 Cleaning up unused Docker resources...${NC}"
     docker image prune -f 2>/dev/null || true
     docker container prune -f 2>/dev/null || true
 
-    echo -e "${GREEN}🎉 Setup and deployment completed!${NC}"
+    echo -e "${GREEN}🎉 SnapDocs deployed successfully!${NC}"
+    echo -e "${BLUE}💡 Useful commands:${NC}"
+    echo -e "   📊 View logs: ${YELLOW}docker logs -f $CONTAINER_NAME${NC}"
+    echo -e "   ⏹️  Stop app: ${YELLOW}docker stop $CONTAINER_NAME${NC}"
+    echo -e "   🔄 Restart: ${YELLOW}docker restart $CONTAINER_NAME${NC}"
 }
 
 # Main execution
-create_missing_files
+echo -e "${BLUE}🎯 Starting fix and deploy process...${NC}"
+create_and_fix_files
+generate_package_lock
 run_deployment
