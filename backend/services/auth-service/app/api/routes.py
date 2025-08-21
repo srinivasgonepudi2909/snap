@@ -2,6 +2,10 @@ from fastapi import APIRouter, HTTPException, status
 from app.models.user import UserSignup, UserLogin, TokenResponse
 from app.services.auth import get_current_user
 from fastapi import Depends
+from fastapi import APIRouter, Depends
+from app.services.auth import get_current_user
+from app.models.user import User
+
 
 auth_router = APIRouter()
 
@@ -18,3 +22,7 @@ def login_user(user: UserLogin):
 @auth_router.get("/dashboard")
 def get_dashboard(current_user: str = Depends(get_current_user)):
     return {"message": f"Welcome back, {current_user}!"}
+
+@auth_router.get("/me", response_model=User)
+def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user

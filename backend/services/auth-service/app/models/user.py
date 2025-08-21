@@ -1,4 +1,12 @@
 from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from uuid import UUID
+
+class User(BaseModel):
+    id: Optional[UUID] = None
+    email: EmailStr
+
 
 class UserSignup(BaseModel):
     username: str = Field(..., min_length=3)
