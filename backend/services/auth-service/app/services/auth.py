@@ -8,6 +8,9 @@ from app.services.jwt_handler import decode_access_token, oauth2_scheme
 from datetime import datetime, timedelta
 from jose import jwt
 from app.utils.config import settings
+from app.models.user import User  # Add this if not already
+from fastapi import HTTPException
+from bson import ObjectId
 
 
 
@@ -33,8 +36,6 @@ def login_user(user: UserLogin):
     token = create_access_token({"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
-    return decode_access_token(token)
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -45,4 +46,19 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 
 def get_user_by_email(email: str):
     return user_collection.find_one({"email": email})
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    payload = decode_access_token(token)
+    email = payload.get("sub")
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user_data = user_collection.find_one({"email": email})
+    if not user_data:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return User(
+        id=str(user_data.get("_id")),  # Convert ObjectId to string
+        email=user_data["email"]
+    )
 
