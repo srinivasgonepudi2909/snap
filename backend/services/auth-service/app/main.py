@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from fastapi.openapi.utils import get_openapi
+from fastapi.security import OAuth2PasswordBearer
 import os
 from app.api.routes import auth_router
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # Load environment variables
 load_dotenv()
@@ -34,3 +38,33 @@ app.include_router(auth_router)
 @app.get("/health")
 def health_check():
     return {"status": "Auth service running 🛡️"}
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title="SnapDocs Auth Service",
+        version="1.0.0",
+        description="Handles user registration and login",
+        routes=app.routes,
+    )
+
+    openapi_schema["components"]["securitySchemes"] = {
+        "OAuth2PasswordBearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+        }
+    }
+
+    for path in openapi_schema["paths"]:
+        for method in openapi_schema["paths"][path]:
+            if "security" not in openapi_schema["paths"][path][method]:
+                openapi_schema["paths"][path][method]["security"] = [{"OAuth2PasswordBearer": []}]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
