@@ -5,6 +5,10 @@ from app.models.user import UserSignup, UserLogin
 from fastapi import HTTPException, status
 from fastapi import Depends
 from app.services.jwt_handler import decode_access_token, oauth2_scheme
+from datetime import datetime, timedelta
+from jose import jwt
+from app.utils.config import settings
+
 
 def signup_user(user: UserSignup):
     if user_collection.find_one({"email": user.email}):
@@ -30,3 +34,11 @@ def login_user(user: UserLogin):
 
 def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
     return decode_access_token(token)
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return encoded_jwt
+
