@@ -3,6 +3,8 @@ from app.utils.hash import hash_password, verify_password
 from app.services.jwt_handler import create_access_token
 from app.models.user import UserSignup, UserLogin
 from fastapi import HTTPException, status
+from fastapi import Depends
+from app.services.jwt_handler import decode_access_token, oauth2_scheme
 
 def signup_user(user: UserSignup):
     if user_collection.find_one({"email": user.email}):
@@ -25,3 +27,6 @@ def login_user(user: UserLogin):
 
     token = create_access_token({"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
+    return decode_access_token(token)

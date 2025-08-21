@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from app.models.user import UserSignup, UserLogin, TokenResponse
+from app.services.auth import get_current_user
+from fastapi import Depends
 
 auth_router = APIRouter()
 
@@ -12,3 +14,7 @@ def register_user(user: UserSignup):
 def login_user(user: UserLogin):
     # Later: verify credentials, return real JWT
     return TokenResponse(access_token="fake-jwt-token-for-now")
+
+@auth_router.get("/dashboard")
+def get_dashboard(current_user: str = Depends(get_current_user)):
+    return {"message": f"Welcome back, {current_user}!"}
