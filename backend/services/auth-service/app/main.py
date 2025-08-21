@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+from app.api.routes import auth_router
 
 # Load environment variables
 load_dotenv()
@@ -15,9 +16,9 @@ app = FastAPI(
 
 # CORS Configuration
 origins = [
-    "http://localhost:3000",             # Local frontend
-    "http://127.0.0.1:3000",             # Another local IP
-    os.getenv("FRONTEND_URL")            # Dynamic if hosted
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    os.getenv("FRONTEND_URL")
 ]
 
 app.add_middleware(
@@ -28,8 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# TODO: Add route imports here (e.g. from app.api.routes import auth_router)
-# app.include_router(auth_router)
+app.include_router(auth_router)
 
 @app.get("/health")
 def health_check():
