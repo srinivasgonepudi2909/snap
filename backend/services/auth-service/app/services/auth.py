@@ -10,6 +10,7 @@ from jose import jwt
 from app.utils.config import settings
 
 
+
 def signup_user(user: UserSignup):
     if user_collection.find_one({"email": user.email}):
         raise HTTPException(status_code=400, detail="User already exists")
@@ -41,4 +42,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+def get_user_by_email(email: str):
+    return user_collection.find_one({"email": email})
 
