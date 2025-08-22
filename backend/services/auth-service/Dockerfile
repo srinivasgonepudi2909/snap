@@ -36,7 +36,8 @@ RUN poetry config virtualenvs.create false \
 # -----------------------
 # Copy rest of the code
 # -----------------------
-COPY ./app ./app
+COPY . /app
+
 
 # -----------------------
 # Expose port and start server
