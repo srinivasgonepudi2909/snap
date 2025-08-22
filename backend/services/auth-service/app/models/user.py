@@ -3,7 +3,7 @@ from typing import Optional
 
 # Main user model used in responses and token decoding
 class User(BaseModel):
-    id: Optional[str] = Field(alias="_id")  # Accept MongoDB ObjectId as string
+    id: Optional[str] = Field(default=None)  # Remove alias, accept 'id' directly
     email: EmailStr
     
     class Config:
