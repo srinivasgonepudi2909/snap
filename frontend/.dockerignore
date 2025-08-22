@@ -4,7 +4,7 @@ build
 .git
 .gitignore
 README.md
-.env
+#env
 coverage
 .DS_Store
 *.log
