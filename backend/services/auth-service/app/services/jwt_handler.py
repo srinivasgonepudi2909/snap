@@ -21,12 +21,12 @@ def create_access_token(data: dict) -> str:
     return encoded_jwt
 
 # Decode + Validate JWT Token
-def decode_access_token(token: str) -> str:
+def decode_access_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        email: str = payload.get("sub")
-        if email is None:
+        if "sub" not in payload:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-        return email
+        return payload
     except JWTError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token is invalid or expired")
+
