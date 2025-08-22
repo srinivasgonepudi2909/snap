@@ -317,4 +317,97 @@ const SnapDocs = () => {
         Sign In
       </button>
       <p className="text-center text-sm text-gray-600">
-        Don't have an account?{' '
+        Don't have an account?{' '}
+        <button
+          type="button"
+          onClick={() => {
+            setIsLoginOpen(false);
+            setIsSignupOpen(true);
+          }}
+          className="text-blue-600 hover:text-blue-700 font-medium"
+        >
+          Sign up here
+        </button>
+      </p>
+    </div>
+  );
+
+  // Signup Form
+  const SignupForm = () => (
+    <div className="space-y-4">
+      <div>
+        <div className="block text-sm font-medium text-gray-700 mb-1">Username</div>
+        <input
+          type="text"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          placeholder="Your username"
+        />
+      </div>
+      <div>
+        <div className="block text-sm font-medium text-gray-700 mb-1">Email</div>
+        <input
+          type="email"
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          placeholder="your@email.com"
+        />
+      </div>
+      <div>
+        <div className="block text-sm font-medium text-gray-700 mb-1">Password</div>
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          >
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+      <button
+        type="button"
+        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 transition-all transform hover:scale-105"
+      >
+        Create Account
+      </button>
+      <p className="text-center text-sm text-gray-600">
+        Already have an account?{' '}
+        <button
+          type="button"
+          onClick={() => {
+            setIsSignupOpen(false);
+            setIsLoginOpen(true);
+          }}
+          className="text-blue-600 hover:text-blue-700 font-medium"
+        >
+          Sign in here
+        </button>
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen">
+      <Header />
+      <HeroSection />
+      <FeaturesSection />
+      <WhyChooseSection />
+
+      {/* Login Modal */}
+      <Modal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} title="Welcome Back">
+        <LoginForm />
+      </Modal>
+
+      {/* Signup Modal */}
+      <Modal isOpen={isSignupOpen} onClose={() => setIsSignupOpen(false)} title="Create Account">
+        <SignupForm />
+      </Modal>
+    </div>
+  );
+};
+
+export default SnapDocs;
