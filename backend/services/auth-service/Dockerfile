@@ -23,21 +23,15 @@ RUN apt-get update \
 WORKDIR /app
 
 # -----------------------
-# Copy only project metadata first (for better cache)
+# Copy entire project
 # -----------------------
-COPY pyproject.toml poetry.lock* ./
+COPY . /app
 
 # -----------------------
 # Install dependencies
 # -----------------------
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi
-
-# -----------------------
-# Copy rest of the code
-# -----------------------
-COPY . /app
-
 
 # -----------------------
 # Expose port and start server
