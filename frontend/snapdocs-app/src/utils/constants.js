@@ -1,0 +1,1 @@
+export const API_BASE_URL = "http://snapdocs-auth-container:8000";
