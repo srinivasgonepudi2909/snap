@@ -1,0 +1,13 @@
+cat > .dockerignore << 'EOF'
+node_modules
+npm-debug.log
+build
+.git
+.gitignore
+README.md
+.env
+coverage
+.DS_Store
+*.log
+.nyc_output
+EOF
