@@ -7,13 +7,14 @@ packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-fastapi = "^0.111.0"
-uvicorn = "^0.30.1"
-pymongo = "^4.7.2"
-python-dotenv = "^1.0.1"
-passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+fastapi = "^0.111.1"
+uvicorn = "^0.30.0"
+python-dotenv = "^1.0.0"
+pymongo = "^4.0.0"
+passlib = "^1.7.4"
 python-jose = "^3.3.0"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+bcrypt = "^4.0.0"
+email-validator = "^2.0.0"
+pydantic = "^2.11.0"
+typer = "^0.9.0"
+httpx = "^0.28.0"
