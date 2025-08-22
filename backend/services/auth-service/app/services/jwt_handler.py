@@ -4,10 +4,10 @@ from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
+from app.utils.config import settings
 
-# Load from .env
-JWT_SECRET = os.getenv("JWT_SECRET")
-JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", 60))
+JWT_SECRET = settings.SECRET_KEY
+JWT_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 # For route protection
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
