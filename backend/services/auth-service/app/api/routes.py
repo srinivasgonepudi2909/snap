@@ -6,6 +6,7 @@ from app.utils.config import user_collection
 
 auth_router = APIRouter()
 
+
 @auth_router.post("/signup", status_code=201)
 def register_user(user: UserSignup):
     if user_collection.find_one({"email": user.email}):
@@ -22,11 +23,24 @@ def register_user(user: UserSignup):
 
 @auth_router.post("/login", response_model=TokenResponse)
 def login_user(user_credentials: UserLogin):
+    # 🔍 Debugging prints
+    print("✅ Login request received")
+    print("➡️ Credentials:", user_credentials.dict())
+
     user = user_collection.find_one({"email": user_credentials.email})
-    if not user or not verify_password(user_credentials.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    print("🔍 User from DB:", user)
+
+    if not user:
+        print("❌ User not found")
+        raise HTTPException(status_code=401, detail="User not found")
+
+    if not verify_password(user_credentials.password, user.get("password", "")):
+        print("❌ Invalid password")
+        raise HTTPException(status_code=401, detail="Incorrect password")
 
     token = create_access_token({"sub": user["email"]})
+    print("✅ Token generated")
+
     return {"access_token": token, "token_type": "bearer"}
 
 
