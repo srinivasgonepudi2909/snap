@@ -145,19 +145,26 @@ const Home = () => {
       setTimeout(() => {
         // FIXED: Accept any email/password and use actual user's name
         if (localEmail.trim() && localPassword.trim()) {
-          setUserEmail(localEmail);
           // Extract name from email (before @ symbol) and capitalize it
           const emailName = localEmail.split('@')[0];
           const displayName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
-          setUsername(displayName);
+          
+          // Set success message FIRST, then update user state
           setLocalSuccess(`Welcome back, ${displayName}! Login successful! 🎉`);
           
+          // Short delay to ensure success message shows before updating user state
+          setTimeout(() => {
+            setUserEmail(localEmail);
+            setUsername(displayName);
+          }, 500);
+          
+          // Close modal after showing success message
           setTimeout(() => {
             setIsLoginOpen(false);
             setLocalEmail('');
             setLocalPassword('');
             setLocalSuccess('');
-          }, 2000);
+          }, 2500); // Extended to 2.5 seconds to see success message longer
         } else {
           setLocalError('Please enter both email and password');
         }
