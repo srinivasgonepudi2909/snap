@@ -3,10 +3,118 @@ import { Link } from 'react-router-dom';
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
          FileText, Users, Award, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 
+// Isolated LoginModal Component
+const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }) => {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleInputChange = React.useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  const togglePassword = React.useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
+  const handleSubmit = React.useCallback(async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('username', data.username || 'User');
+        alert(`✅ Welcome back, ${data.username || 'User'}!`);
+        setFormData({ email: '', password: '' });
+        onLoginSuccess(formData.email);
+        onClose();
+      } else {
+        setError(data.detail || 'Login failed. Please check your credentials.');
+      }
+    } catch (error) {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [formData, onClose, onLoginSuccess]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10">
+        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors">
+          <X className="w-6 h-6" />
+        </button>
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg">
+              <div className="absolute top-0 right-0 w-7 h-7 bg-gradient-to-bl from-cyan-400 to-cyan-600 transform rotate-45 translate-x-2 -translate-y-2"></div>
+              <div className="text-white font-bold text-base z-10">SD</div>
+              <div className="absolute bottom-1 right-1 w-4 h-2 bg-white rounded-sm opacity-80"></div>
+            </div>
+            <span className="text-2xl font-bold text-white">SnapDocs</span>
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
+          <p className="text-gray-400">Login to access your digital vault</p>
+        </div>
+        {error && (
+          <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
+            <input
+              type="email" name="email" value={formData.email} onChange={handleInputChange}
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
+              placeholder="Enter your email" required autoComplete="email"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-300 text-sm font-semibold mb-2">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleInputChange}
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
+                placeholder="Enter your password" required autoComplete="current-password"
+              />
+              <button type="button" onClick={togglePassword} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+          <button type="submit" disabled={loading}
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+            {loading ? 'Logging in...' : 'Login to SnapDocs'}
+          </button>
+        </form>
+        <div className="text-center mt-6">
+          <span className="text-gray-400">Don't have an account? </span>
+          <button onClick={() => { setError(''); onSwitchToSignup(); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+            Sign up here
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Home = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeModal, setActiveModal] = useState('login');
@@ -23,14 +131,6 @@ const Home = () => {
   });
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupError, setSignupError] = useState('');
-
-  // --- LOGIN FORM STATES ---
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: ''
-  });
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
 
   // --- USER STATE ---
   const [userEmail, setUserEmail] = useState("");
@@ -99,73 +199,9 @@ const Home = () => {
     }
   }, [signupData.firstName, signupData.lastName, signupData.email, signupData.password]);
 
-  // --- LOGIN HANDLER ---
-  const handleLogin = React.useCallback(async (e) => {
-    e.preventDefault();
-    setLoginLoading(true);
-    setLoginError('');
-
-    try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: loginData.email,
-          password: loginData.password
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Success - store token and username
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('username', data.username || 'User');
-        setUserEmail(loginData.email);
-        alert(`✅ Welcome back, ${data.username || 'User'}!`);
-        setIsLoginOpen(false);
-        // Clear form
-        setLoginData({
-          email: '',
-          password: ''
-        });
-      } else {
-        setLoginError(data.detail || 'Login failed. Please check your credentials.');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      setLoginError('Network error. Please check your connection and try again.');
-    } finally {
-      setLoginLoading(false);
-    }
-  }, [loginData.email, loginData.password]);
-
-  // Password visibility handlers
-  const toggleLoginPassword = React.useCallback(() => {
-    setShowLoginPassword(prev => !prev);
-  }, []);
-
-  const toggleSignupPassword = React.useCallback(() => {
-    setShowSignupPassword(prev => !prev);
-  }, []);
-
-  // --- INPUT CHANGE HANDLERS ---
-  const handleSignupChange = React.useCallback((e) => {
-    const { name, value } = e.target;
-    setSignupData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
-
-  const handleLoginChange = React.useCallback((e) => {
-    const { name, value } = e.target;
-    setLoginData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Login success handler
+  const handleLoginSuccess = React.useCallback((email) => {
+    setUserEmail(email);
   }, []);
 
   const countries = [
@@ -250,7 +286,6 @@ const Home = () => {
                   onClick={() => {
                     setActiveModal('login');
                     setIsLoginOpen(true);
-                    setLoginError('');
                   }}
                   className={`font-bold text-lg transition-all duration-300 hover:scale-110 transform px-4 py-2 rounded-lg ${
                     activeModal === 'login' 
@@ -264,7 +299,6 @@ const Home = () => {
                   onClick={() => {
                     setActiveModal('signup');
                     setIsSignupOpen(true);
-                    setSignupError('');
                   }}
                   className={`font-bold text-lg transition-all duration-300 hover:scale-110 transform px-6 py-2 rounded-lg shadow-lg ${
                     activeModal === 'signup' 
@@ -574,7 +608,16 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
       <Header />
-      <LoginModal />
+      <LoginModal 
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onSwitchToSignup={() => {
+          setIsLoginOpen(false);
+          setIsSignupOpen(true);
+          setActiveModal('signup');
+        }}
+        onLoginSuccess={handleLoginSuccess}
+      />
       <SignupModal />
       
       {/* Hero Section */}
