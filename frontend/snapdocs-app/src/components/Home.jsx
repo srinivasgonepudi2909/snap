@@ -143,10 +143,10 @@ const Home = () => {
 
       // Simulate login process
       setTimeout(() => {
-        if (localEmail === 'demo@snapdocs.com' && localPassword === 'password') {
+        // FIXED: More flexible credential checking
+        if (localEmail.toLowerCase().trim() === 'demo@snapdocs.com' && localPassword === 'password') {
           setUserEmail(localEmail);
           setUsername('Demo User');
-          // Show success message ONLY in the modal - no browser alerts
           setLocalSuccess('Welcome back, Demo User! 🎉');
           
           setTimeout(() => {
@@ -406,7 +406,7 @@ const Home = () => {
           </form>
           {localSuccess && (
             <div className="text-center mt-4 text-sm text-blue-400">
-              🔄 Redirecting to login in a few seconds...
+              ✨ Ready to login! Click "Login here" below when you're ready.
             </div>
           )}
           <div className="text-center mt-6">
