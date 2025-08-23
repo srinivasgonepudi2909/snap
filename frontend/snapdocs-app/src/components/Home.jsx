@@ -54,7 +54,7 @@ const Home = () => {
   }, []);
 
   // --- SIGNUP HANDLER ---
-  const handleSignup = async (e) => {
+  const handleSignup = React.useCallback(async (e) => {
     e.preventDefault();
     setSignupLoading(true);
     setSignupError('');
@@ -97,10 +97,10 @@ const Home = () => {
     } finally {
       setSignupLoading(false);
     }
-  };
+  }, [signupData.firstName, signupData.lastName, signupData.email, signupData.password]);
 
   // --- LOGIN HANDLER ---
-  const handleLogin = async (e) => {
+  const handleLogin = React.useCallback(async (e) => {
     e.preventDefault();
     setLoginLoading(true);
     setLoginError('');
@@ -140,7 +140,16 @@ const Home = () => {
     } finally {
       setLoginLoading(false);
     }
-  };
+  }, [loginData.email, loginData.password]);
+
+  // Password visibility handlers
+  const toggleLoginPassword = React.useCallback(() => {
+    setShowLoginPassword(prev => !prev);
+  }, []);
+
+  const toggleSignupPassword = React.useCallback(() => {
+    setShowSignupPassword(prev => !prev);
+  }, []);
 
   // --- INPUT CHANGE HANDLERS ---
   const handleSignupChange = React.useCallback((e) => {
@@ -324,7 +333,7 @@ const Home = () => {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  onClick={toggleLoginPassword}
                   className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                 >
                   {showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -485,7 +494,7 @@ const Home = () => {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowSignupPassword(!showSignupPassword)}
+                  onClick={toggleSignupPassword}
                   className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                 >
                   {showSignupPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
