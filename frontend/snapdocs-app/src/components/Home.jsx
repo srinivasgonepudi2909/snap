@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
          FileText, Users, Award, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 
@@ -16,28 +15,10 @@ const Home = () => {
   const [username, setUsername] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUsername = localStorage.getItem("username");
+    // Removed localStorage usage as it's not supported in Claude artifacts
+    // In a real environment, this would work with localStorage
+    const storedUsername = "Demo User"; // Simulated for artifact
     if (storedUsername) setUsername(storedUsername);
-
-    if (!token) return;
-
-    fetch(`${process.env.REACT_APP_BACKEND_URL}/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.email) {
-          setUserEmail(data.email);
-        }
-        if (data?.username) {
-          setUsername(data.username);
-          localStorage.setItem("username", data.username);
-        }
-      })
-      .catch((err) => console.error("Failed to fetch user info:", err));
   }, []);
 
   const countries = [
@@ -59,7 +40,7 @@ const Home = () => {
   }, []);
 
   const SnapDocsLogo = () => (
-    <Link to="/" className="flex items-center space-x-3 group cursor-pointer">
+    <div className="flex items-center space-x-3 group cursor-pointer">
       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg group-hover:scale-110 transition-all duration-300">
         <div className="absolute top-0 right-0 w-7 h-7 bg-gradient-to-bl from-cyan-400 to-cyan-600 transform rotate-45 translate-x-2 -translate-y-2"></div>
         <div className="text-white font-bold text-base z-10">SD</div>
@@ -68,7 +49,7 @@ const Home = () => {
       <span className="text-2xl font-bold text-white group-hover:scale-110 transition-all duration-300">
         SnapDocs
       </span>
-    </Link>
+    </div>
   );
 
   const Header = () => (
@@ -80,24 +61,15 @@ const Home = () => {
           <SnapDocsLogo />
           
           <nav className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/about"
-              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
-            >
+            <button className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer">
               About Us
-            </Link>
-            <Link 
-              to="/how-it-works"
-              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
-            >
+            </button>
+            <button className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer">
               How It Works
-            </Link>
-            <Link 
-              to="/contact"
-              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
-            >
+            </button>
+            <button className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer">
               Contact
-            </Link>
+            </button>
           </nav>
 
           <div className="flex items-center space-x-4">
@@ -106,8 +78,6 @@ const Home = () => {
                 <span className="text-white font-semibold">Hello, {username}</span>
                 <button
                   onClick={() => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('username');
                     setUserEmail('');
                     setUsername('');
                     alert('Logged out successfully!');
@@ -153,44 +123,39 @@ const Home = () => {
     </header>
   );
 
-  // Login Modal Component (Isolated Version)
+  // Login Modal Component
   const LoginModal = () => {
-    const [localEmail, setLocalEmail] = React.useState('');
-    const [localPassword, setLocalPassword] = React.useState('');
-    const [localShowPassword, setLocalShowPassword] = React.useState(false);
-    const [localLoading, setLocalLoading] = React.useState(false);
-    const [localError, setLocalError] = React.useState('');
+    const [localEmail, setLocalEmail] = useState('');
+    const [localPassword, setLocalPassword] = useState('');
+    const [localShowPassword, setLocalShowPassword] = useState(false);
+    const [localLoading, setLocalLoading] = useState(false);
+    const [localError, setLocalError] = useState('');
+    const [localSuccess, setLocalSuccess] = useState('');
 
     const handleLocalSubmit = async (e) => {
       e.preventDefault();
       setLocalLoading(true);
       setLocalError('');
+      setLocalSuccess('');
 
-      try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: localEmail, password: localPassword })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-          localStorage.setItem('token', data.access_token);
-          localStorage.setItem('username', data.username || 'User');
+      // Simulate API call
+      setTimeout(() => {
+        if (localEmail === 'demo@snapdocs.com' && localPassword === 'password') {
           setUserEmail(localEmail);
-          setUsername(data.username || 'User');
-          alert(`✅ Welcome back, ${data.username || 'User'}!`);
-          setIsLoginOpen(false);
-          setLocalEmail('');
-          setLocalPassword('');
+          setUsername('Demo User');
+          setLocalSuccess('Welcome back, Demo User! 🎉');
+          
+          setTimeout(() => {
+            setIsLoginOpen(false);
+            setLocalEmail('');
+            setLocalPassword('');
+            setLocalSuccess('');
+          }, 2000);
         } else {
-          setLocalError(data.detail || 'Login failed. Please check your credentials.');
+          setLocalError('Login failed. Use demo@snapdocs.com with password "password"');
         }
-      } catch (error) {
-        setLocalError('Network error. Please check your connection and try again.');
-      } finally {
         setLocalLoading(false);
-      }
+      }, 1000);
     };
 
     return isLoginOpen ? (
@@ -209,13 +174,21 @@ const Home = () => {
               {localError}
             </div>
           )}
+          {localSuccess && (
+            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              {localSuccess}
+            </div>
+          )}
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
               <input
                 type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="Enter your email" required autoComplete="email"
+                placeholder="Enter your email" required autoComplete="email" disabled={localLoading || localSuccess}
               />
             </div>
             <div>
@@ -224,16 +197,23 @@ const Home = () => {
                 <input
                   type={localShowPassword ? "text" : "password"} value={localPassword} onChange={(e) => setLocalPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
-                  placeholder="Enter your password" required autoComplete="current-password"
+                  placeholder="Enter your password" required autoComplete="current-password" disabled={localLoading || localSuccess}
                 />
-                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors" disabled={localLoading || localSuccess}>
                   {localShowPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={localLoading}
+            <button type="submit" disabled={localLoading || localSuccess}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {localLoading ? 'Logging in...' : 'Login to SnapDocs'}
+              {localSuccess ? (
+                <span className="flex items-center justify-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  Login Successful!
+                </span>
+              ) : localLoading ? 'Logging in...' : 'Login to SnapDocs'}
             </button>
           </form>
           <div className="text-center mt-6">
@@ -247,55 +227,47 @@ const Home = () => {
     ) : null;
   };
 
-  // Signup Modal Component (Now Fully Isolated)
+  // Signup Modal Component
   const SignupModal = () => {
-    const [localFirstName, setLocalFirstName] = React.useState('');
-    const [localLastName, setLocalLastName] = React.useState('');
-    const [localEmail, setLocalEmail] = React.useState('');
-    const [localPhoneNumber, setLocalPhoneNumber] = React.useState('');
-    const [localPassword, setLocalPassword] = React.useState('');
-    const [localShowPassword, setLocalShowPassword] = React.useState(false);
-    const [localLoading, setLocalLoading] = React.useState(false);
-    const [localError, setLocalError] = React.useState('');
-    const [localCountry, setLocalCountry] = React.useState({ code: '+91', flag: '🇮🇳', name: 'India' });
-    const [localCountryOpen, setLocalCountryOpen] = React.useState(false);
+    const [localFirstName, setLocalFirstName] = useState('');
+    const [localLastName, setLocalLastName] = useState('');
+    const [localEmail, setLocalEmail] = useState('');
+    const [localPhoneNumber, setLocalPhoneNumber] = useState('');
+    const [localPassword, setLocalPassword] = useState('');
+    const [localShowPassword, setLocalShowPassword] = useState(false);
+    const [localLoading, setLocalLoading] = useState(false);
+    const [localError, setLocalError] = useState('');
+    const [localSuccess, setLocalSuccess] = useState('');
+    const [localCountry, setLocalCountry] = useState({ code: '+91', flag: '🇮🇳', name: 'India' });
+    const [localCountryOpen, setLocalCountryOpen] = useState(false);
 
     const handleLocalSubmit = async (e) => {
       e.preventDefault();
       setLocalLoading(true);
       setLocalError('');
+      setLocalSuccess('');
 
-      try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/signup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: `${localFirstName} ${localLastName}`.trim(),
-            email: localEmail,
-            password: localPassword
-          })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-          alert(`✅ Account created successfully! Please login with your credentials.`);
-          setIsSignupOpen(false);
-          setIsLoginOpen(true);
-          setActiveModal('login');
-          // Clear form
-          setLocalFirstName('');
-          setLocalLastName('');
-          setLocalEmail('');
-          setLocalPhoneNumber('');
-          setLocalPassword('');
+      // Simulate API call
+      setTimeout(() => {
+        if (localEmail && localPassword.length >= 6) {
+          setLocalSuccess('Account created successfully! Please login with your credentials. 🎉');
+          
+          setTimeout(() => {
+            setIsSignupOpen(false);
+            setIsLoginOpen(true);
+            setActiveModal('login');
+            setLocalFirstName('');
+            setLocalLastName('');
+            setLocalEmail('');
+            setLocalPhoneNumber('');
+            setLocalPassword('');
+            setLocalSuccess('');
+          }, 3000);
         } else {
-          setLocalError(data.detail || 'Signup failed. Please try again.');
+          setLocalError('Please fill all fields and ensure password is at least 6 characters.');
         }
-      } catch (error) {
-        setLocalError('Network error. Please check your connection and try again.');
-      } finally {
         setLocalLoading(false);
-      }
+      }, 1000);
     };
 
     return isSignupOpen ? (
@@ -314,6 +286,14 @@ const Home = () => {
               {localError}
             </div>
           )}
+          {localSuccess && (
+            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              {localSuccess}
+            </div>
+          )}
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -321,7 +301,7 @@ const Home = () => {
                 <input
                   type="text" value={localFirstName} onChange={(e) => setLocalFirstName(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="First name" required autoComplete="given-name"
+                  placeholder="First name" required autoComplete="given-name" disabled={localLoading || localSuccess}
                 />
               </div>
               <div>
@@ -329,7 +309,7 @@ const Home = () => {
                 <input
                   type="text" value={localLastName} onChange={(e) => setLocalLastName(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Last name" required autoComplete="family-name"
+                  placeholder="Last name" required autoComplete="family-name" disabled={localLoading || localSuccess}
                 />
               </div>
             </div>
@@ -338,7 +318,7 @@ const Home = () => {
               <input
                 type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="Enter your email" required autoComplete="email"
+                placeholder="Enter your email" required autoComplete="email" disabled={localLoading || localSuccess}
               />
             </div>
             <div>
@@ -347,8 +327,9 @@ const Home = () => {
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={() => setLocalCountryOpen(!localCountryOpen)}
-                    className="flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors"
+                    onClick={() => !localLoading && !localSuccess && setLocalCountryOpen(!localCountryOpen)}
+                    className="flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors disabled:opacity-50"
+                    disabled={localLoading || localSuccess}
                   >
                     <span>{localCountry.flag}</span>
                     <span>{localCountry.code}</span>
@@ -377,7 +358,7 @@ const Home = () => {
                 <input
                   type="tel" value={localPhoneNumber} onChange={(e) => setLocalPhoneNumber(e.target.value)}
                   className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Phone number" autoComplete="tel"
+                  placeholder="Phone number" autoComplete="tel" disabled={localLoading || localSuccess}
                 />
               </div>
             </div>
@@ -387,18 +368,30 @@ const Home = () => {
                 <input
                   type={localShowPassword ? "text" : "password"} value={localPassword} onChange={(e) => setLocalPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
-                  placeholder="Create a strong password" required minLength="6" autoComplete="new-password"
+                  placeholder="Create a strong password" required minLength="6" autoComplete="new-password" disabled={localLoading || localSuccess}
                 />
-                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors" disabled={localLoading || localSuccess}>
                   {localShowPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={localLoading}
+            <button type="submit" disabled={localLoading || localSuccess}
               className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {localLoading ? 'Creating Account...' : 'Create SnapDocs Account'}
+              {localSuccess ? (
+                <span className="flex items-center justify-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  Account Created!
+                </span>
+              ) : localLoading ? 'Creating Account...' : 'Create SnapDocs Account'}
             </button>
           </form>
+          {localSuccess && (
+            <div className="text-center mt-4 text-sm text-blue-400">
+              🔄 Redirecting to login in a few seconds...
+            </div>
+          )}
           <div className="text-center mt-6">
             <span className="text-gray-400">Already have an account? </span>
             <button onClick={() => { setIsSignupOpen(false); setIsLoginOpen(true); setActiveModal('login'); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
@@ -462,9 +455,9 @@ const Home = () => {
       <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center relative z-10">
-          <div className="space-y-8 max-w-4xl mx-auto pt-20 animate-fade-in">
+          <div className="space-y-8 max-w-4xl mx-auto pt-20">
             <div className="space-y-6">
-              <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight animate-slide-up">
+              <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
                 Your Digital Vault
                 <br />
                 <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -472,17 +465,17 @@ const Home = () => {
                 </span>
               </h1>
               {userEmail && (
-                <p className="text-lg text-gray-300 animate-slide-up mt-2">
+                <p className="text-lg text-gray-300 mt-2">
                   👋 Welcome, <span className="font-semibold text-white">{username}</span>!
                 </p>
               )}
-              <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-slide-up">
+              <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
                 Store, organize, and access your valuable documents, photos, and certificates with 
                 military-grade security. Create custom folders and never lose important files again.
               </p>
             </div>
 
-            <div className="pt-4 animate-scale-in">
+            <div className="pt-4">
               <button
                 onClick={() => {
                   setActiveModal('signup');
@@ -628,12 +621,11 @@ const Home = () => {
                 <span>Start Free Trial</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
-              <Link
-                to="/how-it-works"
+              <button
                 className="inline-flex items-center justify-center space-x-2 bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/15 transition-all duration-300 border border-white/20"
               >
                 <span>Learn More</span>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -653,9 +645,9 @@ const Home = () => {
             <div>
               <h3 className="text-white font-semibold mb-4">Quick Links</h3>
               <div className="space-y-2">
-                <Link to="/about" className="block text-gray-400 hover:text-white transition-colors">About Us</Link>
-                <Link to="/how-it-works" className="block text-gray-400 hover:text-white transition-colors">How It Works</Link>
-                <Link to="/contact" className="block text-gray-400 hover:text-white transition-colors">Contact</Link>
+                <button className="block text-gray-400 hover:text-white transition-colors text-left">About Us</button>
+                <button className="block text-gray-400 hover:text-white transition-colors text-left">How It Works</button>
+                <button className="block text-gray-400 hover:text-white transition-colors text-left">Contact</button>
               </div>
             </div>
             <div>
