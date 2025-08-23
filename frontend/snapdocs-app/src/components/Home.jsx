@@ -12,6 +12,28 @@ const Home = () => {
   const [selectedCountry, setSelectedCountry] = useState({ code: '+91', flag: '🇮🇳', name: 'India' });
   const [isCountryOpen, setIsCountryOpen] = useState(false);
 
+  // --- ADDED: userEmail state and fetch logic ---
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.email) {
+          setUserEmail(data.email);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch user info:", err));
+  }, []);
+  // --- END ADDED ---
+
   const countries = [
     { code: '+91', flag: '🇮🇳', name: 'India' },
     { code: '+1', flag: '🇺🇸', name: 'United States' },
@@ -364,6 +386,13 @@ const Home = () => {
                   Secured & Organized
                 </span>
               </h1>
+              {/* --- ADDED: Welcome message if logged in --- */}
+              {userEmail && (
+                <p className="text-lg text-gray-300 animate-slide-up mt-2">
+                  👋 Welcome, <span className="font-semibold text-white">{userEmail}</span>!
+                </p>
+              )}
+              {/* --- END ADDED --- */}
               <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-slide-up">
                 Store, organize, and access your valuable documents, photos, and certificates with 
                 military-grade security. Create custom folders and never lose important files again.

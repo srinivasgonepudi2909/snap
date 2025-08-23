@@ -14,14 +14,17 @@ def register_user(user: UserSignup):
 
     from app.utils.hash import hash_password
     hashed = hash_password(user.password)
-    user_dict = user.dict()
-    user_dict["password"] = hashed
-    user_collection.insert_one(user_dict)
+    user_data = {
+        "username": user.username,
+        "email": user.email,
+        "password": hashed,
+    }
+    user_collection.insert_one(user_data)
 
     return {"message": f"User {user.email} registered successfully!"}
 
 
-@auth_router.post("/login", response_model=TokenResponse)
+@auth_router.post("/login")
 def login_user(user_credentials: UserLogin):
     # 🔍 Debugging prints
     print("✅ Login request received")
@@ -41,7 +44,11 @@ def login_user(user_credentials: UserLogin):
     token = create_access_token({"sub": user["email"]})
     print("✅ Token generated")
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "username": user.get("username", "User")  # 👈 Added this line
+    }
 
 
 @auth_router.get("/dashboard")
@@ -52,6 +59,7 @@ def get_dashboard(current_user: str = Depends(get_current_user)):
 @auth_router.get("/me", response_model=User)
 def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
 
 @auth_router.get("/health/mongo")
 def check_mongo_connection():
