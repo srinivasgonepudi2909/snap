@@ -3,118 +3,10 @@ import { Link } from 'react-router-dom';
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
          FileText, Users, Award, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 
-// Isolated LoginModal Component
-const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }) => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleInputChange = React.useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  }, []);
-
-  const togglePassword = React.useCallback(() => {
-    setShowPassword(prev => !prev);
-  }, []);
-
-  const handleSubmit = React.useCallback(async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('username', data.username || 'User');
-        alert(`✅ Welcome back, ${data.username || 'User'}!`);
-        setFormData({ email: '', password: '' });
-        onLoginSuccess(formData.email);
-        onClose();
-      } else {
-        setError(data.detail || 'Login failed. Please check your credentials.');
-      }
-    } catch (error) {
-      setError('Network error. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [formData, onClose, onLoginSuccess]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10">
-        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors">
-          <X className="w-6 h-6" />
-        </button>
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg">
-              <div className="absolute top-0 right-0 w-7 h-7 bg-gradient-to-bl from-cyan-400 to-cyan-600 transform rotate-45 translate-x-2 -translate-y-2"></div>
-              <div className="text-white font-bold text-base z-10">SD</div>
-              <div className="absolute bottom-1 right-1 w-4 h-2 bg-white rounded-sm opacity-80"></div>
-            </div>
-            <span className="text-2xl font-bold text-white">SnapDocs</span>
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-          <p className="text-gray-400">Login to access your digital vault</p>
-        </div>
-        {error && (
-          <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
-            <input
-              type="email" name="email" value={formData.email} onChange={handleInputChange}
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-              placeholder="Enter your email" required autoComplete="email"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-300 text-sm font-semibold mb-2">Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleInputChange}
-                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
-                placeholder="Enter your password" required autoComplete="current-password"
-              />
-              <button type="button" onClick={togglePassword} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-          <button type="submit" disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-            {loading ? 'Logging in...' : 'Login to SnapDocs'}
-          </button>
-        </form>
-        <div className="text-center mt-6">
-          <span className="text-gray-400">Don't have an account? </span>
-          <button onClick={() => { setError(''); onSwitchToSignup(); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-            Sign up here
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const Home = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeModal, setActiveModal] = useState('login');
@@ -132,11 +24,23 @@ const Home = () => {
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupError, setSignupError] = useState('');
 
+  // --- LOGIN FORM STATES (ISOLATED) ---
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  });
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
   // --- USER STATE ---
   const [userEmail, setUserEmail] = useState("");
+  const [username, setUsername] = useState(""); // <-- Add this
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) setUsername(storedUsername); // <-- Add this
+
     if (!token) return;
 
     fetch(`${process.env.REACT_APP_BACKEND_URL}/me`, {
@@ -149,12 +53,16 @@ const Home = () => {
         if (data?.email) {
           setUserEmail(data.email);
         }
+        if (data?.username) {
+          setUsername(data.username);
+          localStorage.setItem("username", data.username); // keep in sync
+        }
       })
       .catch((err) => console.error("Failed to fetch user info:", err));
   }, []);
 
   // --- SIGNUP HANDLER ---
-  const handleSignup = React.useCallback(async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setSignupLoading(true);
     setSignupError('');
@@ -197,11 +105,66 @@ const Home = () => {
     } finally {
       setSignupLoading(false);
     }
-  }, [signupData.firstName, signupData.lastName, signupData.email, signupData.password]);
+  };
 
-  // Login success handler
-  const handleLoginSuccess = React.useCallback((email) => {
-    setUserEmail(email);
+  // --- LOGIN HANDLER (ISOLATED) ---
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success - store token and username
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('username', data.username || 'User');
+        setUserEmail(loginData.email);
+        alert(`✅ Welcome back, ${data.username || 'User'}!`);
+        setIsLoginOpen(false);
+        // Clear form
+        setLoginData({
+          email: '',
+          password: ''
+        });
+      } else {
+        setLoginError(data.detail || 'Login failed. Please check your credentials.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Network error. Please check your connection and try again.');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // --- INPUT CHANGE HANDLERS ---
+  const handleSignupChange = React.useCallback((e) => {
+    const { name, value } = e.target;
+    setSignupData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
+
+  const handleLoginChange = React.useCallback((e) => {
+    const { name, value } = e.target;
+    setLoginData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   }, []);
 
   const countries = [
@@ -267,12 +230,13 @@ const Home = () => {
           <div className="flex items-center space-x-4">
             {userEmail ? (
               <div className="flex items-center space-x-4">
-                <span className="text-white font-semibold">Hello, {userEmail}</span>
+                <span className="text-white font-semibold">Hello, {username}</span>
                 <button
                   onClick={() => {
                     localStorage.removeItem('token');
                     localStorage.removeItem('username');
                     setUserEmail('');
+                    setUsername('');
                     alert('Logged out successfully!');
                   }}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
@@ -286,6 +250,7 @@ const Home = () => {
                   onClick={() => {
                     setActiveModal('login');
                     setIsLoginOpen(true);
+                    setLoginError('');
                   }}
                   className={`font-bold text-lg transition-all duration-300 hover:scale-110 transform px-4 py-2 rounded-lg ${
                     activeModal === 'login' 
@@ -299,6 +264,7 @@ const Home = () => {
                   onClick={() => {
                     setActiveModal('signup');
                     setIsSignupOpen(true);
+                    setSignupError('');
                   }}
                   className={`font-bold text-lg transition-all duration-300 hover:scale-110 transform px-6 py-2 rounded-lg shadow-lg ${
                     activeModal === 'signup' 
@@ -316,93 +282,100 @@ const Home = () => {
     </header>
   );
 
-  // Login Modal Component
-  const LoginModal = () => (
-    isLoginOpen && (
-      <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10 animate-scale-in">
-          <button
-            onClick={() => setIsLoginOpen(false)}
-            className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
-          >
+  // Login Modal Component (Optimized Version)
+  const LoginModal = () => {
+    const [localEmail, setLocalEmail] = React.useState('');
+    const [localPassword, setLocalPassword] = React.useState('');
+    const [localShowPassword, setLocalShowPassword] = React.useState(false);
+    const [localLoading, setLocalLoading] = React.useState(false);
+    const [localError, setLocalError] = React.useState('');
+
+    const handleLocalSubmit = async (e) => {
+      e.preventDefault();
+      setLocalLoading(true);
+      setLocalError('');
+
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: localEmail, password: localPassword })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          localStorage.setItem('token', data.access_token);
+          localStorage.setItem('username', data.username || 'User');
+          setUserEmail(localEmail);
+          alert(`✅ Welcome back, ${data.username || 'User'}!`);
+          setIsLoginOpen(false);
+          setLocalEmail('');
+          setLocalPassword('');
+        } else {
+          setLocalError(data.detail || 'Login failed. Please check your credentials.');
+        }
+      } catch (error) {
+        setLocalError('Network error. Please check your connection and try again.');
+      } finally {
+        setLocalLoading(false);
+      }
+    };
+
+    return isLoginOpen ? (
+      <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10">
+          <button onClick={() => setIsLoginOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors">
             <X className="w-6 h-6" />
           </button>
-
           <div className="text-center mb-8">
             <SnapDocsLogo />
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Welcome Back</h2>
             <p className="text-gray-400">Login to access your digital vault</p>
           </div>
-
-          {loginError && (
+          {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
-              {loginError}
+              {localError}
             </div>
           )}
-
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
               <input
-                type="email"
-                name="email"
-                value={loginData.email}
-                onChange={handleLoginChange}
+                type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="Enter your email"
-                required
+                placeholder="Enter your email" required autoComplete="email"
               />
             </div>
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Password</label>
               <div className="relative">
                 <input
-                  type={showLoginPassword ? "text" : "password"}
-                  name="password"
-                  value={loginData.password}
-                  onChange={handleLoginChange}
+                  type={localShowPassword ? "text" : "password"} value={localPassword} onChange={(e) => setLocalPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
-                  placeholder="Enter your password"
-                  required
+                  placeholder="Enter your password" required autoComplete="current-password"
                 />
-                <button
-                  type="button"
-                  onClick={toggleLoginPassword}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                >
-                  {showLoginPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                  {localShowPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={loginLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loginLoading ? 'Logging in...' : 'Login to SnapDocs'}
+            <button type="submit" disabled={localLoading}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+              {localLoading ? 'Logging in...' : 'Login to SnapDocs'}
             </button>
           </form>
-
           <div className="text-center mt-6">
             <span className="text-gray-400">Don't have an account? </span>
-            <button
-              onClick={() => {
-                setIsLoginOpen(false);
-                setIsSignupOpen(true);
-                setActiveModal('signup');
-                setLoginError('');
-              }}
-              className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
-            >
+            <button onClick={() => { setIsLoginOpen(false); setIsSignupOpen(true); setActiveModal('signup'); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
               Sign up here
             </button>
           </div>
         </div>
       </div>
-    )
-  );
+    ) : null;
+  };
 
-  // Signup Modal Component
+  // Signup Modal Component (Keep Original Working Version)
   const SignupModal = React.memo(() => (
     isSignupOpen && (
       <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -528,7 +501,7 @@ const Home = () => {
                 />
                 <button
                   type="button"
-                  onClick={toggleSignupPassword}
+                  onClick={() => setShowSignupPassword(!showSignupPassword)}
                   className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                 >
                   {showSignupPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -608,16 +581,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
       <Header />
-      <LoginModal 
-        isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
-        onSwitchToSignup={() => {
-          setIsLoginOpen(false);
-          setIsSignupOpen(true);
-          setActiveModal('signup');
-        }}
-        onLoginSuccess={handleLoginSuccess}
-      />
+      <LoginModal />
       <SignupModal />
       
       {/* Hero Section */}
@@ -635,7 +599,7 @@ const Home = () => {
               </h1>
               {userEmail && (
                 <p className="text-lg text-gray-300 animate-slide-up mt-2">
-                  👋 Welcome, <span className="font-semibold text-white">{userEmail}</span>!
+                  👋 Welcome, <span className="font-semibold text-white">{username}</span>!
                 </p>
               )}
               <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-slide-up">
@@ -677,32 +641,6 @@ const Home = () => {
 
       {/* Features Section */}
       <section className="py-20 bg-gray-900/50">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Why Choose <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">SnapDocs?</span>
-            </h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Powerful features designed to keep your documents safe, organized, and easily accessible
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 hover:bg-white/15 transition-all duration-300 group">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <feature.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">{feature.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Document Types Section */}
-      <section className="py-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
@@ -843,4 +781,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Home;       
