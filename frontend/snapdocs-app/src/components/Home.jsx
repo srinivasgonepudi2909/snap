@@ -15,9 +15,9 @@ const Home = () => {
   const [username, setUsername] = useState("");
 
   useEffect(() => {
-    // Removed localStorage usage as it's not supported in Claude artifacts
-    // In a real environment, this would work with localStorage
-    const storedUsername = "Demo User"; // Simulated for artifact
+    // CHANGE 1: Removed localStorage usage (not supported in Claude artifacts)
+    // Original code had localStorage.getItem("token") and API calls
+    const storedUsername = ""; // Simulated for artifact
     if (storedUsername) setUsername(storedUsername);
   }, []);
 
@@ -40,6 +40,7 @@ const Home = () => {
   }, []);
 
   const SnapDocsLogo = () => (
+    // CHANGE 2: Removed Link component (React Router not available in artifacts)
     <div className="flex items-center space-x-3 group cursor-pointer">
       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg group-hover:scale-110 transition-all duration-300">
         <div className="absolute top-0 right-0 w-7 h-7 bg-gradient-to-bl from-cyan-400 to-cyan-600 transform rotate-45 translate-x-2 -translate-y-2"></div>
@@ -61,6 +62,7 @@ const Home = () => {
           <SnapDocsLogo />
           
           <nav className="hidden md:flex items-center space-x-8">
+            {/* CHANGE 3: Replaced Link components with buttons */}
             <button className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer">
               About Us
             </button>
@@ -78,9 +80,10 @@ const Home = () => {
                 <span className="text-white font-semibold">Hello, {username}</span>
                 <button
                   onClick={() => {
+                    // CHANGE 4: Removed alert() - this was causing the browser popup!
                     setUserEmail('');
                     setUsername('');
-                    alert('Logged out successfully!');
+                    // Now logout happens silently without popup
                   }}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
                 >
@@ -138,12 +141,12 @@ const Home = () => {
       setLocalError('');
       setLocalSuccess('');
 
-      // Simulate API call
+      // CHANGE 5: Simplified API simulation - removed fetch calls that don't work in artifacts
       setTimeout(() => {
         if (localEmail === 'demo@snapdocs.com' && localPassword === 'password') {
           setUserEmail(localEmail);
           setUsername('Demo User');
-          setLocalSuccess('Welcome back, Demo User! 🎉');
+          setLocalSuccess('Welcome back, Demo User! 🎉'); // SUCCESS MESSAGE SHOWS HERE IN MODAL
           
           setTimeout(() => {
             setIsLoginOpen(false);
@@ -169,11 +172,15 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Welcome Back</h2>
             <p className="text-gray-400">Login to access your digital vault</p>
           </div>
+          
+          {/* ERROR MESSAGE SHOWS HERE */}
           {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
               {localError}
             </div>
           )}
+          
+          {/* SUCCESS MESSAGE SHOWS HERE INSTEAD OF BROWSER ALERT */}
           {localSuccess && (
             <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,6 +189,7 @@ const Home = () => {
               {localSuccess}
             </div>
           )}
+          
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
@@ -247,9 +255,9 @@ const Home = () => {
       setLocalError('');
       setLocalSuccess('');
 
-      // Simulate API call
+      // CHANGE 6: Simplified signup simulation
       setTimeout(() => {
-        if (localEmail && localPassword.length >= 6) {
+        if (localEmail && localPassword.length >= 6 && localFirstName && localLastName) {
           setLocalSuccess('Account created successfully! Please login with your credentials. 🎉');
           
           setTimeout(() => {
@@ -264,7 +272,7 @@ const Home = () => {
             setLocalSuccess('');
           }, 3000);
         } else {
-          setLocalError('Please fill all fields and ensure password is at least 6 characters.');
+          setLocalError('Please fill all required fields and ensure password is at least 6 characters.');
         }
         setLocalLoading(false);
       }, 1000);
@@ -281,11 +289,15 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Create Account</h2>
             <p className="text-gray-400">Join thousands securing their documents</p>
           </div>
+          
+          {/* ERROR MESSAGE SHOWS HERE */}
           {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
               {localError}
             </div>
           )}
+          
+          {/* SUCCESS MESSAGE SHOWS HERE */}
           {localSuccess && (
             <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,6 +306,7 @@ const Home = () => {
               {localSuccess}
             </div>
           )}
+          
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
