@@ -1,14 +1,14 @@
 FROM node:18-alpine as build
 WORKDIR /app
 
-COPY package.json ./
-COPY .env .env  
+COPY frontend/snapdocs-app/package.json ./
+COPY frontend/snapdocs-app/.env .env    
 RUN npm install --silent
-COPY . .
+COPY frontend/snapdocs-app .
 RUN npm run build
 
 FROM nginx:alpine
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY frontend/snapdocs-app/nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
