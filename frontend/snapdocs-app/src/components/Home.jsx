@@ -146,19 +146,17 @@ const Home = () => {
           setLocalSuccess(`Welcome back, ${displayName}! Login successful! 🎉`);
           setLocalLoading(false);
           
-          // Update user state after a short delay
-          setTimeout(() => {
-            setUserEmail(localEmail);
-            setUsername(displayName);
-          }, 800);
+          // Update user state immediately (no delay)
+          setUserEmail(localEmail);
+          setUsername(displayName);
           
-          // Close modal after showing success message for longer
+          // Close modal after EXACTLY 6 seconds from when success message appears
           setTimeout(() => {
             setIsLoginOpen(false);
             setLocalEmail('');
             setLocalPassword('');
             setLocalSuccess('');
-          }, 10000); // Extended to 6 seconds to properly see the message
+          }, 6000); // 6 seconds for BOTH success message AND popup
         } else {
           setLocalError('Please enter both email and password');
           setLocalLoading(false);
