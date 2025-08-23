@@ -143,11 +143,14 @@ const Home = () => {
 
       // Simulate login process
       setTimeout(() => {
-        // FIXED: Accept any email/password for demo purposes
+        // FIXED: Accept any email/password and use actual user's name
         if (localEmail.trim() && localPassword.trim()) {
           setUserEmail(localEmail);
-          setUsername('Demo User'); // Fixed: Use consistent username instead of undefined localFirstName
-          setLocalSuccess('Welcome back! Login successful! 🎉');
+          // Extract name from email (before @ symbol) and capitalize it
+          const emailName = localEmail.split('@')[0];
+          const displayName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+          setUsername(displayName);
+          setLocalSuccess(`Welcome back, ${displayName}! Login successful! 🎉`);
           
           setTimeout(() => {
             setIsLoginOpen(false);
