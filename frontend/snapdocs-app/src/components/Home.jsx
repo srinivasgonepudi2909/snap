@@ -143,11 +143,11 @@ const Home = () => {
 
       // Simulate login process
       setTimeout(() => {
-        // FIXED: More flexible credential checking
-        if (localEmail.toLowerCase().trim() === 'demo@snapdocs.com' && localPassword === 'password') {
+        // FIXED: Accept any email/password for demo purposes
+        if (localEmail.trim() && localPassword.trim()) {
           setUserEmail(localEmail);
-          setUsername('Demo User');
-          setLocalSuccess('Welcome back, Demo User! 🎉');
+          setUsername('Demo User'); // Fixed: Use consistent username instead of undefined localFirstName
+          setLocalSuccess('Welcome back! Login successful! 🎉');
           
           setTimeout(() => {
             setIsLoginOpen(false);
@@ -156,7 +156,7 @@ const Home = () => {
             setLocalSuccess('');
           }, 2000);
         } else {
-          setLocalError('Login failed. Use demo@snapdocs.com with password "password"');
+          setLocalError('Please enter both email and password');
         }
         setLocalLoading(false);
       }, 1000);
@@ -259,22 +259,11 @@ const Home = () => {
       // Simulate signup process
       setTimeout(() => {
         if (localEmail && localPassword.length >= 6 && localFirstName && localLastName) {
-          // Show success message ONLY in the modal - no browser alerts
-          setLocalSuccess('Account created successfully! Please login with your credentials. 🎉');
+          // Show success message ONLY in the modal
+          setLocalSuccess('Account created successfully! You can now login with your credentials. 🎉');
           
-          // Auto redirect to login after 3 seconds
-          setTimeout(() => {
-            setIsSignupOpen(false);
-            setIsLoginOpen(true);
-            setActiveModal('login');
-            // Clear form
-            setLocalFirstName('');
-            setLocalLastName('');
-            setLocalEmail('');
-            setLocalPhoneNumber('');
-            setLocalPassword('');
-            setLocalSuccess('');
-          }, 3000);
+          // REMOVED: No auto-redirect - user stays on signup modal
+          // User can manually click "Login here" when ready
         } else {
           setLocalError('Please fill all required fields and ensure password is at least 6 characters.');
         }
