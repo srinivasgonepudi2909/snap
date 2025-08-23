@@ -12,7 +12,26 @@ const Home = () => {
   const [selectedCountry, setSelectedCountry] = useState({ code: '+91', flag: '🇮🇳', name: 'India' });
   const [isCountryOpen, setIsCountryOpen] = useState(false);
 
-  // --- ADDED: userEmail state and fetch logic ---
+  // --- SIGNUP FORM STATES ---
+  const [signupData, setSignupData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    password: ''
+  });
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [signupError, setSignupError] = useState('');
+
+  // --- LOGIN FORM STATES ---
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  });
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // --- USER STATE ---
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
@@ -32,7 +51,112 @@ const Home = () => {
       })
       .catch((err) => console.error("Failed to fetch user info:", err));
   }, []);
-  // --- END ADDED ---
+
+  // --- SIGNUP HANDLER ---
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setSignupLoading(true);
+    setSignupError('');
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: `${signupData.firstName} ${signupData.lastName}`.trim(),
+          email: signupData.email,
+          password: signupData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success - show success message and switch to login
+        alert(`✅ Account created successfully! Please login with your credentials.`);
+        setIsSignupOpen(false);
+        setIsLoginOpen(true);
+        setActiveModal('login');
+        // Clear form
+        setSignupData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phoneNumber: '',
+          password: ''
+        });
+      } else {
+        setSignupError(data.detail || 'Signup failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      setSignupError('Network error. Please check your connection and try again.');
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  // --- LOGIN HANDLER ---
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success - store token and username
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('username', data.username || 'User');
+        setUserEmail(loginData.email);
+        alert(`✅ Welcome back, ${data.username || 'User'}!`);
+        setIsLoginOpen(false);
+        // Clear form
+        setLoginData({
+          email: '',
+          password: ''
+        });
+      } else {
+        setLoginError(data.detail || 'Login failed. Please check your credentials.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Network error. Please check your connection and try again.');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // --- INPUT CHANGE HANDLERS ---
+  const handleSignupChange = (e) => {
+    const { name, value } = e.target;
+    setSignupData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    setLoginData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const countries = [
     { code: '+91', flag: '🇮🇳', name: 'India' },
@@ -95,32 +219,53 @@ const Home = () => {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => {
-                setActiveModal('login');
-                setIsLoginOpen(true);
-              }}
-              className={`font-bold text-lg transition-all duration-300 hover:scale-110 transform px-4 py-2 rounded-lg ${
-                activeModal === 'login' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => {
-                setActiveModal('signup');
-                setIsSignupOpen(true);
-              }}
-              className={`font-bold text-lg transition-all duration-300 hover:scale-110 transform px-6 py-2 rounded-lg shadow-lg ${
-                activeModal === 'signup' 
-                  ? 'bg-purple-600 text-white hover:bg-purple-700' 
-                  : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700'
-              }`}
-            >
-              Sign Up
-            </button>
+            {userEmail ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-white font-semibold">Hello, {userEmail}</span>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    setUserEmail('');
+                    alert('Logged out successfully!');
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setActiveModal('login');
+                    setIsLoginOpen(true);
+                    setLoginError('');
+                  }}
+                  className={`font-bold text-lg transition-all duration-300 hover:scale-110 transform px-4 py-2 rounded-lg ${
+                    activeModal === 'login' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveModal('signup');
+                    setIsSignupOpen(true);
+                    setSignupError('');
+                  }}
+                  className={`font-bold text-lg transition-all duration-300 hover:scale-110 transform px-6 py-2 rounded-lg shadow-lg ${
+                    activeModal === 'signup' 
+                      ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -145,13 +290,23 @@ const Home = () => {
             <p className="text-gray-400">Login to access your digital vault</p>
           </div>
 
-          <form className="space-y-6">
+          {loginError && (
+            <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
+              {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
               <input
                 type="email"
+                name="email"
+                value={loginData.email}
+                onChange={handleLoginChange}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                 placeholder="Enter your email"
+                required
               />
             </div>
             <div>
@@ -159,8 +314,12 @@ const Home = () => {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={loginData.password}
+                  onChange={handleLoginChange}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
                   placeholder="Enter your password"
+                  required
                 />
                 <button
                   type="button"
@@ -173,9 +332,10 @@ const Home = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+              disabled={loginLoading}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Login to SnapDocs
+              {loginLoading ? 'Logging in...' : 'Login to SnapDocs'}
             </button>
           </form>
 
@@ -186,6 +346,7 @@ const Home = () => {
                 setIsLoginOpen(false);
                 setIsSignupOpen(true);
                 setActiveModal('signup');
+                setLoginError('');
               }}
               className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
             >
@@ -215,22 +376,36 @@ const Home = () => {
             <p className="text-gray-400">Join thousands securing their documents</p>
           </div>
 
-          <form className="space-y-6">
+          {signupError && (
+            <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
+              {signupError}
+            </div>
+          )}
+
+          <form onSubmit={handleSignup} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-gray-300 text-sm font-semibold mb-2">First Name</label>
                 <input
                   type="text"
+                  name="firstName"
+                  value={signupData.firstName}
+                  onChange={handleSignupChange}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                   placeholder="First name"
+                  required
                 />
               </div>
               <div>
                 <label className="block text-gray-300 text-sm font-semibold mb-2">Last Name</label>
                 <input
                   type="text"
+                  name="lastName"
+                  value={signupData.lastName}
+                  onChange={handleSignupChange}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                   placeholder="Last name"
+                  required
                 />
               </div>
             </div>
@@ -238,8 +413,12 @@ const Home = () => {
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
               <input
                 type="email"
+                name="email"
+                value={signupData.email}
+                onChange={handleSignupChange}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                 placeholder="Enter your email"
+                required
               />
             </div>
             <div>
@@ -277,6 +456,9 @@ const Home = () => {
                 </div>
                 <input
                   type="tel"
+                  name="phoneNumber"
+                  value={signupData.phoneNumber}
+                  onChange={handleSignupChange}
                   className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                   placeholder="Phone number"
                 />
@@ -287,8 +469,13 @@ const Home = () => {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={signupData.password}
+                  onChange={handleSignupChange}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
                   placeholder="Create a strong password"
+                  required
+                  minLength="6"
                 />
                 <button
                   type="button"
@@ -301,9 +488,10 @@ const Home = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+              disabled={signupLoading}
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create SnapDocs Account
+              {signupLoading ? 'Creating Account...' : 'Create SnapDocs Account'}
             </button>
           </form>
 
@@ -314,6 +502,7 @@ const Home = () => {
                 setIsSignupOpen(false);
                 setIsLoginOpen(true);
                 setActiveModal('login');
+                setSignupError('');
               }}
               className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
             >
@@ -386,13 +575,11 @@ const Home = () => {
                   Secured & Organized
                 </span>
               </h1>
-              {/* --- ADDED: Welcome message if logged in --- */}
               {userEmail && (
                 <p className="text-lg text-gray-300 animate-slide-up mt-2">
                   👋 Welcome, <span className="font-semibold text-white">{userEmail}</span>!
                 </p>
               )}
-              {/* --- END ADDED --- */}
               <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-slide-up">
                 Store, organize, and access your valuable documents, photos, and certificates with 
                 military-grade security. Create custom folders and never lose important files again.
@@ -599,4 +786,3 @@ const Home = () => {
 };
 
 export default Home;
-
