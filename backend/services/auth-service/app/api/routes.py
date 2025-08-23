@@ -52,3 +52,12 @@ def get_dashboard(current_user: str = Depends(get_current_user)):
 @auth_router.get("/me", response_model=User)
 def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@auth_router.get("/health/mongo")
+def check_mongo_connection():
+    try:
+        # This pings the MongoDB server
+        user_collection.database.command("ping")
+        return {"status": "ok", "message": "MongoDB is connected"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"MongoDB connection failed: {str(e)}")
