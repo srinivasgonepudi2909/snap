@@ -22,7 +22,9 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    os.getenv("FRONTEND_URL")
+    "http://13.222.58.123:3000",  # Add your EC2 public IP
+    os.getenv("FRONTEND_URL"),
+    "*"  # Allow all origins for development (remove in production)
 ]
 
 app.add_middleware(
