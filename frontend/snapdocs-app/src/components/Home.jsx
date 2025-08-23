@@ -164,7 +164,7 @@ const Home = () => {
             setLocalEmail('');
             setLocalPassword('');
             setLocalSuccess('');
-          }, 2500); // Extended to 2.5 seconds to see success message longer
+          }, 4000); // Extended to 4 seconds to see success message longer
         } else {
           setLocalError('Please enter both email and password');
         }
