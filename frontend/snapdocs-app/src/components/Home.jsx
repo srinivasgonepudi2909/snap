@@ -158,7 +158,7 @@ const Home = () => {
             setLocalEmail('');
             setLocalPassword('');
             setLocalSuccess('');
-          }, 3500); // 3.5 seconds to properly see the message
+          }, 10000); // Extended to 6 seconds to properly see the message
         } else {
           setLocalError('Please enter both email and password');
           setLocalLoading(false);
