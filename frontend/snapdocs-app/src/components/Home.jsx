@@ -141,12 +141,13 @@ const Home = () => {
       setLocalError('');
       setLocalSuccess('');
 
-      // CHANGE 5: Simplified API simulation - removed fetch calls that don't work in artifacts
+      // Simulate login process
       setTimeout(() => {
         if (localEmail === 'demo@snapdocs.com' && localPassword === 'password') {
           setUserEmail(localEmail);
           setUsername('Demo User');
-          setLocalSuccess('Welcome back, Demo User! 🎉'); // SUCCESS MESSAGE SHOWS HERE IN MODAL
+          // Show success message ONLY in the modal - no browser alerts
+          setLocalSuccess('Welcome back, Demo User! 🎉');
           
           setTimeout(() => {
             setIsLoginOpen(false);
@@ -255,15 +256,18 @@ const Home = () => {
       setLocalError('');
       setLocalSuccess('');
 
-      // CHANGE 6: Simplified signup simulation
+      // Simulate signup process
       setTimeout(() => {
         if (localEmail && localPassword.length >= 6 && localFirstName && localLastName) {
+          // Show success message ONLY in the modal - no browser alerts
           setLocalSuccess('Account created successfully! Please login with your credentials. 🎉');
           
+          // Auto redirect to login after 3 seconds
           setTimeout(() => {
             setIsSignupOpen(false);
             setIsLoginOpen(true);
             setActiveModal('login');
+            // Clear form
             setLocalFirstName('');
             setLocalLastName('');
             setLocalEmail('');
