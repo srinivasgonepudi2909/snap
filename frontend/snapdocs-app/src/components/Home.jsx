@@ -142,21 +142,21 @@ const Home = () => {
   };
 
   // --- INPUT CHANGE HANDLERS ---
-  const handleSignupChange = (e) => {
+  const handleSignupChange = React.useCallback((e) => {
     const { name, value } = e.target;
     setSignupData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
-  const handleLoginChange = (e) => {
+  const handleLoginChange = React.useCallback((e) => {
     const { name, value } = e.target;
     setLoginData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
   const countries = [
     { code: '+91', flag: '🇮🇳', name: 'India' },
@@ -359,10 +359,10 @@ const Home = () => {
   );
 
   // Signup Modal Component
-  const SignupModal = () => (
+  const SignupModal = React.memo(() => (
     isSignupOpen && (
-      <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10 animate-scale-in max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
           <button
             onClick={() => setIsSignupOpen(false)}
             className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
@@ -394,6 +394,7 @@ const Home = () => {
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                   placeholder="First name"
                   required
+                  autoComplete="given-name"
                 />
               </div>
               <div>
@@ -406,6 +407,7 @@ const Home = () => {
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                   placeholder="Last name"
                   required
+                  autoComplete="family-name"
                 />
               </div>
             </div>
@@ -419,6 +421,7 @@ const Home = () => {
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                 placeholder="Enter your email"
                 required
+                autoComplete="email"
               />
             </div>
             <div>
@@ -461,6 +464,7 @@ const Home = () => {
                   onChange={handleSignupChange}
                   className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                   placeholder="Phone number"
+                  autoComplete="tel"
                 />
               </div>
             </div>
@@ -476,6 +480,7 @@ const Home = () => {
                   placeholder="Create a strong password"
                   required
                   minLength="6"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -512,7 +517,7 @@ const Home = () => {
         </div>
       </div>
     )
-  );
+  ));
 
   const features = [
     {
