@@ -20,5 +20,5 @@ settings = Settings()
 
 # MongoDB connection using the URI from settings
 client = MongoClient(settings.MONGO_URI)
-db = client["snapdocs-auth"]
+db = client["snapdocs"]
 user_collection = db["users"]
