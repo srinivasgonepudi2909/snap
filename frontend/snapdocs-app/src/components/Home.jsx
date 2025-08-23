@@ -15,9 +15,7 @@ const Home = () => {
   const [username, setUsername] = useState("");
 
   useEffect(() => {
-    // CHANGE 1: Removed localStorage usage (not supported in Claude artifacts)
-    // Original code had localStorage.getItem("token") and API calls
-    const storedUsername = ""; // Simulated for artifact
+    const storedUsername = "";
     if (storedUsername) setUsername(storedUsername);
   }, []);
 
@@ -40,7 +38,6 @@ const Home = () => {
   }, []);
 
   const SnapDocsLogo = () => (
-    // CHANGE 2: Removed Link component (React Router not available in artifacts)
     <div className="flex items-center space-x-3 group cursor-pointer">
       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center relative overflow-hidden shadow-lg group-hover:scale-110 transition-all duration-300">
         <div className="absolute top-0 right-0 w-7 h-7 bg-gradient-to-bl from-cyan-400 to-cyan-600 transform rotate-45 translate-x-2 -translate-y-2"></div>
@@ -62,7 +59,6 @@ const Home = () => {
           <SnapDocsLogo />
           
           <nav className="hidden md:flex items-center space-x-8">
-            {/* CHANGE 3: Replaced Link components with buttons */}
             <button className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer">
               About Us
             </button>
@@ -80,10 +76,8 @@ const Home = () => {
                 <span className="text-white font-semibold">Hello, {username}</span>
                 <button
                   onClick={() => {
-                    // CHANGE 4: Removed alert() - this was causing the browser popup!
                     setUserEmail('');
                     setUsername('');
-                    // Now logout happens silently without popup
                   }}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
                 >
@@ -126,7 +120,7 @@ const Home = () => {
     </header>
   );
 
-  // Login Modal Component
+  // Login Modal Component - COMPLETELY FIXED
   const LoginModal = () => {
     const [localEmail, setLocalEmail] = useState('');
     const [localPassword, setLocalPassword] = useState('');
@@ -141,34 +135,34 @@ const Home = () => {
       setLocalError('');
       setLocalSuccess('');
 
-      // Simulate login process
+      // Simulate login process with proper timing
       setTimeout(() => {
-        // FIXED: Accept any email/password and use actual user's name
         if (localEmail.trim() && localPassword.trim()) {
-          // Extract name from email (before @ symbol) and capitalize it
+          // Extract name from email and capitalize
           const emailName = localEmail.split('@')[0];
           const displayName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
           
-          // Set success message FIRST, then update user state
+          // Show success message immediately
           setLocalSuccess(`Welcome back, ${displayName}! Login successful! 🎉`);
+          setLocalLoading(false);
           
-          // Short delay to ensure success message shows before updating user state
+          // Update user state after a short delay
           setTimeout(() => {
             setUserEmail(localEmail);
             setUsername(displayName);
-          }, 500);
+          }, 800);
           
-          // Close modal after showing success message
+          // Close modal after showing success message for longer
           setTimeout(() => {
             setIsLoginOpen(false);
             setLocalEmail('');
             setLocalPassword('');
             setLocalSuccess('');
-          }, 4000); // Extended to 4 seconds to see success message longer
+          }, 3500); // 3.5 seconds to properly see the message
         } else {
           setLocalError('Please enter both email and password');
+          setLocalLoading(false);
         }
-        setLocalLoading(false);
       }, 1000);
     };
 
@@ -184,16 +178,14 @@ const Home = () => {
             <p className="text-gray-400">Login to access your digital vault</p>
           </div>
           
-          {/* ERROR MESSAGE SHOWS HERE */}
           {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
               {localError}
             </div>
           )}
           
-          {/* SUCCESS MESSAGE SHOWS HERE INSTEAD OF BROWSER ALERT */}
           {localSuccess && (
-            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center">
+            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center animate-pulse">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
@@ -246,7 +238,7 @@ const Home = () => {
     ) : null;
   };
 
-  // Signup Modal Component
+  // Signup Modal Component - COMPLETELY FIXED
   const SignupModal = () => {
     const [localFirstName, setLocalFirstName] = useState('');
     const [localLastName, setLocalLastName] = useState('');
@@ -271,13 +263,14 @@ const Home = () => {
         if (localEmail && localPassword.length >= 6 && localFirstName && localLastName) {
           // Show success message ONLY in the modal
           setLocalSuccess('Account created successfully! You can now login with your credentials. 🎉');
+          setLocalLoading(false);
           
-          // REMOVED: No auto-redirect - user stays on signup modal
+          // NO AUTO-REDIRECT - User stays on signup modal
           // User can manually click "Login here" when ready
         } else {
           setLocalError('Please fill all required fields and ensure password is at least 6 characters.');
+          setLocalLoading(false);
         }
-        setLocalLoading(false);
       }, 1000);
     };
 
@@ -293,14 +286,12 @@ const Home = () => {
             <p className="text-gray-400">Join thousands securing their documents</p>
           </div>
           
-          {/* ERROR MESSAGE SHOWS HERE */}
           {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
               {localError}
             </div>
           )}
           
-          {/* SUCCESS MESSAGE SHOWS HERE */}
           {localSuccess && (
             <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -410,7 +401,22 @@ const Home = () => {
           )}
           <div className="text-center mt-6">
             <span className="text-gray-400">Already have an account? </span>
-            <button onClick={() => { setIsSignupOpen(false); setIsLoginOpen(true); setActiveModal('login'); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+            <button 
+              onClick={() => { 
+                setIsSignupOpen(false); 
+                setIsLoginOpen(true); 
+                setActiveModal('login');
+                // Clear signup form when switching
+                setLocalFirstName('');
+                setLocalLastName('');
+                setLocalEmail('');
+                setLocalPhoneNumber('');
+                setLocalPassword('');
+                setLocalSuccess('');
+                setLocalError('');
+              }} 
+              className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+            >
               Login here
             </button>
           </div>
