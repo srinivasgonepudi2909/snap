@@ -39,6 +39,8 @@ services:
       - backend
     networks:
       - snapdocs-backend-network
+    volumes:
+      - ./frontend/snapdocs-app/.env:/app/.env   # <-- Ensures .env is available during build
 
 volumes:
   mongo-data:
