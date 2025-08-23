@@ -160,13 +160,11 @@ const Home = () => {
     const [localShowPassword, setLocalShowPassword] = React.useState(false);
     const [localLoading, setLocalLoading] = React.useState(false);
     const [localError, setLocalError] = React.useState('');
-    const [localSuccess, setLocalSuccess] = React.useState(''); // Add success state
 
     const handleLocalSubmit = async (e) => {
       e.preventDefault();
       setLocalLoading(true);
       setLocalError('');
-      setLocalSuccess(''); // Clear previous success message
 
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
@@ -181,17 +179,10 @@ const Home = () => {
           localStorage.setItem('username', data.username || 'User');
           setUserEmail(localEmail);
           setUsername(data.username || 'User');
-          
-          // Show success message in UI instead of alert
-          setLocalSuccess(`Welcome back, ${data.username || 'User'}! 🎉`);
-          
-          // Auto close modal after 2 seconds
-          setTimeout(() => {
-            setIsLoginOpen(false);
-            setLocalEmail('');
-            setLocalPassword('');
-            setLocalSuccess('');
-          }, 2000);
+          alert(`✅ Welcome back, ${data.username || 'User'}!`);
+          setIsLoginOpen(false);
+          setLocalEmail('');
+          setLocalPassword('');
         } else {
           setLocalError(data.detail || 'Login failed. Please check your credentials.');
         }
@@ -218,21 +209,13 @@ const Home = () => {
               {localError}
             </div>
           )}
-          {localSuccess && (
-            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              {localSuccess}
-            </div>
-          )}
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
               <input
                 type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="Enter your email" required autoComplete="email" disabled={localLoading || localSuccess}
+                placeholder="Enter your email" required autoComplete="email"
               />
             </div>
             <div>
@@ -241,23 +224,16 @@ const Home = () => {
                 <input
                   type={localShowPassword ? "text" : "password"} value={localPassword} onChange={(e) => setLocalPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
-                  placeholder="Enter your password" required autoComplete="current-password" disabled={localLoading || localSuccess}
+                  placeholder="Enter your password" required autoComplete="current-password"
                 />
-                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors" disabled={localLoading || localSuccess}>
+                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
                   {localShowPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={localLoading || localSuccess}
+            <button type="submit" disabled={localLoading}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {localSuccess ? (
-                <span className="flex items-center justify-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Login Successful!
-                </span>
-              ) : localLoading ? 'Logging in...' : 'Login to SnapDocs'}
+              {localLoading ? 'Logging in...' : 'Login to SnapDocs'}
             </button>
           </form>
           <div className="text-center mt-6">
@@ -281,7 +257,6 @@ const Home = () => {
     const [localShowPassword, setLocalShowPassword] = React.useState(false);
     const [localLoading, setLocalLoading] = React.useState(false);
     const [localError, setLocalError] = React.useState('');
-    const [localSuccess, setLocalSuccess] = React.useState(''); // Add success state
     const [localCountry, setLocalCountry] = React.useState({ code: '+91', flag: '🇮🇳', name: 'India' });
     const [localCountryOpen, setLocalCountryOpen] = React.useState(false);
 
@@ -289,7 +264,6 @@ const Home = () => {
       e.preventDefault();
       setLocalLoading(true);
       setLocalError('');
-      setLocalSuccess(''); // Clear previous success message
 
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/signup`, {
@@ -304,22 +278,16 @@ const Home = () => {
 
         const data = await response.json();
         if (response.ok) {
-          // Show success message in UI instead of alert
-          setLocalSuccess('Account created successfully! Please login with your credentials. 🎉');
-          
-          // Auto switch to login modal after 3 seconds
-          setTimeout(() => {
-            setIsSignupOpen(false);
-            setIsLoginOpen(true);
-            setActiveModal('login');
-            // Clear form
-            setLocalFirstName('');
-            setLocalLastName('');
-            setLocalEmail('');
-            setLocalPhoneNumber('');
-            setLocalPassword('');
-            setLocalSuccess('');
-          }, 3000);
+          alert(`✅ Account created successfully! Please login with your credentials.`);
+          setIsSignupOpen(false);
+          setIsLoginOpen(true);
+          setActiveModal('login');
+          // Clear form
+          setLocalFirstName('');
+          setLocalLastName('');
+          setLocalEmail('');
+          setLocalPhoneNumber('');
+          setLocalPassword('');
         } else {
           setLocalError(data.detail || 'Signup failed. Please try again.');
         }
@@ -346,14 +314,6 @@ const Home = () => {
               {localError}
             </div>
           )}
-          {localSuccess && (
-            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4 flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              {localSuccess}
-            </div>
-          )}
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -361,7 +321,7 @@ const Home = () => {
                 <input
                   type="text" value={localFirstName} onChange={(e) => setLocalFirstName(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="First name" required autoComplete="given-name" disabled={localLoading || localSuccess}
+                  placeholder="First name" required autoComplete="given-name"
                 />
               </div>
               <div>
@@ -369,7 +329,7 @@ const Home = () => {
                 <input
                   type="text" value={localLastName} onChange={(e) => setLocalLastName(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Last name" required autoComplete="family-name" disabled={localLoading || localSuccess}
+                  placeholder="Last name" required autoComplete="family-name"
                 />
               </div>
             </div>
@@ -378,7 +338,7 @@ const Home = () => {
               <input
                 type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="Enter your email" required autoComplete="email" disabled={localLoading || localSuccess}
+                placeholder="Enter your email" required autoComplete="email"
               />
             </div>
             <div>
@@ -387,9 +347,8 @@ const Home = () => {
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={() => !localLoading && !localSuccess && setLocalCountryOpen(!localCountryOpen)}
-                    className="flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors disabled:opacity-50"
-                    disabled={localLoading || localSuccess}
+                    onClick={() => setLocalCountryOpen(!localCountryOpen)}
+                    className="flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors"
                   >
                     <span>{localCountry.flag}</span>
                     <span>{localCountry.code}</span>
@@ -418,7 +377,7 @@ const Home = () => {
                 <input
                   type="tel" value={localPhoneNumber} onChange={(e) => setLocalPhoneNumber(e.target.value)}
                   className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Phone number" autoComplete="tel" disabled={localLoading || localSuccess}
+                  placeholder="Phone number" autoComplete="tel"
                 />
               </div>
             </div>
@@ -428,77 +387,18 @@ const Home = () => {
                 <input
                   type={localShowPassword ? "text" : "password"} value={localPassword} onChange={(e) => setLocalPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
-                  placeholder="Create a strong password" required minLength="6" autoComplete="new-password" disabled={localLoading || localSuccess}
+                  placeholder="Create a strong password" required minLength="6" autoComplete="new-password"
                 />
-                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors" disabled={localLoading || localSuccess}>
+                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
                   {localShowPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={localLoading || localSuccess}
+            <button type="submit" disabled={localLoading}
               className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {localSuccess ? (
-                <span className="flex items-center justify-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Account Created!
-                </span>
-              ) : localLoading ? 'Creating Account...' : 'Create SnapDocs Account'}
+              {localLoading ? 'Creating Account...' : 'Create SnapDocs Account'}
             </button>
           </form>
-          {localSuccess && (
-            <div className="text-center mt-4 text-sm text-blue-400">
-              Redirecting to login in a few seconds...
-            </div>
-          )}
-          <div className="text-center mt-6">
-            <span className="text-gray-400">Already have an account? </span>
-            <button onClick={() => { setIsSignupOpen(false); setIsLoginOpen(true); setActiveModal('login'); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-              Login here
-            </button>
-          </div>
-        </div>
-      </div>
-    ) : null;
-  };
-                <input
-                  type="tel" value={localPhoneNumber} onChange={(e) => setLocalPhoneNumber(e.target.value)}
-                  className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Phone number" autoComplete="tel" disabled={localLoading || localSuccess}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-gray-300 text-sm font-semibold mb-2">Password</label>
-              <div className="relative">
-                <input
-                  type={localShowPassword ? "text" : "password"} value={localPassword} onChange={(e) => setLocalPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
-                  placeholder="Create a strong password" required minLength="6" autoComplete="new-password" disabled={localLoading || localSuccess}
-                />
-                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors" disabled={localLoading || localSuccess}>
-                  {localShowPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-            <button type="submit" disabled={localLoading || localSuccess}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {localSuccess ? (
-                <span className="flex items-center justify-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Account Created!
-                </span>
-              ) : localLoading ? 'Creating Account...' : 'Create SnapDocs Account'}
-            </button>
-          </form>
-          {localSuccess && (
-            <div className="text-center mt-4 text-sm text-blue-400 animate-pulse">
-              🔄 Redirecting to login in a few seconds...
-            </div>
-          )}
           <div className="text-center mt-6">
             <span className="text-gray-400">Already have an account? </span>
             <button onClick={() => { setIsSignupOpen(false); setIsLoginOpen(true); setActiveModal('login'); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
