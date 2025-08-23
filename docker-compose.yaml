@@ -18,7 +18,7 @@ services:
     build:
       context: ./backend/services/auth-service
     image: snapdocs-auth-service:latest
-    container_name: snapdocs-auth-container
+    container_name: snapdocs-auth-container-backend
     env_file:
       - ./backend/services/auth-service/app/.env
     ports:
