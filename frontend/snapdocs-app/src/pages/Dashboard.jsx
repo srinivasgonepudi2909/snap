@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Upload, 
@@ -13,7 +13,8 @@ import {
   Trash2,
   Share,
   Plus,
-  Activity
+  Activity,
+  X
 } from 'lucide-react';
 
 // Custom hook for documents
@@ -22,38 +23,383 @@ const useDocuments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/documents`);
-        const data = await response.json();
-        
-        if (data.success) {
-          setDocuments(data.data || []);
-        } else {
-          setError('Failed to fetch documents');
-          setDocuments([]);
-        }
-      } catch (err) {
-        console.error('Error fetching documents:', err);
-        setError('Network error');
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/documents`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setDocuments(data.data || []);
+      } else {
+        setError('Failed to fetch documents');
         setDocuments([]);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching documents:', err);
+      setError('Network error');
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchDocuments();
   }, []);
 
-  return { documents, loading, error };
+  return { documents, loading, error, refetch: fetchDocuments };
 };
 
+// File Upload Component
+const FileUploader = ({ onFileUpload }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    handleFiles(files);
+  };
+
+  const handleFiles = async (files) => {
+    setUploading(true);
+    const token = localStorage.getItem('token');
+    
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder_name', 'General'); // Default folder
+      
+      try {
+        const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData
+        });
+
+        if (response.ok) {
+          console.log(`Uploaded: ${file.name}`);
+        } else {
+          console.error('Upload failed:', await response.text());
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+      }
+    }
+    
+    setUploading(false);
+    onFileUpload && onFileUpload();
+  };
+
+  return (
+    <div 
+      className={`bg-white/10 backdrop-blur-sm rounded-2xl p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${
+        isDragging 
+          ? 'border-blue-400 bg-blue-400/10' 
+          : 'border-blue-400/50 hover:border-blue-400'
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onClick={() => fileInputRef.current?.click()}
+    >
+      <div className="text-center">
+        <Upload className={`w-16 h-16 mx-auto mb-4 transition-colors ${
+          isDragging ? 'text-blue-300' : 'text-blue-400'
+        }`} />
+        <h3 className="text-xl font-semibold text-white mb-2">
+          {isDragging ? 'Drop files here!' : uploading ? 'Uploading...' : 'Drag & Drop Files Here'}
+        </h3>
+        <p className="text-gray-400 mb-4">Or click to browse and upload</p>
+        <button 
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+          disabled={uploading}
+        >
+          {uploading ? 'Uploading...' : 'Choose Files'}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
+        />
+      </div>
+    </div>
+  );
+};
+
+// Folder Creation Modal
+const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
+  const [folderName, setFolderName] = useState('');
+  const [folderColor, setFolderColor] = useState('#3B82F6');
+  const [folderIcon, setFolderIcon] = useState('📁');
+  const [loading, setLoading] = useState(false);
+
+  const colors = [
+    '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', 
+    '#EF4444', '#6B7280', '#EC4899', '#14B8A6'
+  ];
+
+  const icons = ['📁', '📄', '🎓', '🏠', '💼', '🏥', '💰', '✈️', '📱', '🎵', '🎨', '⚡'];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/folders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: folderName,
+          color: folderColor,
+          icon: folderIcon,
+          description: `${folderName} folder`
+        })
+      });
+
+      if (response.ok) {
+        onFolderCreated && onFolderCreated();
+        onClose();
+        setFolderName('');
+        setFolderColor('#3B82F6');
+        setFolderIcon('📁');
+      }
+    } catch (error) {
+      console.error('Error creating folder:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10">
+        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors">
+          <X className="w-6 h-6" />
+        </button>
+        
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Folder className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-2">Create New Folder</h2>
+          <p className="text-gray-400">Organize your documents with custom folders</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-gray-300 text-sm font-semibold mb-2">Folder Name</label>
+            <input
+              type="text"
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
+              placeholder="Enter folder name"
+              required
+              maxLength={50}
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-semibold mb-2">Choose Icon</label>
+            <div className="grid grid-cols-6 gap-2">
+              {icons.map((icon) => (
+                <button
+                  key={icon}
+                  type="button"
+                  onClick={() => setFolderIcon(icon)}
+                  className={`p-3 rounded-xl text-2xl hover:bg-white/10 transition-colors ${
+                    folderIcon === icon ? 'bg-blue-600/30 border border-blue-500' : 'bg-white/5'
+                  }`}
+                >
+                  {icon}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-semibold mb-2">Choose Color</label>
+            <div className="grid grid-cols-4 gap-2">
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setFolderColor(color)}
+                  className={`w-12 h-12 rounded-xl transition-transform hover:scale-110 ${
+                    folderColor === color ? 'ring-2 ring-white scale-110' : ''
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white/5 rounded-xl p-4">
+            <div className="flex items-center space-x-3">
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
+                style={{ backgroundColor: folderColor }}
+              >
+                {folderIcon}
+              </div>
+              <div>
+                <div className="text-white font-semibold">{folderName || 'Folder Name'}</div>
+                <div className="text-gray-400 text-sm">Preview</div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || !folderName.trim()}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Creating...' : 'Create Folder'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Search Component
+const SearchComponent = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  // Debounce function
+  const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
+
+  const handleSearch = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${process.env.REACT_APP_DOCUMENT_API}/api/v1/search?q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.results || []);
+        setShowResults(true);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const debouncedSearch = useCallback(debounce(handleSearch, 300), []);
+
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+  }, [searchQuery, debouncedSearch]);
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => searchQuery && setShowResults(true)}
+          onBlur={() => setTimeout(() => setShowResults(false), 200)}
+          placeholder="Search documents..."
+          className="pl-10 pr-4 py-2 w-64 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:w-80 transition-all duration-300"
+        />
+        {isSearching && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+          </div>
+        )}
+      </div>
+
+      {showResults && searchQuery && (
+        <div className="absolute top-full mt-2 left-0 right-0 bg-gray-800 rounded-xl border border-white/20 shadow-2xl max-h-64 overflow-y-auto z-50">
+          {searchResults.length > 0 ? (
+            searchResults.map((result, index) => (
+              <div key={index} className="px-4 py-3 hover:bg-white/10 cursor-pointer border-b border-white/10 last:border-b-0">
+                <div className="flex items-center space-x-3">
+                  <FileText className="w-5 h-5 text-blue-400" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-medium truncate">{result.name}</div>
+                    <div className="text-gray-400 text-sm">{result.folder || 'General'}</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="px-4 py-3 text-gray-400 text-center">
+              No documents found for "{searchQuery}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Main Dashboard Component
 export default function Dashboard() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [userEmail, setUserEmail] = useState('');
-  const { documents, loading, error } = useDocuments();
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const { documents, loading, error, refetch } = useDocuments();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -179,14 +525,7 @@ export default function Dashboard() {
               </h1>
               
               <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Search documents..."
-                    className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
+                <SearchComponent />
                 <button className="p-2 text-gray-300 hover:text-white">
                   <Settings className="w-5 h-5" />
                 </button>
@@ -235,21 +574,17 @@ export default function Dashboard() {
                 <h2 className="text-2xl font-bold text-white mb-6">Quick Actions</h2>
                 
                 {/* Upload Area */}
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 mb-6 border-dashed border-blue-400/50 hover:border-blue-400 transition-colors cursor-pointer">
-                  <div className="text-center">
-                    <Upload className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">Drag & Drop Files Here</h3>
-                    <p className="text-gray-400 mb-4">Or click to browse and upload</p>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
-                      Choose Files
-                    </button>
-                  </div>
+                <div className="mb-6">
+                  <FileUploader onFileUpload={refetch} />
                 </div>
 
                 {/* Folders */}
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-white">Your Folders</h3>
-                  <button className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => setCreateFolderOpen(true)}
+                    className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
                     <Plus className="w-4 h-4" />
                     <span>New Folder</span>
                   </button>
@@ -334,6 +669,13 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
+
+      {/* Create Folder Modal */}
+      <CreateFolderModal 
+        isOpen={createFolderOpen} 
+        onClose={() => setCreateFolderOpen(false)}
+        onFolderCreated={refetch}
+      />
     </div>
   );
 }
