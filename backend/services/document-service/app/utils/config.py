@@ -2,7 +2,7 @@
 
 import os
 from pymongo import MongoClient
-from pydantic import BaseSettings  # Use standard BaseSettings instead of pydantic_settings
+from pydantic_settings import BaseSettings  # Updated import
 from typing import List
 
 
@@ -48,21 +48,45 @@ class Settings(BaseSettings):
 # Create settings instance
 settings = Settings()
 
-# MongoDB connection
+# MongoDB connection with better error handling
+client = None
+db = None
+documents_collection = None
+folders_collection = None
+
 try:
-    client = MongoClient(settings.MONGO_URI)
-    db = client["snapdocs"]
-    
-    # Collections
-    documents_collection = db["documents"]
-    folders_collection = db["folders"]
+    print(f"🔗 Attempting to connect to MongoDB: {settings.MONGO_URI}")
+    client = MongoClient(settings.MONGO_URI, serverSelectionTimeoutMS=5000)
     
     # Test connection
     client.admin.command('ping')
+    print("✅ MongoDB ping successful")
+    
+    # Initialize database and collections
+    db = client["snapdocs"]
+    documents_collection = db["documents"]
+    folders_collection = db["folders"]
+    
+    # Verify collections
+    collection_names = db.list_collection_names()
+    print(f"📚 Available collections: {collection_names}")
+    
+    # Create indexes for better performance (optional)
+    try:
+        documents_collection.create_index("folder_name")
+        documents_collection.create_index("created_at")
+        folders_collection.create_index("name", unique=True)
+        print("📈 Database indexes created successfully")
+    except Exception as idx_error:
+        print(f"⚠️ Index creation warning: {idx_error}")
+    
     print("✅ MongoDB connected successfully")
     
 except Exception as e:
     print(f"❌ MongoDB connection failed: {e}")
+    print(f"🔧 Connection string: {settings.MONGO_URI}")
+    
+    # Set to None so the application can handle gracefully
     client = None
     db = None
     documents_collection = None
@@ -72,3 +96,15 @@ except Exception as e:
 upload_path = os.path.abspath(settings.UPLOAD_DIRECTORY)
 os.makedirs(upload_path, exist_ok=True)
 print(f"📁 Upload directory: {upload_path}")
+
+# Function to check database health
+def check_database_health():
+    """Check if database connection is healthy"""
+    try:
+        if client is None:
+            return {"status": "error", "message": "No database connection"}
+        
+        client.admin.command('ping')
+        return {"status": "healthy", "message": "Database connection is working"}
+    except Exception as e:
+        return {"status": "error", "message": f"Database connection failed: {str(e)}"}

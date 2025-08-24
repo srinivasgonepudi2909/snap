@@ -248,6 +248,8 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
 // Folder Creation Modal
 // Fixed Folder Creation Modal - Replace this component in your Dashboard.jsx
 
+// Replace the CreateFolderModal component in your Dashboard.jsx with this fixed version
+
 const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
   const [folderName, setFolderName] = useState('');
   const [folderColor, setFolderColor] = useState('#3B82F6');
@@ -284,12 +286,13 @@ const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
+      console.log('🚀 Creating folder:', folderName); // Debug log
+      
       const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/folders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          // Remove Authorization header for now since the backend doesn't validate it
         },
         body: JSON.stringify({
           name: folderName.trim(),
@@ -299,26 +302,28 @@ const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
         })
       });
 
+      console.log('📊 Response status:', response.status); // Debug log
+      
       const result = await response.json();
-      console.log('Folder creation response:', result); // Debug log
+      console.log('📦 Response data:', result); // Debug log
       
       if (response.ok && result.success) {
-        // Success - close modal and refresh
+        console.log('✅ Folder created successfully');
         handleClose();
         onFolderCreated && onFolderCreated();
       } else {
-        // Handle specific error messages
-        if (response.status === 400 && result.message) {
-          setError(result.message);
+        console.error('❌ Folder creation failed:', result);
+        if (response.status === 400 && result.detail) {
+          setError(result.detail);
         } else if (response.status === 500) {
           setError('Server error. Please try again later.');
         } else {
-          setError(result.message || `Failed to create folder (${response.status})`);
+          setError(result.message || result.detail || `Failed to create folder (${response.status})`);
         }
       }
     } catch (error) {
-      console.error('Error creating folder:', error);
-      setError('Network error. Please check your connection.');
+      console.error('🔥 Network error:', error);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -336,13 +341,11 @@ const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
   };
 
   const handleBackdropClick = (e) => {
-    // Only close if clicking the backdrop, not the modal content
     if (e.target === e.currentTarget) {
       handleClose();
     }
   };
 
-  // Handle Escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen && !loading) {
@@ -352,7 +355,6 @@ const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
-      // Prevent body scroll
       document.body.style.overflow = 'hidden';
     }
 

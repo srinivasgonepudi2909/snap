@@ -8,8 +8,16 @@ import uuid
 from datetime import datetime
 import aiofiles
 from pathlib import Path
+from pydantic import BaseModel
 
 documents_router = APIRouter(tags=["documents"])
+
+# Pydantic models for request validation
+class FolderCreateRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    color: Optional[str] = "#3B82F6"
+    icon: Optional[str] = "📁"
 
 # Test endpoints (keep existing)
 @documents_router.get("/test")
@@ -195,19 +203,21 @@ async def list_folders():
         }
 
 @documents_router.post("/folders")
-async def create_folder(folder_data: dict):
+async def create_folder(folder_request: FolderCreateRequest):
     """Create a new folder"""
     try:
         from app.utils.config import folders_collection
+        
+        print(f"🚀 Received folder creation request: {folder_request}")  # Debug log
         
         if folders_collection is None:
             raise HTTPException(status_code=500, detail="Database not available")
         
         # Validate required fields
-        if "name" not in folder_data or not folder_data["name"].strip():
+        if not folder_request.name or not folder_request.name.strip():
             raise HTTPException(status_code=400, detail="Folder name is required")
         
-        folder_name = folder_data["name"].strip()
+        folder_name = folder_request.name.strip()
         
         # Check if folder already exists
         existing = folders_collection.find_one({"name": folder_name})
@@ -217,16 +227,20 @@ async def create_folder(folder_data: dict):
         # Create folder record
         new_folder = {
             "name": folder_name,
-            "description": folder_data.get("description", ""),
-            "color": folder_data.get("color", "#3B82F6"),
-            "icon": folder_data.get("icon", "📁"),
+            "description": folder_request.description or "",
+            "color": folder_request.color or "#3B82F6",
+            "icon": folder_request.icon or "📁",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "document_count": 0
         }
         
+        print(f"📝 Creating folder with data: {new_folder}")  # Debug log
+        
         result = folders_collection.insert_one(new_folder)
         new_folder["_id"] = str(result.inserted_id)
+        
+        print(f"✅ Folder created successfully with ID: {result.inserted_id}")  # Debug log
         
         return {
             "success": True,
@@ -237,6 +251,7 @@ async def create_folder(folder_data: dict):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Error creating folder: {str(e)}")  # Debug log
         raise HTTPException(status_code=500, detail=f"Failed to create folder: {str(e)}")
 
 @documents_router.get("/folders/{folder_name}/documents")
