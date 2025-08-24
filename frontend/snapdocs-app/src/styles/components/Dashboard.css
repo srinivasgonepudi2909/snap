@@ -1,0 +1,97 @@
+.container {
+  display: flex;
+  height: 100vh;
+  font-family: sans-serif;
+}
+
+.sidebar {
+  width: 200px;
+  background-color: #0f1c3f;
+  color: white;
+  padding: 20px;
+}
+
+.sidebar h2 {
+  font-size: 18px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.sidebar li {
+  margin: 15px 0;
+  cursor: pointer;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  background: #f5f6fa;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header input {
+  width: 50%;
+  padding: 8px;
+}
+
+.folder-area {
+  margin-top: 30px;
+}
+
+.new-folder {
+  margin-bottom: 20px;
+  padding: 8px 12px;
+  background: #2e89ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
+
+.folders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.folder {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  width: 120px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+}
+
+.upload-hint {
+  margin-top: 20px;
+  color: #999;
+  font-style: italic;
+}
+
+.right-panel {
+  width: 250px;
+  padding: 20px;
+  background: #fff;
+  border-left: 1px solid #ddd;
+}
+
+.recent-uploads ul,
+.activity ul {
+  list-style: none;
+  padding: 0;
+}
+
+.recent-uploads li,
+.activity li {
+  margin: 10px 0;
+}
