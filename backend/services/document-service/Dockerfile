@@ -10,10 +10,14 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # -----------------------
-# Install system deps
+# Install system dependencies for Python packages
 # -----------------------
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl gcc libffi-dev \
+    && apt-get install -y --no-install-recommends \
+        gcc \
+        g++ \
+        libpq-dev \
+        python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # -----------------------
@@ -22,23 +26,30 @@ RUN apt-get update \
 WORKDIR /app
 
 # -----------------------
-# Copy requirements file
+# Copy requirements file (if exists) or use poetry
 # -----------------------
-COPY requirements.txt /app/
+COPY requirements.txt pyproject.toml ./
 
 # -----------------------
-# Install dependencies
+# Install dependencies based on what's available
 # -----------------------
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+RUN if [ -f "requirements.txt" ]; then \
+        pip install --no-cache-dir --upgrade pip \
+        && pip install --no-cache-dir -r requirements.txt; \
+    else \
+        pip install --no-cache-dir poetry==1.8.2 \
+        && poetry config virtualenvs.create false \
+        && poetry install --no-interaction --no-ansi --no-root; \
+    fi
 
 # -----------------------
-# Copy entire project after dependencies
+# Copy application code
 # -----------------------
-COPY . /app
+COPY app/ ./app/
+COPY uploads/ ./uploads/
 
 # -----------------------
-# Create uploads directory with proper permissions
+# Create uploads directory if it doesn't exist
 # -----------------------
 RUN mkdir -p /app/uploads && chmod 755 /app/uploads
 
