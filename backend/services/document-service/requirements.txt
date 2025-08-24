@@ -8,3 +8,4 @@ aiofiles==23.2.1
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 alembic==1.12.1
+pymongo==4.6.0
