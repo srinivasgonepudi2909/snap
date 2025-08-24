@@ -2,18 +2,18 @@
 
 import os
 from pymongo import MongoClient
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings  # Use standard BaseSettings instead of pydantic_settings
 from typing import List
 
 
 class Settings(BaseSettings):
     # JWT Configuration
-    SECRET_KEY: str
+    SECRET_KEY: str = "snapdocs_documents_secret_key_2024"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # MongoDB Configuration
-    MONGO_URI: str
+    MONGO_URI: str = "mongodb://Chaitra:changeme123@snapdocs-mongo:27017/snapdocs?authSource=admin"
 
     # File Storage Configuration
     UPLOAD_DIRECTORY: str = "./uploads"
