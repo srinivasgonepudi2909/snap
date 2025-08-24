@@ -24,7 +24,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-// Custom hook for documents and folders
+// Custom hook for documents and folders - UPDATED WITH BETTER REFRESH
 const useDocuments = () => {
   const [documents, setDocuments] = useState([]);
   const [folders, setFolders] = useState([]);
@@ -33,55 +33,79 @@ const useDocuments = () => {
 
   const fetchDocuments = async () => {
     try {
+      console.log('🔄 Fetching documents...');
       const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/documents`);
       const data = await response.json();
       
+      console.log('📄 Documents response:', data);
+      
       if (data.success) {
         setDocuments(data.data || []);
+        console.log(`✅ Loaded ${data.data?.length || 0} documents`);
       } else {
         setError('Failed to fetch documents');
         setDocuments([]);
       }
     } catch (err) {
-      console.error('Error fetching documents:', err);
-      setError('Network error');
+      console.error('❌ Error fetching documents:', err);
+      setError('Network error while fetching documents');
       setDocuments([]);
     }
   };
 
   const fetchFolders = async () => {
     try {
+      console.log('🔄 Fetching folders...');
       const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/folders`);
       const data = await response.json();
       
+      console.log('📁 Folders response:', data);
+      
       if (data.success) {
         setFolders(data.data || []);
+        console.log(`✅ Loaded ${data.data?.length || 0} folders`);
       } else {
+        console.warn('⚠️ Folders fetch not successful:', data.message);
         setFolders([]);
       }
     } catch (err) {
-      console.error('Error fetching folders:', err);
+      console.error('❌ Error fetching folders:', err);
+      setError('Network error while fetching folders');
       setFolders([]);
     }
   };
 
   const fetchAll = async () => {
     setLoading(true);
+    setError(null);
     try {
       await Promise.all([fetchDocuments(), fetchFolders()]);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('❌ Error fetching data:', error);
       setError('Failed to load data');
     } finally {
       setLoading(false);
     }
   };
 
+  // Force refresh function
+  const forceRefresh = async () => {
+    console.log('🔄 Force refreshing data...');
+    await fetchAll();
+  };
+
   useEffect(() => {
     fetchAll();
   }, []);
 
-  return { documents, folders, loading, error, refetch: fetchAll };
+  return { 
+    documents, 
+    folders, 
+    loading, 
+    error, 
+    refetch: fetchAll,
+    forceRefresh
+  };
 };
 
 // File Upload Component
@@ -245,11 +269,7 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
   );
 };
 
-// Folder Creation Modal
-// Fixed Folder Creation Modal - Replace this component in your Dashboard.jsx
-
-// Replace the CreateFolderModal component in your Dashboard.jsx with this fixed version
-
+// UPDATED CreateFolderModal Component
 const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
   const [folderName, setFolderName] = useState('');
   const [folderColor, setFolderColor] = useState('#3B82F6');
@@ -292,7 +312,6 @@ const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Remove Authorization header for now since the backend doesn't validate it
         },
         body: JSON.stringify({
           name: folderName.trim(),
@@ -310,7 +329,11 @@ const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
       if (response.ok && result.success) {
         console.log('✅ Folder created successfully');
         handleClose();
-        onFolderCreated && onFolderCreated();
+        
+        // Call the callback with a small delay to ensure server has processed
+        setTimeout(() => {
+          onFolderCreated && onFolderCreated();
+        }, 500);
       } else {
         console.error('❌ Folder creation failed:', result);
         if (response.status === 400 && result.detail) {
@@ -760,9 +783,9 @@ export default function Dashboard() {
   const [userEmail, setUserEmail] = useState('');
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState(null);
-  const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' or 'folder'
+  const [viewMode, setViewMode] = useState('dashboard');
   const [notifications, setNotifications] = useState([]);
-  const { documents, folders, loading, error, refetch } = useDocuments();
+  const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
 
   // Initialize user data
   useEffect(() => {
@@ -812,6 +835,20 @@ export default function Dashboard() {
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 5000);
+  };
+
+  // UPDATED folder creation handler
+  const handleFolderCreated = async () => {
+    console.log('📁 Folder created, refreshing dashboard...');
+    
+    // Show immediate feedback
+    showNotification('Folder created successfully!');
+    
+    // Force refresh data
+    await forceRefresh();
+    
+    // Additional debug
+    console.log('🔍 Current folders after refresh:', folders);
   };
 
   const handleLogout = () => {
@@ -1059,7 +1096,7 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between mb-6">
                           <h3 className="text-xl font-bold text-white flex items-center space-x-2">
                             <FolderOpen className="w-6 h-6 text-yellow-400" />
-                            <span>Your Folders</span>
+                            <span>Your Folders ({folders.length})</span>
                           </h3>
                           <button 
                             onClick={() => setCreateFolderOpen(true)}
@@ -1068,6 +1105,15 @@ export default function Dashboard() {
                             <Plus className="w-4 h-4" />
                             <span>New Folder</span>
                           </button>
+                        </div>
+
+                        {/* Debug info */}
+                        <div className="bg-gray-800 p-4 rounded-lg mb-4 text-sm text-gray-300">
+                          <div>Debug Info:</div>
+                          <div>Loading: {loading ? 'Yes' : 'No'}</div>
+                          <div>Error: {error || 'None'}</div>
+                          <div>Folders array length: {folders.length}</div>
+                          <div>Folders data: {JSON.stringify(folders.map(f => f?.name ? {name: f.name, id: f._id} : f), null, 2)}</div>
                         </div>
 
                         {loading ? (
@@ -1079,15 +1125,15 @@ export default function Dashboard() {
                           <div className="bg-red-600/20 backdrop-blur-sm rounded-2xl p-8 border border-red-500/50 text-center">
                             <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
                             <div className="text-red-300 text-lg font-semibold mb-2">Error Loading Data</div>
-                            <div className="text-red-300">{error}</div>
+                            <div className="text-red-300 mb-4">{error}</div>
                             <button 
-                              onClick={refetch}
-                              className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                              onClick={forceRefresh}
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                             >
                               Try Again
                             </button>
                           </div>
-                        ) : folders.length > 0 ? (
+                        ) : folders && folders.length > 0 ? (
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {folders.map((folder, index) => {
                               const folderDocCount = documents.filter(doc => 
@@ -1281,14 +1327,11 @@ export default function Dashboard() {
         </main>
       </div>
 
-      {/* Create Folder Modal */}
+      {/* Create Folder Modal - UPDATED CALLBACK */}
       <CreateFolderModal 
         isOpen={createFolderOpen} 
         onClose={() => setCreateFolderOpen(false)}
-        onFolderCreated={() => {
-          refetch();
-          showNotification('Folder created successfully!');
-        }}
+        onFolderCreated={handleFolderCreated}
       />
     </div>
   );
