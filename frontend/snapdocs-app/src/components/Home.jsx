@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
          FileText, Users, Award, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 
 const Home = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const navigate = useNavigate(); // Added navigate hook
   const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeModal, setActiveModal] = useState('login');
@@ -114,6 +115,12 @@ const Home = () => {
               <div className="flex items-center space-x-4">
                 <span className="text-white font-semibold">Hello, {username}</span>
                 <button
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300 transform hover:scale-105"
+                >
+                  Dashboard
+                </button>
+                <button
                   onClick={() => {
                     localStorage.removeItem('token');
                     localStorage.removeItem('username');
@@ -162,7 +169,7 @@ const Home = () => {
     </header>
   );
 
-  // Login Modal Component (Isolated Version)
+  // Login Modal Component (Updated with navigation)
   const LoginModal = () => {
     const [localEmail, setLocalEmail] = React.useState('');
     const [localPassword, setLocalPassword] = React.useState('');
@@ -183,20 +190,23 @@ const Home = () => {
         });
 
         const data = await response.json();
-if (response.ok) {
-  localStorage.setItem('token', data.access_token);
-  localStorage.setItem('username', data.username || 'User');
-  setUserEmail(localEmail);
-  setUsername(data.username || 'User');
-  showMessage(`Welcome back, ${data.username || 'User'}!`);
-  setIsLoginOpen(false);
-  setLocalEmail('');
-  setLocalPassword('');
-  
-  // Add this line to navigate to dashboard after login
-  navigate('/dashboard');
-} else {
-  setLocalError(data.detail || 'Login failed. Please check your credentials.');
+        if (response.ok) {
+          localStorage.setItem('token', data.access_token);
+          localStorage.setItem('username', data.username || 'User');
+          setUserEmail(localEmail);
+          setUsername(data.username || 'User');
+          showMessage(`Welcome back, ${data.username || 'User'}!`);
+          setIsLoginOpen(false);
+          setLocalEmail('');
+          setLocalPassword('');
+          
+          // Navigate to dashboard after successful login
+          navigate('/dashboard');
+        } else {
+          setLocalError(data.detail || 'Login failed. Please check your credentials.');
+        }
+      } catch (error) {
+        setLocalError('Network error. Please check your connection and try again.');
       } finally {
         setLocalLoading(false);
       }
@@ -256,7 +266,7 @@ if (response.ok) {
     ) : null;
   };
 
-  // Signup Modal Component (Now Fully Isolated)
+  // Signup Modal Component (Unchanged)
   const SignupModal = () => {
     const [localFirstName, setLocalFirstName] = React.useState('');
     const [localLastName, setLocalLastName] = React.useState('');
@@ -510,16 +520,26 @@ if (response.ok) {
             </div>
 
             <div className="pt-4 animate-scale-in">
-              <button
-                onClick={() => {
-                  setActiveModal('signup');
-                  setIsSignupOpen(true);
-                }}
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-110 transition-all duration-300 shadow-2xl"
-              >
-                <span>Get Started Free</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
+              {userEmail ? (
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-110 transition-all duration-300 shadow-2xl"
+                >
+                  <span>Go to Dashboard</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setActiveModal('signup');
+                    setIsSignupOpen(true);
+                  }}
+                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-110 transition-all duration-300 shadow-2xl"
+                >
+                  <span>Get Started Free</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
@@ -645,16 +665,26 @@ if (response.ok) {
               Start organizing your digital life today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => {
-                  setActiveModal('signup');
-                  setIsSignupOpen(true);
-                }}
-                className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-2xl"
-              >
-                <span>Start Free Trial</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
+              {userEmail ? (
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-2xl"
+                >
+                  <span>Go to Dashboard</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setActiveModal('signup');
+                    setIsSignupOpen(true);
+                  }}
+                  className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-2xl"
+                >
+                  <span>Start Free Trial</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              )}
               <Link
                 to="/how-it-works"
                 className="inline-flex items-center justify-center space-x-2 bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/15 transition-all duration-300 border border-white/20"
