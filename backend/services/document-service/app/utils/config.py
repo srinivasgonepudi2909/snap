@@ -2,37 +2,37 @@
 
 import os
 from pymongo import MongoClient
-from pydantic_settings import BaseSettings  # Updated import
 from typing import List
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
 
-class Settings(BaseSettings):
-    # JWT Configuration
-    SECRET_KEY: str = "snapdocs_documents_secret_key_2024"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+class Settings:
+    def __init__(self):
+        # JWT Configuration
+        self.SECRET_KEY = os.getenv("SECRET_KEY", "snapdocs_documents_secret_key_2024")
+        self.ALGORITHM = os.getenv("ALGORITHM", "HS256")
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
-    # MongoDB Configuration
-    MONGO_URI: str = "mongodb://Chaitra:changeme123@snapdocs-mongo:27017/snapdocs?authSource=admin"
+        # MongoDB Configuration
+        self.MONGO_URI = os.getenv("MONGO_URI", "mongodb://Chaitra:changeme123@snapdocs-mongo:27017/snapdocs?authSource=admin")
 
-    # File Storage Configuration
-    UPLOAD_DIRECTORY: str = "./uploads"
-    MAX_FILE_SIZE: int = 50000000  # 50MB
-    ALLOWED_FILE_TYPES: str = "pdf,doc,docx,jpg,jpeg,png,gif,txt,xls,xlsx,ppt,pptx,zip,rar"
+        # File Storage Configuration
+        self.UPLOAD_DIRECTORY = os.getenv("UPLOAD_DIRECTORY", "./uploads")
+        self.MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", "50000000"))  # 50MB
+        self.ALLOWED_FILE_TYPES = os.getenv("ALLOWED_FILE_TYPES", "pdf,doc,docx,jpg,jpeg,png,gif,txt,xls,xlsx,ppt,pptx,zip,rar")
 
-    # Auth Service Configuration
-    AUTH_SERVICE_URL: str = "http://snapdocs-auth-container-backend:8000"
+        # Auth Service Configuration
+        self.AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://snapdocs-auth-container-backend:8000")
 
-    # CORS Configuration
-    FRONTEND_URLS: str = "http://localhost:3000,http://127.0.0.1:3000"
+        # CORS Configuration
+        self.FRONTEND_URLS = os.getenv("FRONTEND_URLS", "http://localhost:3000,http://127.0.0.1:3000")
 
-    # Service Configuration
-    SERVICE_NAME: str = "document-service"
-    SERVICE_VERSION: str = "1.0.0"
-    DEBUG: bool = True
-
-    class Config:
-        env_file = ".env"
+        # Service Configuration
+        self.SERVICE_NAME = os.getenv("SERVICE_NAME", "document-service")
+        self.SERVICE_VERSION = os.getenv("SERVICE_VERSION", "1.0.0")
+        self.DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
     @property
     def allowed_file_extensions(self) -> List[str]:
@@ -56,7 +56,7 @@ folders_collection = None
 
 try:
     print(f"🔗 Attempting to connect to MongoDB: {settings.MONGO_URI}")
-    client = MongoClient(settings.MONGO_URI, serverSelectionTimeoutMS=5000)
+    client = MongoClient(settings.MONGO_URI, serverSelectionTimeoutMS=10000)
     
     # Test connection
     client.admin.command('ping')
@@ -75,7 +75,7 @@ try:
     try:
         documents_collection.create_index("folder_name")
         documents_collection.create_index("created_at")
-        folders_collection.create_index("name", unique=True)
+        folders_collection.create_index("name")
         print("📈 Database indexes created successfully")
     except Exception as idx_error:
         print(f"⚠️ Index creation warning: {idx_error}")
@@ -84,7 +84,7 @@ try:
     
 except Exception as e:
     print(f"❌ MongoDB connection failed: {e}")
-    print(f"🔧 Connection string: {settings.MONGO_URI}")
+    print(f"🔧 Connection string used: {settings.MONGO_URI}")
     
     # Set to None so the application can handle gracefully
     client = None
