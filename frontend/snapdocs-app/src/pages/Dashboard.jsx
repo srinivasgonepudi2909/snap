@@ -1,6 +1,5 @@
 import React from 'react';
 import '../../styles/components/Dashboard.css';
-import { useDocuments } from '../../hooks/useDocuments';
 
 export default function Dashboard() {
   const username = localStorage.getItem("username") || "User";
