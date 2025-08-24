@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
          FileText, Users, Award, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 
 const Home = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const navigate = useNavigate();
   const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeModal, setActiveModal] = useState('login');
