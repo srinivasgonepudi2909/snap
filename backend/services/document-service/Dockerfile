@@ -23,15 +23,20 @@ RUN apt-get update \
 WORKDIR /app
 
 # -----------------------
-# Copy entire project
+# Copy pyproject.toml first for dependency caching
 # -----------------------
-COPY . /app
+COPY pyproject.toml /app/
 
 # -----------------------
 # Install dependencies
 # -----------------------
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi
+
+# -----------------------
+# Copy entire project after dependencies
+# -----------------------
+COPY . /app
 
 # -----------------------
 # Create uploads directory
