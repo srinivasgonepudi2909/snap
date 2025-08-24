@@ -1,15 +1,13 @@
 # -----------------------
 # Base image with Python
 # -----------------------
-FROM python:3.9.19-slim-bullseye
+FROM python:3.9-slim
 
 # -----------------------
 # Set environment vars
 # -----------------------
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PIP_NO_CACHE_DIR=off
-ENV PIP_DISABLE_PIP_VERSION_CHECK=on
 
 # -----------------------
 # Install system deps
@@ -19,26 +17,20 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # -----------------------
-# Install poetry with pip
-# -----------------------
-RUN pip install --no-cache-dir poetry==1.8.2
-
-# -----------------------
 # Set work directory
 # -----------------------
 WORKDIR /app
 
 # -----------------------
-# Copy poetry files first for dependency caching
+# Copy requirements file
 # -----------------------
-COPY pyproject.toml poetry.lock* /app/
+COPY requirements.txt /app/
 
 # -----------------------
-# Configure poetry and install dependencies
+# Install dependencies
 # -----------------------
-RUN poetry config virtualenvs.create false \
-    && poetry config experimental.new-installer false \
-    && poetry install --no-interaction --no-ansi --no-root
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
 # -----------------------
 # Copy entire project after dependencies
