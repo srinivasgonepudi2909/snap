@@ -285,7 +285,7 @@ const CreateFolderModal = ({ isOpen, onClose, onFolderCreated }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/folders`, {
+      const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/folders` {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
