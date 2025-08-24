@@ -14,6 +14,7 @@ const Home = () => {
   // --- USER STATE ---
   const [userEmail, setUserEmail] = useState("");
   const [username, setUsername] = useState("");
+  const [message, setMessage] = useState({ text: '', type: '' }); // For success/error messages
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -57,6 +58,14 @@ const Home = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const showMessage = (text, type = 'success') => {
+    setMessage({ text, type });
+    // Auto-hide message after 5 seconds
+    setTimeout(() => {
+      setMessage({ text: '', type: '' });
+    }, 5000);
+  };
 
   const SnapDocsLogo = () => (
     <Link to="/" className="flex items-center space-x-3 group cursor-pointer">
@@ -110,7 +119,7 @@ const Home = () => {
                     localStorage.removeItem('username');
                     setUserEmail('');
                     setUsername('');
-                    alert('Logged out successfully!');
+                    showMessage('Logged out successfully!');
                   }}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
                 >
@@ -153,20 +162,18 @@ const Home = () => {
     </header>
   );
 
-  // Login Modal Component with Updated Success Handling
+  // Login Modal Component (Isolated Version)
   const LoginModal = () => {
     const [localEmail, setLocalEmail] = React.useState('');
     const [localPassword, setLocalPassword] = React.useState('');
     const [localShowPassword, setLocalShowPassword] = React.useState(false);
     const [localLoading, setLocalLoading] = React.useState(false);
     const [localError, setLocalError] = React.useState('');
-    const [localSuccess, setLocalSuccess] = React.useState(''); // Add success state
 
     const handleLocalSubmit = async (e) => {
       e.preventDefault();
       setLocalLoading(true);
       setLocalError('');
-      setLocalSuccess(''); // Clear previous success message
 
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
@@ -181,17 +188,10 @@ const Home = () => {
           localStorage.setItem('username', data.username || 'User');
           setUserEmail(localEmail);
           setUsername(data.username || 'User');
-          
-          // Show inline success message instead of alert
-          setLocalSuccess(`✅ Welcome back, ${data.username || 'User'}!`);
-          
-          // Close modal after a short delay to show success message
-          setTimeout(() => {
-            setIsLoginOpen(false);
-            setLocalEmail('');
-            setLocalPassword('');
-            setLocalSuccess('');
-          }, 2000);
+          showMessage(`Welcome back, ${data.username || 'User'}!`);
+          setIsLoginOpen(false);
+          setLocalEmail('');
+          setLocalPassword('');
         } else {
           setLocalError(data.detail || 'Login failed. Please check your credentials.');
         }
@@ -213,21 +213,11 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Welcome Back</h2>
             <p className="text-gray-400">Login to access your digital vault</p>
           </div>
-          
-          {/* Success Message */}
-          {localSuccess && (
-            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4">
-              {localSuccess}
-            </div>
-          )}
-          
-          {/* Error Message */}
           {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
               {localError}
             </div>
           )}
-          
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
@@ -266,7 +256,7 @@ const Home = () => {
     ) : null;
   };
 
-  // Signup Modal Component with Updated Success Handling
+  // Signup Modal Component (Now Fully Isolated)
   const SignupModal = () => {
     const [localFirstName, setLocalFirstName] = React.useState('');
     const [localLastName, setLocalLastName] = React.useState('');
@@ -276,7 +266,6 @@ const Home = () => {
     const [localShowPassword, setLocalShowPassword] = React.useState(false);
     const [localLoading, setLocalLoading] = React.useState(false);
     const [localError, setLocalError] = React.useState('');
-    const [localSuccess, setLocalSuccess] = React.useState(''); // Add success state
     const [localCountry, setLocalCountry] = React.useState({ code: '+91', flag: '🇮🇳', name: 'India' });
     const [localCountryOpen, setLocalCountryOpen] = React.useState(false);
 
@@ -284,7 +273,6 @@ const Home = () => {
       e.preventDefault();
       setLocalLoading(true);
       setLocalError('');
-      setLocalSuccess(''); // Clear previous success message
 
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/signup`, {
@@ -299,22 +287,16 @@ const Home = () => {
 
         const data = await response.json();
         if (response.ok) {
-          // Show inline success message instead of alert
-          setLocalSuccess('✅ Account created successfully! Redirecting to login...');
-          
-          // Clear form and redirect to login after showing success message
-          setTimeout(() => {
-            setIsSignupOpen(false);
-            setIsLoginOpen(true);
-            setActiveModal('login');
-            // Clear form
-            setLocalFirstName('');
-            setLocalLastName('');
-            setLocalEmail('');
-            setLocalPhoneNumber('');
-            setLocalPassword('');
-            setLocalSuccess('');
-          }, 2000);
+          showMessage('Account created successfully! Please login with your credentials.');
+          setIsSignupOpen(false);
+          setIsLoginOpen(true);
+          setActiveModal('login');
+          // Clear form
+          setLocalFirstName('');
+          setLocalLastName('');
+          setLocalEmail('');
+          setLocalPhoneNumber('');
+          setLocalPassword('');
         } else {
           setLocalError(data.detail || 'Signup failed. Please try again.');
         }
@@ -336,21 +318,11 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Create Account</h2>
             <p className="text-gray-400">Join thousands securing their documents</p>
           </div>
-          
-          {/* Success Message */}
-          {localSuccess && (
-            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4">
-              {localSuccess}
-            </div>
-          )}
-          
-          {/* Error Message */}
           {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
               {localError}
             </div>
           )}
-          
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -494,6 +466,24 @@ const Home = () => {
       <Header />
       <LoginModal />
       <SignupModal />
+      
+      {/* Message Display */}
+      {message.text && (
+        <div className={`fixed top-20 right-6 z-50 px-6 py-3 rounded-xl shadow-2xl border backdrop-blur-sm transition-all duration-300 ${
+          message.type === 'error' 
+            ? 'bg-red-600/20 border-red-500/50 text-red-300' 
+            : 'bg-green-600/20 border-green-500/50 text-green-300'
+        }`}>
+          <div className="flex items-center">
+            {message.type === 'error' ? (
+              <X className="w-5 h-5 mr-2" />
+            ) : (
+              <Check className="w-5 h-5 mr-2" />
+            )}
+            <span>{message.text}</span>
+          </div>
+        </div>
+      )}
       
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 relative overflow-hidden">
