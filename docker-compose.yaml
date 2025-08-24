@@ -28,6 +28,23 @@ services:
     networks:
       - snapdocs-backend-network
 
+  document-service:
+    build:
+      context: ./backend/services/document-service
+    image: snapdocs-document-service:latest
+    container_name: snapdocs-document-container
+    env_file:
+      - ./backend/services/document-service/app/.env
+    ports:
+      - "8001:8001"
+    volumes:
+      - document-uploads:/app/uploads
+    depends_on:
+      - mongo
+      - backend
+    networks:
+      - snapdocs-backend-network
+
   frontend:
     build:
       context: ./frontend/snapdocs-app
@@ -37,11 +54,13 @@ services:
       - "3000:80"
     depends_on:
       - backend
+      - document-service
     networks:
       - snapdocs-backend-network
 
 volumes:
   mongo-data:
+  document-uploads:
 
 networks:
   snapdocs-backend-network:

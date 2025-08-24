@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "document-service"
+version = "1.0.0"
+description = "SnapDocs Document Management Service"
+authors = ["SnapDocs Team <srigonepudi@gmail.com>"]
+packages = [{ include = "app" }]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.111.1"
+uvicorn = "^0.30.0"
+python-dotenv = "^1.0.0"
+pymongo = "^4.0.0"
+python-jose = "^3.3.0"
+python-multipart = "^0.0.6"
+httpx = "^0.28.0"
+pydantic-settings = "^2.2.1"
+pillow = "^10.0.0"
+aiofiles = "^23.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
