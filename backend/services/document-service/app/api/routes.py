@@ -30,12 +30,12 @@ async def test_database_endpoint():
                 "status": "disconnected"
             }
         
-        # Test database connection
-        documents_collection.find_one()
+        # Test database connection with a simple operation
+        result = documents_collection.find_one({}, {"_id": 1})
         
         # Get collection stats
-        doc_count = documents_collection.count_documents({})
-        folder_count = folders_collection.count_documents({}) if folders_collection else 0
+        doc_count = documents_collection.estimated_document_count()
+        folder_count = folders_collection.estimated_document_count() if folders_collection is not None else 0
         
         return {
             "success": True,
@@ -44,7 +44,8 @@ async def test_database_endpoint():
             "collections": {
                 "documents": doc_count,
                 "folders": folder_count
-            }
+            },
+            "status": "connected"
         }
     except Exception as e:
         return {
