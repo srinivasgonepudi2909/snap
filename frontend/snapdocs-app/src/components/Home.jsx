@@ -59,13 +59,22 @@ const Home = () => {
           <SnapDocsLogo />
           
           <nav className="hidden md:flex items-center space-x-8">
-            <button className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer">
+            <button 
+              onClick={() => alert('About Us: SnapDocs is your trusted partner for secure document storage and organization. We provide military-grade security with AES-256 encryption.')}
+              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
+            >
               About Us
             </button>
-            <button className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer">
+            <button 
+              onClick={() => alert('How It Works: 1) Upload your documents 2) Organize in custom folders 3) Access anytime with secure login 4) Share safely when needed')}
+              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
+            >
               How It Works
             </button>
-            <button className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer">
+            <button 
+              onClick={() => alert('Contact Us: Email: srigonepudi@gmail.com | Location: India 🇮🇳 | We are here to help with your document management needs!')}
+              className="text-gray-300 hover:text-white transition-all duration-300 font-bold text-lg hover:scale-110 transform cursor-pointer"
+            >
               Contact
             </button>
           </nav>
@@ -667,9 +676,24 @@ const Home = () => {
             <div>
               <h3 className="text-white font-semibold mb-4">Quick Links</h3>
               <div className="space-y-2">
-                <button className="block text-gray-400 hover:text-white transition-colors text-left">About Us</button>
-                <button className="block text-gray-400 hover:text-white transition-colors text-left">How It Works</button>
-                <button className="block text-gray-400 hover:text-white transition-colors text-left">Contact</button>
+                <button 
+                  onClick={() => alert('About Us: SnapDocs is your trusted partner for secure document storage and organization. We provide military-grade security with AES-256 encryption.')}
+                  className="block text-gray-400 hover:text-white transition-colors text-left"
+                >
+                  About Us
+                </button>
+                <button 
+                  onClick={() => alert('How It Works: 1) Upload your documents 2) Organize in custom folders 3) Access anytime with secure login 4) Share safely when needed')}
+                  className="block text-gray-400 hover:text-white transition-colors text-left"
+                >
+                  How It Works
+                </button>
+                <button 
+                  onClick={() => alert('Contact Us: Email: srigonepudi@gmail.com | Location: India 🇮🇳 | We are here to help with your document management needs!')}
+                  className="block text-gray-400 hover:text-white transition-colors text-left"
+                >
+                  Contact
+                </button>
               </div>
             </div>
             <div>
