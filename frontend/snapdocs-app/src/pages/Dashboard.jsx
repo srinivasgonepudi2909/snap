@@ -1,25 +1,23 @@
 import React from 'react';
 import '../../styles/components/Dashboard.css';
-
-const folders = [
-  "ID Cards", "PAN Card", "Passport", "Family",
-  "Trip", "Vacations", "Work Docs", "Miscellaneous"
-];
-
-const recentUploads = [
-  { name: "beach.jpg", time: "1 hour ago" },
-  { name: "document.pdf", time: "3 hours ago" },
-  { name: "portrait.png", time: "5 hours ago" },
-];
-
-const activityLog = [
-  { name: "beach.jpg", action: "Uploaded", time: "2 hours ago" },
-  { name: "document.pdf", action: "Moved", time: "3 hours ago" },
-  { name: "portrait.png", action: "Deleted", time: "4 hours ago" },
-];
+import { useDocuments } from '../../hooks/useDocuments';
 
 export default function Dashboard() {
   const username = localStorage.getItem("username") || "User";
+  const { documents, loading } = useDocuments();
+
+  // Extract unique folder names
+  const folders = [...new Set(documents.map((doc) => doc.folder || "Uncategorized"))];
+
+  // Take 5 most recent uploads
+  const recentUploads = documents.slice(0, 5);
+
+  // Fake activity log for now (optional: replace with real logic later)
+  const activityLog = recentUploads.map((doc) => ({
+    name: doc.name,
+    action: "Uploaded",
+    time: "Just now",
+  }));
 
   return (
     <div className="container">
@@ -49,13 +47,19 @@ export default function Dashboard() {
 
         <section className="folder-area">
           <button className="new-folder">+ New Folder</button>
-          <div className="folders">
-            {folders.map((folder) => (
-              <div key={folder} className="folder">
-                📁 <span>{folder}</span>
-              </div>
-            ))}
-          </div>
+
+          {loading ? (
+            <p>Loading folders...</p>
+          ) : (
+            <div className="folders">
+              {folders.map((folder) => (
+                <div key={folder} className="folder">
+                  📁 <span>{folder}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="upload-hint">Drag and drop files here</div>
         </section>
       </main>
@@ -64,11 +68,12 @@ export default function Dashboard() {
         <div className="recent-uploads">
           <h4>Recent Uploads</h4>
           <ul>
-            {recentUploads.map(file => (
-              <li key={file.name}>{file.name}</li>
+            {recentUploads.map((file) => (
+              <li key={file._id || file.name}>{file.name}</li>
             ))}
           </ul>
         </div>
+
         <div className="activity">
           <h4>Activity</h4>
           <ul>
