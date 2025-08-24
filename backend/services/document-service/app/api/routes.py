@@ -1,13 +1,10 @@
 # app/api/routes.py
 
-from fastapi import APIRouter, HTTPException, Depends, status
-from typing import Dict
-from app.utils.auth import get_current_user, get_current_user_id
-from app.utils.config import documents_collection, folders_collection
+from fastapi import APIRouter, HTTPException, status
 
 documents_router = APIRouter(tags=["documents"])
 
-# Test endpoints for initial testing
+# Basic test endpoints (no authentication required for now)
 
 @documents_router.get("/test")
 async def test_endpoint():
@@ -19,25 +16,19 @@ async def test_endpoint():
         "version": "1.0.0"
     }
 
-@documents_router.get("/test/auth")
-async def test_auth_endpoint(current_user: Dict = Depends(get_current_user)):
-    """Test endpoint to verify authentication is working"""
-    return {
-        "success": True,
-        "message": "Authentication is working! 🔐",
-        "user_email": current_user.get("email"),
-        "user_data": current_user
-    }
-
 @documents_router.get("/test/database")
 async def test_database_endpoint():
     """Test endpoint to verify database connection"""
     try:
+        # Try to import and test database
+        from app.utils.config import documents_collection, folders_collection
+        
         if documents_collection is None:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Database connection not available"
-            )
+            return {
+                "success": False,
+                "message": "Database connection not available",
+                "status": "disconnected"
+            }
         
         # Test database connection
         documents_collection.find_one()
@@ -56,49 +47,18 @@ async def test_database_endpoint():
             }
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database error: {str(e)}"
-        )
-
-@documents_router.get("/test/full")
-async def test_full_endpoint(
-    current_user: Dict = Depends(get_current_user),
-    user_id: str = Depends(get_current_user_id)
-):
-    """Test endpoint for full authentication + database"""
-    try:
-        # Test database
-        if documents_collection is None:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Database not available"
-            )
-        
-        # Test user documents query
-        user_docs = list(documents_collection.find({"user_id": user_id}).limit(5))
-        user_folders = list(folders_collection.find({"user_id": user_id}).limit(5))
-        
         return {
-            "success": True,
-            "message": "Full stack test successful! ✅",
-            "user_email": current_user.get("email"),
-            "user_id": user_id,
-            "user_documents_count": len(user_docs),
-            "user_folders_count": len(user_folders),
-            "database_status": "connected"
+            "success": False,
+            "message": f"Database error: {str(e)}",
+            "status": "error"
         }
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Full test failed: {str(e)}"
-        )
 
-# Basic folder endpoints for testing
 @documents_router.get("/folders")
-async def list_folders(user_id: str = Depends(get_current_user_id)):
-    """List user folders (basic implementation for testing)"""
+async def list_folders():
+    """List all folders (no auth for testing)"""
     try:
+        from app.utils.config import folders_collection
+        
         if folders_collection is None:
             return {
                 "success": False,
@@ -106,7 +66,7 @@ async def list_folders(user_id: str = Depends(get_current_user_id)):
                 "data": []
             }
         
-        folders = list(folders_collection.find({"user_id": user_id}))
+        folders = list(folders_collection.find({}).limit(10))  # Limit to 10 for testing
         
         # Convert ObjectId to string for JSON serialization
         for folder in folders:
@@ -118,16 +78,18 @@ async def list_folders(user_id: str = Depends(get_current_user_id)):
             "data": folders
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching folders: {str(e)}"
-        )
+        return {
+            "success": False,
+            "message": f"Error fetching folders: {str(e)}",
+            "data": []
+        }
 
-# Basic documents endpoints for testing
 @documents_router.get("/documents")
-async def list_documents(user_id: str = Depends(get_current_user_id)):
-    """List user documents (basic implementation for testing)"""
+async def list_documents():
+    """List all documents (no auth for testing)"""
     try:
+        from app.utils.config import documents_collection
+        
         if documents_collection is None:
             return {
                 "success": False,
@@ -135,7 +97,7 @@ async def list_documents(user_id: str = Depends(get_current_user_id)):
                 "data": []
             }
         
-        documents = list(documents_collection.find({"user_id": user_id}))
+        documents = list(documents_collection.find({}).limit(10))  # Limit to 10 for testing
         
         # Convert ObjectId to string for JSON serialization
         for doc in documents:
@@ -147,7 +109,25 @@ async def list_documents(user_id: str = Depends(get_current_user_id)):
             "data": documents
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching documents: {str(e)}"
-        )
+        return {
+            "success": False,
+            "message": f"Error fetching documents: {str(e)}",
+            "data": []
+        }
+
+@documents_router.get("/info")
+async def service_info():
+    """Service information endpoint"""
+    import os
+    return {
+        "service": "document-service",
+        "version": "1.0.0",
+        "status": "running",
+        "upload_directory": os.path.abspath("./uploads"),
+        "endpoints": {
+            "test": "/api/v1/test",
+            "database_test": "/api/v1/test/database", 
+            "folders": "/api/v1/folders",
+            "documents": "/api/v1/documents"
+        }
+    }
