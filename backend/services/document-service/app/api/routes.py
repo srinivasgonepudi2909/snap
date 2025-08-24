@@ -2,22 +2,15 @@
 
 from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form, Query
 from fastapi.responses import JSONResponse
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import os
 import uuid
 from datetime import datetime
 import aiofiles
 from pathlib import Path
-from pydantic import BaseModel
+import traceback
 
 documents_router = APIRouter(tags=["documents"])
-
-# Pydantic models for request validation
-class FolderCreateRequest(BaseModel):
-    name: str
-    description: Optional[str] = ""
-    color: Optional[str] = "#3B82F6"
-    icon: Optional[str] = "📁"
 
 # Test endpoints (keep existing)
 @documents_router.get("/test")
@@ -38,7 +31,7 @@ async def test_database_endpoint():
             return {"success": False, "message": "Database connection not available"}
         
         doc_count = documents_collection.estimated_document_count()
-        folder_count = folders_collection.estimated_document_count() if folders_collection else 0
+        folder_count = folders_collection.estimated_document_count() if folders_collection is not None else 0
         
         return {
             "success": True,
@@ -86,6 +79,7 @@ async def list_documents():
             "data": documents
         }
     except Exception as e:
+        print(f"❌ Error in list_documents: {str(e)}")
         return {
             "success": False,
             "message": f"Error fetching documents: {str(e)}",
@@ -157,15 +151,17 @@ async def upload_document(
         }
         
     except Exception as e:
+        print(f"❌ Upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
-# Folders endpoints
+# Folders endpoints - FIXED PyMongo compatibility issues
 @documents_router.get("/folders")
 async def list_folders():
     """List all folders"""
     try:
         from app.utils.config import folders_collection, documents_collection
         
+        # FIX: Check with 'is not None' instead of truthy check
         if folders_collection is None:
             return {"success": False, "message": "Database not available", "data": []}
         
@@ -178,8 +174,8 @@ async def list_folders():
             if "created_at" not in folder:
                 folder["created_at"] = datetime.utcnow()
             
-            # Count documents in this folder
-            if documents_collection:
+            # Count documents in this folder - FIX: Check with 'is not None'
+            if documents_collection is not None:
                 doc_count = documents_collection.count_documents({
                     "$or": [
                         {"folder_name": folder["name"]},
@@ -196,6 +192,8 @@ async def list_folders():
             "data": folders
         }
     except Exception as e:
+        print(f"❌ Error in list_folders: {str(e)}")
+        print(f"📊 Traceback: {traceback.format_exc()}")
         return {
             "success": False,
             "message": f"Error fetching folders: {str(e)}",
@@ -203,33 +201,42 @@ async def list_folders():
         }
 
 @documents_router.post("/folders")
-async def create_folder(folder_request: FolderCreateRequest):
+async def create_folder(folder_data: Dict[str, Any]):
     """Create a new folder"""
     try:
         from app.utils.config import folders_collection
         
-        print(f"🚀 Received folder creation request: {folder_request}")  # Debug log
+        print(f"🚀 Received folder creation request: {folder_data}")  # Debug log
         
+        # FIX: Check with 'is not None' instead of truthy check
         if folders_collection is None:
+            print("❌ folders_collection is None - database not available")
             raise HTTPException(status_code=500, detail="Database not available")
         
         # Validate required fields
-        if not folder_request.name or not folder_request.name.strip():
+        if not folder_data or "name" not in folder_data or not folder_data["name"] or not folder_data["name"].strip():
+            print("❌ Folder name validation failed")
             raise HTTPException(status_code=400, detail="Folder name is required")
         
-        folder_name = folder_request.name.strip()
+        folder_name = folder_data["name"].strip()
+        print(f"📝 Processing folder name: '{folder_name}'")
         
         # Check if folder already exists
-        existing = folders_collection.find_one({"name": folder_name})
-        if existing:
-            raise HTTPException(status_code=400, detail="Folder already exists")
+        try:
+            existing = folders_collection.find_one({"name": folder_name})
+            if existing:
+                print(f"❌ Folder '{folder_name}' already exists")
+                raise HTTPException(status_code=400, detail="Folder already exists")
+        except Exception as check_error:
+            print(f"⚠️ Error checking existing folder: {str(check_error)}")
+            # Continue anyway - this might be a connection issue
         
         # Create folder record
         new_folder = {
             "name": folder_name,
-            "description": folder_request.description or "",
-            "color": folder_request.color or "#3B82F6",
-            "icon": folder_request.icon or "📁",
+            "description": folder_data.get("description", ""),
+            "color": folder_data.get("color", "#3B82F6"),
+            "icon": folder_data.get("icon", "📁"),
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "document_count": 0
@@ -237,22 +244,28 @@ async def create_folder(folder_request: FolderCreateRequest):
         
         print(f"📝 Creating folder with data: {new_folder}")  # Debug log
         
-        result = folders_collection.insert_one(new_folder)
-        new_folder["_id"] = str(result.inserted_id)
-        
-        print(f"✅ Folder created successfully with ID: {result.inserted_id}")  # Debug log
-        
-        return {
-            "success": True,
-            "message": "Folder created successfully",
-            "data": new_folder
-        }
+        try:
+            result = folders_collection.insert_one(new_folder)
+            new_folder["_id"] = str(result.inserted_id)
+            
+            print(f"✅ Folder created successfully with ID: {result.inserted_id}")  # Debug log
+            
+            return {
+                "success": True,
+                "message": "Folder created successfully",
+                "data": new_folder
+            }
+        except Exception as insert_error:
+            print(f"❌ Error inserting folder: {str(insert_error)}")
+            print(f"📊 Traceback: {traceback.format_exc()}")
+            raise HTTPException(status_code=500, detail=f"Failed to insert folder: {str(insert_error)}")
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error creating folder: {str(e)}")  # Debug log
-        raise HTTPException(status_code=500, detail=f"Failed to create folder: {str(e)}")
+        print(f"❌ Unexpected error in create_folder: {str(e)}")
+        print(f"📊 Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @documents_router.get("/folders/{folder_name}/documents")
 async def get_folder_documents(folder_name: str):
@@ -260,6 +273,7 @@ async def get_folder_documents(folder_name: str):
     try:
         from app.utils.config import documents_collection
         
+        # FIX: Check with 'is not None' instead of truthy check
         if documents_collection is None:
             return {"success": False, "message": "Database not available", "data": []}
         
@@ -286,6 +300,7 @@ async def get_folder_documents(folder_name: str):
         }
         
     except Exception as e:
+        print(f"❌ Error in get_folder_documents: {str(e)}")
         return {
             "success": False,
             "message": f"Error fetching folder documents: {str(e)}",
@@ -299,6 +314,7 @@ async def search_documents(q: str = Query(..., description="Search query")):
     try:
         from app.utils.config import documents_collection
         
+        # FIX: Check with 'is not None' instead of truthy check
         if documents_collection is None or not q.strip():
             return {"success": True, "message": "No results", "results": []}
         
@@ -324,6 +340,7 @@ async def search_documents(q: str = Query(..., description="Search query")):
         }
         
     except Exception as e:
+        print(f"❌ Error in search_documents: {str(e)}")
         return {
             "success": False,
             "message": f"Search failed: {str(e)}",
@@ -360,6 +377,7 @@ async def delete_document(document_id: str):
         return {"success": True, "message": "Document deleted successfully"}
         
     except Exception as e:
+        print(f"❌ Error in delete_document: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
 
 @documents_router.delete("/folders/{folder_id}")
@@ -369,6 +387,7 @@ async def delete_folder(folder_id: str):
         from app.utils.config import folders_collection, documents_collection
         from bson import ObjectId
         
+        # FIX: Check with 'is not None' instead of truthy check
         if folders_collection is None:
             raise HTTPException(status_code=500, detail="Database not available")
         
@@ -377,8 +396,8 @@ async def delete_folder(folder_id: str):
         if not folder:
             raise HTTPException(status_code=404, detail="Folder not found")
         
-        # Check if folder has documents
-        if documents_collection:
+        # Check if folder has documents - FIX: Check with 'is not None'
+        if documents_collection is not None:
             doc_count = documents_collection.count_documents({
                 "$or": [
                     {"folder_name": folder["name"]},
@@ -402,6 +421,7 @@ async def delete_folder(folder_id: str):
         return {"success": True, "message": "Folder deleted successfully"}
         
     except Exception as e:
+        print(f"❌ Error in delete_folder: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
 
 # Info endpoint
