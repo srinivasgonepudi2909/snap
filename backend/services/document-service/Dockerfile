@@ -14,7 +14,8 @@ ENV PYTHONUNBUFFERED=1
 # -----------------------
 RUN apt-get update \
     && apt-get install -y curl build-essential \
-    && rm -rf /var/lib/apt/lists/*
+    && curl -sSL https://install.python-poetry.org | python3 - \
+    && ln -s /root/.local/bin/poetry /usr/local/bin/poetry
 
 # -----------------------
 # Set work directory
@@ -22,17 +23,18 @@ RUN apt-get update \
 WORKDIR /app
 
 # -----------------------
-# Copy requirements first for better caching
+# Copy pyproject.toml first for dependency caching
 # -----------------------
-COPY requirements.txt /app/
+COPY pyproject.toml /app/
 
 # -----------------------
-# Install Python dependencies
+# Install dependencies
 # -----------------------
-RUN pip install --no-cache-dir -r requirements.txt
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi
 
 # -----------------------
-# Copy entire project
+# Copy entire project after dependencies
 # -----------------------
 COPY . /app
 
