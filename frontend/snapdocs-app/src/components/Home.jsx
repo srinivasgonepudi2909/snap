@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
          FileText, Users, Award, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 
 const Home = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const navigate = useNavigate();
   const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeModal, setActiveModal] = useState('login');
@@ -184,20 +183,20 @@ const Home = () => {
         });
 
         const data = await response.json();
-        if (response.ok) {
-          localStorage.setItem('token', data.access_token);
-          localStorage.setItem('username', data.username || 'User');
-          setUserEmail(localEmail);
-          setUsername(data.username || 'User');
-          showMessage(`Welcome back, ${data.username || 'User'}!`);
-          setIsLoginOpen(false);
-          setLocalEmail('');
-          setLocalPassword('');
-        } else {
-          setLocalError(data.detail || 'Login failed. Please check your credentials.');
-        }
-      } catch (error) {
-        setLocalError('Network error. Please check your connection and try again.');
+if (response.ok) {
+  localStorage.setItem('token', data.access_token);
+  localStorage.setItem('username', data.username || 'User');
+  setUserEmail(localEmail);
+  setUsername(data.username || 'User');
+  showMessage(`Welcome back, ${data.username || 'User'}!`);
+  setIsLoginOpen(false);
+  setLocalEmail('');
+  setLocalPassword('');
+  
+  // Add this line to navigate to dashboard after login
+  navigate('/dashboard');
+} else {
+  setLocalError(data.detail || 'Login failed. Please check your credentials.');
       } finally {
         setLocalLoading(false);
       }
