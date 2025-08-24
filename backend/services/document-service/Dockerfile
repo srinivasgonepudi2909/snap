@@ -1,14 +1,15 @@
 # -----------------------
 # Base image with Python
 # -----------------------
-FROM python:3.9-slim
+FROM python:3.9.19-slim-bullseye
 
 # -----------------------
 # Set environment vars
 # -----------------------
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV POETRY_VERSION=1.8.2
+ENV PIP_NO_CACHE_DIR=off
+ENV PIP_DISABLE_PIP_VERSION_CHECK=on
 
 # -----------------------
 # Install system deps
@@ -18,9 +19,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # -----------------------
-# Install poetry with pip (more reliable)
+# Install poetry with pip
 # -----------------------
-RUN pip install --no-cache-dir "poetry==$POETRY_VERSION"
+RUN pip install --no-cache-dir poetry==1.8.2
 
 # -----------------------
 # Set work directory
@@ -36,6 +37,7 @@ COPY pyproject.toml poetry.lock* /app/
 # Configure poetry and install dependencies
 # -----------------------
 RUN poetry config virtualenvs.create false \
+    && poetry config experimental.new-installer false \
     && poetry install --no-interaction --no-ansi --no-root
 
 # -----------------------
