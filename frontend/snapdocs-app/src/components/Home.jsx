@@ -153,18 +153,20 @@ const Home = () => {
     </header>
   );
 
-  // Login Modal Component (Isolated Version)
+  // Login Modal Component with Updated Success Handling
   const LoginModal = () => {
     const [localEmail, setLocalEmail] = React.useState('');
     const [localPassword, setLocalPassword] = React.useState('');
     const [localShowPassword, setLocalShowPassword] = React.useState(false);
     const [localLoading, setLocalLoading] = React.useState(false);
     const [localError, setLocalError] = React.useState('');
+    const [localSuccess, setLocalSuccess] = React.useState(''); // Add success state
 
     const handleLocalSubmit = async (e) => {
       e.preventDefault();
       setLocalLoading(true);
       setLocalError('');
+      setLocalSuccess(''); // Clear previous success message
 
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
@@ -179,10 +181,17 @@ const Home = () => {
           localStorage.setItem('username', data.username || 'User');
           setUserEmail(localEmail);
           setUsername(data.username || 'User');
-          alert(`✅ Welcome back, ${data.username || 'User'}!`);
-          setIsLoginOpen(false);
-          setLocalEmail('');
-          setLocalPassword('');
+          
+          // Show inline success message instead of alert
+          setLocalSuccess(`✅ Welcome back, ${data.username || 'User'}!`);
+          
+          // Close modal after a short delay to show success message
+          setTimeout(() => {
+            setIsLoginOpen(false);
+            setLocalEmail('');
+            setLocalPassword('');
+            setLocalSuccess('');
+          }, 2000);
         } else {
           setLocalError(data.detail || 'Login failed. Please check your credentials.');
         }
@@ -204,11 +213,21 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Welcome Back</h2>
             <p className="text-gray-400">Login to access your digital vault</p>
           </div>
+          
+          {/* Success Message */}
+          {localSuccess && (
+            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4">
+              {localSuccess}
+            </div>
+          )}
+          
+          {/* Error Message */}
           {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
               {localError}
             </div>
           )}
+          
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
@@ -247,7 +266,7 @@ const Home = () => {
     ) : null;
   };
 
-  // Signup Modal Component (Now Fully Isolated)
+  // Signup Modal Component with Updated Success Handling
   const SignupModal = () => {
     const [localFirstName, setLocalFirstName] = React.useState('');
     const [localLastName, setLocalLastName] = React.useState('');
@@ -257,6 +276,7 @@ const Home = () => {
     const [localShowPassword, setLocalShowPassword] = React.useState(false);
     const [localLoading, setLocalLoading] = React.useState(false);
     const [localError, setLocalError] = React.useState('');
+    const [localSuccess, setLocalSuccess] = React.useState(''); // Add success state
     const [localCountry, setLocalCountry] = React.useState({ code: '+91', flag: '🇮🇳', name: 'India' });
     const [localCountryOpen, setLocalCountryOpen] = React.useState(false);
 
@@ -264,6 +284,7 @@ const Home = () => {
       e.preventDefault();
       setLocalLoading(true);
       setLocalError('');
+      setLocalSuccess(''); // Clear previous success message
 
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/signup`, {
@@ -278,16 +299,22 @@ const Home = () => {
 
         const data = await response.json();
         if (response.ok) {
-          alert(`✅ Account created successfully! Please login with your credentials.`);
-          setIsSignupOpen(false);
-          setIsLoginOpen(true);
-          setActiveModal('login');
-          // Clear form
-          setLocalFirstName('');
-          setLocalLastName('');
-          setLocalEmail('');
-          setLocalPhoneNumber('');
-          setLocalPassword('');
+          // Show inline success message instead of alert
+          setLocalSuccess('✅ Account created successfully! Redirecting to login...');
+          
+          // Clear form and redirect to login after showing success message
+          setTimeout(() => {
+            setIsSignupOpen(false);
+            setIsLoginOpen(true);
+            setActiveModal('login');
+            // Clear form
+            setLocalFirstName('');
+            setLocalLastName('');
+            setLocalEmail('');
+            setLocalPhoneNumber('');
+            setLocalPassword('');
+            setLocalSuccess('');
+          }, 2000);
         } else {
           setLocalError(data.detail || 'Signup failed. Please try again.');
         }
@@ -309,11 +336,21 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Create Account</h2>
             <p className="text-gray-400">Join thousands securing their documents</p>
           </div>
+          
+          {/* Success Message */}
+          {localSuccess && (
+            <div className="bg-green-600/20 border border-green-500/50 text-green-300 px-4 py-3 rounded-xl mb-4">
+              {localSuccess}
+            </div>
+          )}
+          
+          {/* Error Message */}
           {localError && (
             <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
               {localError}
             </div>
           )}
+          
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
