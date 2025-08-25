@@ -620,8 +620,10 @@ const SearchComponent = ({ onSearchResults }) => {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => searchQuery && setShowResults(true)}
+          onBlur={() => setTimeout(() => setShowResults(false), 200)}
           placeholder="Search documents..."
-          className="pl-10 pr-4 py-2 w-64 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:w-80 transition-all duration-300"
+          className="pl-10 pr-4 py-2 w-64 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:w-80 transition-all duration-300"
         />
         {isSearching && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -916,7 +918,7 @@ export default function Dashboard() {
   const storagePercentage = (usedStorage / totalStorage) * 100;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
       {/* Notifications */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {notifications.map((notification) => (
@@ -946,7 +948,7 @@ export default function Dashboard() {
 
       <div className="flex h-screen">
         {/* Sidebar */}
-        <aside className="w-64 bg-blue-600 flex flex-col">
+        <aside className="w-64 bg-gray-900/50 backdrop-blur-sm border-r border-white/10 flex flex-col">
           <div className="p-6 flex-1">
             <div className="flex items-center space-x-3 mb-8">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -959,36 +961,29 @@ export default function Dashboard() {
               <button 
                 onClick={handleBackToDashboard}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  viewMode === 'dashboard' 
-                    ? 'text-blue-600 bg-white' 
-                    : 'text-white hover:bg-blue-700'
+                  viewMode === 'dashboard' ? 'text-white bg-blue-600/20' : 'text-gray-300 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <Home className="w-5 h-5" />
                 <span>Dashboard</span>
               </button>
-              
-              <button className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-blue-700 rounded-lg transition-colors text-left">
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-left">
                 <FileText className="w-5 h-5" />
                 <span>All Files ({documents.length})</span>
               </button>
-              
-              <button className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-blue-700 rounded-lg transition-colors text-left">
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-left">
                 <Folder className="w-5 h-5" />
                 <span>Folders ({folders.length})</span>
               </button>
-              
-              <button className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-blue-700 rounded-lg transition-colors text-left">
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-left">
                 <Star className="w-5 h-5" />
                 <span>Favorites</span>
               </button>
-              
-              <button className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-blue-700 rounded-lg transition-colors text-left">
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-left">
                 <Share className="w-5 h-5" />
                 <span>Shared</span>
               </button>
-              
-              <button className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-blue-700 rounded-lg transition-colors text-left">
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-left">
                 <Trash2 className="w-5 h-5" />
                 <span>Trash</span>
               </button>
@@ -996,19 +991,19 @@ export default function Dashboard() {
           </div>
 
           {/* User Profile at bottom */}
-          <div className="p-6 border-t border-blue-500">
+          <div className="p-6 border-t border-white/10">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-white font-semibold truncate">{username}</div>
-                <div className="text-blue-100 text-sm truncate">{userEmail}</div>
+                <div className="text-gray-400 text-sm truncate">{userEmail}</div>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-2 text-white hover:bg-blue-700 transition-colors w-full p-2 rounded-lg"
+              className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors w-full p-2 rounded-lg hover:bg-white/10"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
@@ -1019,7 +1014,7 @@ export default function Dashboard() {
         {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <header className="bg-white border-b border-gray-200 p-6 flex-shrink-0">
+          <header className="bg-white/10 backdrop-blur-sm border-b border-white/10 p-6 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {viewMode === 'folder' && (
@@ -1030,13 +1025,13 @@ export default function Dashboard() {
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                 )}
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-white">
                   {viewMode === 'folder' && selectedFolder 
                     ? `${selectedFolder.icon} ${selectedFolder.name}`
                     : `Welcome back, ${username}! 👋`
                   }
                 </h1>
-              </div
+              </div>
               
               <div className="flex items-center space-x-4">
                 <SearchComponent />
@@ -1054,32 +1049,32 @@ export default function Dashboard() {
                 <>
                   {/* Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:scale-105 transition-transform duration-200">
                       <div className="flex items-center">
-                        <FileText className="w-8 h-8 text-blue-600 mr-4" />
+                        <FileText className="w-8 h-8 text-blue-400 mr-4" />
                         <div>
-                          <div className="text-2xl font-bold text-gray-900">{documents.length}</div>
-                          <div className="text-gray-600">Total Documents</div>
+                          <div className="text-2xl font-bold text-white">{documents.length}</div>
+                          <div className="text-gray-400">Total Documents</div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:scale-105 transition-transform duration-200">
                       <div className="flex items-center">
                         <Folder className="w-8 h-8 text-purple-400 mr-4" />
                         <div>
-                          <div className="text-2xl font-bold text-gray-900">{folders.length}</div>
-                          <div className="text-gray-600">Folders</div>
+                          <div className="text-2xl font-bold text-white">{folders.length}</div>
+                          <div className="text-gray-400">Folders</div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:scale-105 transition-transform duration-200">
                       <div className="flex items-center">
                         <Upload className="w-8 h-8 text-green-400 mr-4" />
                         <div>
-                          <div className="text-2xl font-bold text-gray-900">{recentUploads.length}</div>
-                          <div className="text-gray-600">Recent Uploads</div>
+                          <div className="text-2xl font-bold text-white">{recentUploads.length}</div>
+                          <div className="text-gray-400">Recent Uploads</div>
                         </div>
                       </div>
                     </div>
@@ -1091,7 +1086,7 @@ export default function Dashboard() {
                       <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
                         <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded"></div>
                         <span>Quick Actions</span>
-                      </h2
+                      </h2>
                       
                       {/* Upload Area */}
                       <FileUploader onFileUpload={refetch} selectedFolder={selectedFolder?.name} />
@@ -1300,7 +1295,7 @@ export default function Dashboard() {
                             <p className="text-gray-300 mt-2">{selectedFolder.description}</p>
                           )}
                         </div>
-                      </div
+                      </div>
                       
                       <div className="flex items-center space-x-3">
                         <button className="p-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors">
