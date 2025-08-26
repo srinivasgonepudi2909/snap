@@ -1,5 +1,5 @@
-// components/dashboard/SearchComponent.jsx - FIXED WITH WORKING RESULTS
-import React, { useState, useEffect, useMemo } from 'react';
+// components/dashboard/SearchComponent.jsx - UPDATED SIMPLIFIED VERSION
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 
 const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
@@ -12,82 +12,53 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
     size: ''
   });
 
-  console.log('SearchComponent received documents:', documents.length);
-  console.log('Search query:', searchQuery);
-  console.log('Sample document:', documents[0]);
-
   // Perform search when query or filters change
-  const searchResults = useMemo(() => {
-    console.log('🔍 Performing search...');
-    
-    // If no search query and no filters, return empty array
+  useEffect(() => {
+    performSearch();
+  }, [searchQuery, filters, documents]);
+
+  const performSearch = () => {
     if (!searchQuery.trim() && !hasActiveFilters()) {
-      console.log('No query or filters, returning empty results');
-      return [];
+      onSearchResults([]);
+      return;
     }
 
     let results = [...documents];
-    console.log('Starting with documents:', results.length);
 
     // Text search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      console.log('Searching for:', query);
-      
-      results = results.filter(doc => {
-        const name = (doc.name || doc.original_name || '').toLowerCase();
-        const folderName = (doc.folder_name || doc.folder_id || '').toLowerCase();
-        
-        const matches = name.includes(query) || folderName.includes(query);
-        
-        if (matches) {
-          console.log('Match found:', doc.name || doc.original_name);
-        }
-        
-        return matches;
-      });
-      
-      console.log('After text search:', results.length, 'results');
+      results = results.filter(doc =>
+        (doc.name || '').toLowerCase().includes(query) ||
+        (doc.original_name || '').toLowerCase().includes(query) ||
+        (doc.folder_name || '').toLowerCase().includes(query)
+      );
     }
 
     // File type filter
     if (filters.fileType) {
-      console.log('Applying file type filter:', filters.fileType);
       results = results.filter(doc => {
-        const fileName = doc.name || doc.original_name || '';
-        const fileExt = fileName.split('.').pop()?.toLowerCase();
-        
+        const fileExt = (doc.name || doc.original_name || '').split('.').pop()?.toLowerCase();
         switch (filters.fileType) {
-          case 'pdf': 
-            return fileExt === 'pdf';
-          case 'doc': 
-            return ['doc', 'docx'].includes(fileExt);
-          case 'image': 
-            return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileExt);
-          case 'excel': 
-            return ['xls', 'xlsx'].includes(fileExt);
-          case 'powerpoint': 
-            return ['ppt', 'pptx'].includes(fileExt);
-          default: 
-            return true;
+          case 'pdf': return fileExt === 'pdf';
+          case 'doc': return ['doc', 'docx'].includes(fileExt);
+          case 'image': return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+          case 'excel': return ['xls', 'xlsx'].includes(fileExt);
+          case 'powerpoint': return ['ppt', 'pptx'].includes(fileExt);
+          default: return true;
         }
       });
-      console.log('After file type filter:', results.length, 'results');
     }
 
     // Folder filter
     if (filters.folder) {
-      console.log('Applying folder filter:', filters.folder);
-      results = results.filter(doc => {
-        const docFolder = doc.folder_name || doc.folder_id || 'General';
-        return docFolder === filters.folder;
-      });
-      console.log('After folder filter:', results.length, 'results');
+      results = results.filter(doc => 
+        (doc.folder_name || doc.folder_id || 'General') === filters.folder
+      );
     }
 
     // Date range filter
     if (filters.dateRange) {
-      console.log('Applying date filter:', filters.dateRange);
       const now = new Date();
       let cutoffDate;
       
@@ -109,18 +80,14 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
       }
 
       if (cutoffDate) {
-        results = results.filter(doc => {
-          if (!doc.created_at) return false;
-          const docDate = new Date(doc.created_at);
-          return docDate >= cutoffDate;
-        });
+        results = results.filter(doc => 
+          doc.created_at && new Date(doc.created_at) >= cutoffDate
+        );
       }
-      console.log('After date filter:', results.length, 'results');
     }
 
     // Size filter
     if (filters.size) {
-      console.log('Applying size filter:', filters.size);
       results = results.filter(doc => {
         const size = doc.file_size || 0;
         switch (filters.size) {
@@ -130,27 +97,19 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           default: return true;
         }
       });
-      console.log('After size filter:', results.length, 'results');
     }
 
-    console.log('Final search results:', results.length);
-    return results;
-  }, [searchQuery, filters, documents]);
-
-  // Update search results when they change
-  useEffect(() => {
-    console.log('Sending search results to parent:', searchResults.length);
-    onSearchResults(searchResults);
-  }, [searchResults, onSearchResults]);
+    onSearchResults(results);
+  };
 
   const hasActiveFilters = () => {
     return Object.values(filters).some(value => value !== '');
   };
 
   const clearSearch = () => {
-    console.log('Clearing search');
     setSearchQuery('');
     setFilters({ fileType: '', folder: '', dateRange: '', size: '' });
+    onSearchResults([]);
   };
 
   const clearFilters = () => {
@@ -158,14 +117,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
   };
 
   // Get unique folder names for filter dropdown
-  const uniqueFolders = useMemo(() => {
-    const folderSet = new Set();
-    documents.forEach(doc => {
-      const folderName = doc.folder_name || doc.folder_id || 'General';
-      folderSet.add(folderName);
-    });
-    return Array.from(folderSet).sort();
-  }, [documents]);
+  const uniqueFolders = [...new Set(documents.map(doc => doc.folder_name || doc.folder_id || 'General'))];
 
   return (
     <div className="relative">
@@ -176,11 +128,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           type="text"
           placeholder="Search files and folders..."
           value={searchQuery}
-          onChange={(e) => {
-            const value = e.target.value;
-            console.log('Search input changed to:', value);
-            setSearchQuery(value);
-          }}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 px-4 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none"
         />
         {(searchQuery || hasActiveFilters()) && (
@@ -194,7 +142,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
         )}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`p-3 border-l border-white/20 transition-colors relative ${
+          className={`p-3 border-l border-white/20 transition-colors ${
             hasActiveFilters() ? 'text-blue-400 bg-blue-600/20' : 'text-gray-400 hover:text-white'
           }`}
           title="Filters"
@@ -337,7 +285,6 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               {hasActiveFilters() && (
                 <span className="ml-2">({Object.values(filters).filter(v => v).length} filters active)</span>
               )}
-              <span className="ml-2 text-blue-200">({searchResults.length} results)</span>
             </span>
             <button 
               onClick={clearSearch}
@@ -346,16 +293,6 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               Clear
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Debug Info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (searchQuery || hasActiveFilters()) && (
-        <div className="mt-2 px-3 py-2 bg-yellow-600/20 border border-yellow-500/30 rounded-lg text-xs text-yellow-300">
-          <div>Debug: Query="{searchQuery}" | Documents={documents.length} | Results={searchResults.length}</div>
-          {searchResults.length > 0 && (
-            <div>Sample result: {searchResults[0]?.name || searchResults[0]?.original_name}</div>
-          )}
         </div>
       )}
     </div>
