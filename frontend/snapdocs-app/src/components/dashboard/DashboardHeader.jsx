@@ -1,7 +1,6 @@
-// components/dashboard/DashboardHeader.jsx
+// components/dashboard/DashboardHeader.jsx - SIMPLIFIED WITHOUT SEARCH
 import React from 'react';
 import { ArrowLeft, Settings, Menu, X } from 'lucide-react';
-import SearchComponent from './SearchComponent';
 
 const DashboardHeader = ({ 
   viewMode, 
@@ -33,56 +32,39 @@ const DashboardHeader = ({
 
   return (
     <header className="sticky top-0 bg-white/10 backdrop-blur-sm border-b border-white/10 p-4 md:p-6 flex-shrink-0 z-40">
-      <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'items-center justify-between'} w-full`}>
+      <div className="flex items-center justify-between w-full">
         
-        {/* Top Row: Mobile Menu + Title + Back Button */}
-        <div className="flex items-center justify-between w-full space-x-4">
-          <div className="flex items-center space-x-3">
-            {isMobile && (
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
-              >
-                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            )}
-
-            {showBackButton && (
-              <button 
-                onClick={onBackToDashboard}
-                className="p-2 text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-
-            <h1 className="text-xl md:text-3xl font-bold text-white truncate">
-              {getHeaderTitle()}
-            </h1>
-          </div>
-
-          {!isMobile && (
-            <div className="flex items-center space-x-4">
-              <SearchComponent />
-              <button className="p-2 text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
-            </div>
+        {/* Left Side: Menu + Back Button + Title */}
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           )}
+
+          {showBackButton && (
+            <button 
+              onClick={onBackToDashboard}
+              className="p-2 text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+
+          <h1 className="text-lg md:text-3xl font-bold text-white truncate">
+            {getHeaderTitle()}
+          </h1>
         </div>
 
-        {/* Bottom Row for Mobile: Search and Settings */}
-        {isMobile && (
-          <div className="flex items-center justify-between w-full">
-            {/* Optional: Uncomment to enable mobile search */}
-            {/* <div className="flex-1">
-              <SearchComponent />
-            </div> */}
-            <button className="p-2 text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
-              <Settings className="w-5 h-5" />
-            </button>
-          </div>
-        )}
+        {/* Right Side: Settings */}
+        <div className="flex items-center space-x-4 flex-shrink-0">
+          <button className="p-3 text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </header>
   );

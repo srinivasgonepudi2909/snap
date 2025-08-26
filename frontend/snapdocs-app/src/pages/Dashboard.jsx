@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx
+// pages/Dashboard.jsx - UPDATED WITH SEARCHCOMPONENT
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -11,7 +11,7 @@ import DashboardHeader from '../components/dashboard/DashboardHeader';
 import DashboardViews from '../components/dashboard/DashboardViews';
 import CreateFolderModal from '../components/dashboard/CreateFolderModal';
 import Notifications from '../components/dashboard/Notifications';
-import AdvancedSearch from '../components/dashboard/AdvancedSearch';
+import SearchComponent from '../components/dashboard/SearchComponent';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,7 +23,9 @@ const Dashboard = () => {
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [viewMode, setViewMode] = useState('dashboard');
   const [notifications, setNotifications] = useState([]);
-  const [searchResults, setSearchResults] = useState(null);
+  
+  // Search state
+  const [searchResults, setSearchResults] = useState([]);
 
   const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
 
@@ -64,6 +66,11 @@ const Dashboard = () => {
     fetchUserInfo();
   }, [navigate]);
 
+  // Handle search results
+  const handleSearchResults = (results) => {
+    setSearchResults(results);
+  };
+
   const showNotification = (message, type = 'success') => {
     const id = Date.now();
     setNotifications(prev => [...prev, { id, message, type }]);
@@ -85,6 +92,7 @@ const Dashboard = () => {
 
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
+    setSearchResults([]); // Clear search when changing views
     if (mode === 'dashboard') setSelectedFolder(null);
     if (isMobile) setSidebarOpen(false);
   };
@@ -92,12 +100,14 @@ const Dashboard = () => {
   const handleFolderClick = (folder) => {
     setSelectedFolder(folder);
     setViewMode('folder');
+    setSearchResults([]); // Clear search when entering folder
     if (isMobile) setSidebarOpen(false);
   };
 
   const handleBackToDashboard = () => {
     setSelectedFolder(null);
     setViewMode('dashboard');
+    setSearchResults([]); // Clear search when going back
   };
 
   const handleFileAction = async (action, file) => {
@@ -107,6 +117,7 @@ const Dashboard = () => {
         break;
       case 'download':
         showNotification(`Downloading ${file.name}`, 'info');
+        // Add actual download logic here
         break;
       case 'delete':
         if (window.confirm(`Are you sure you want to delete ${file.name}?`)) {
@@ -165,6 +176,13 @@ const Dashboard = () => {
     }
   };
 
+  // Get current documents to display based on search results
+  const getCurrentDocuments = () => {
+    return searchResults.length > 0 ? searchResults : documents;
+  };
+
+  const hasSearchResults = searchResults.length > 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
       <Notifications notifications={notifications} />
@@ -209,34 +227,36 @@ const Dashboard = () => {
             </div>
           )}
 
-          {!isMobile && (
-            <DashboardHeader
-              viewMode={viewMode}
-              selectedFolder={selectedFolder}
-              username={username}
-              onBackToDashboard={handleBackToDashboard}
-              isMobile={isMobile}
-              sidebarOpen={sidebarOpen}
-              setSidebarOpen={setSidebarOpen}
-            />
-          )}
+          <DashboardHeader
+            viewMode={viewMode}
+            selectedFolder={selectedFolder}
+            username={username}
+            onBackToDashboard={handleBackToDashboard}
+            isMobile={isMobile}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+          />
 
           <div className="flex-1 overflow-y-auto">
-            <div className="p-6">
-              <AdvancedSearch
+            <div className="p-6 space-y-6">
+              {/* Search Component */}
+              <SearchComponent
                 documents={documents}
                 folders={folders}
-                onSearchResults={(res) => setSearchResults(res)}
+                onSearchResults={handleSearchResults}
               />
 
+              {/* Main Content */}
               <DashboardViews
                 viewMode={viewMode}
-                documents={searchResults || documents}
+                documents={getCurrentDocuments()}
                 folders={folders}
                 selectedFolder={selectedFolder}
                 loading={loading}
                 error={error}
                 recentUploads={recentUploads}
+                searchQuery={hasSearchResults ? 'search-active' : ''}
+                searchResults={searchResults}
                 onViewModeChange={handleViewModeChange}
                 onFolderClick={handleFolderClick}
                 onCreateFolder={() => setCreateFolderOpen(true)}
