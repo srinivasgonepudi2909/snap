@@ -99,8 +99,13 @@ const FolderGrid = ({
               </div>
               
               <div className="text-center">
-                <div className="text-xs text-gray-500 bg-white/5 rounded-full px-3 py-1 inline-block">
-                  Created {new Date(folder.created_at).toLocaleDateString()}
+                <div className="text-sm text-gray-300 bg-white/10 border border-white/20 rounded-lg px-3 py-2 inline-flex items-center gap-2">
+                  <span>📅</span>
+                  {new Date(folder.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
                 </div>
               </div>
             </div>
