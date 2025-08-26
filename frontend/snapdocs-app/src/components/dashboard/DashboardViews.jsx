@@ -1,11 +1,14 @@
 // components/dashboard/DashboardViews.jsx
 import React from 'react';
+import PropTypes from 'prop-types';
 import { FileText, Folder, Upload, Plus, Eye, Download, Trash2, AlertCircle } from 'lucide-react';
 import StatsCards from './StatsCards';
 import FolderGrid from './FolderGrid';
 import ActivityPanel from './ActivityPanel';
 import FileUploader from './FileUploader';
 import FileList from './FileList';
+import useFilePreview from '../../hooks/useFilePreview';
+import FilePreviewModal from './FilePreviewModal';
 
 const DashboardViews = ({
   viewMode,
@@ -25,9 +28,65 @@ const DashboardViews = ({
   formatDate,
   getFileIcon
 }) => {
+  // Initialize preview hook
+  const {
+    isPreviewOpen,
+    currentFile,
+    currentIndex,
+    openPreview,
+    closePreview,
+    navigatePreview
+  } = useFilePreview();
+
   // Calculate storage usage (mock data for now)
   const totalStorage = 15 * 1024 * 1024 * 1024; // 15GB
   const usedStorage = documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
+
+  // File action handler with preview support
+  const handleFileAction = (action, file) => {
+    if (action === 'preview') {
+      // Pass the appropriate file list based on current view
+      const fileList = viewMode === 'folder' 
+        ? documents.filter(d => d.folder_id === selectedFolder?._id)
+        : viewMode === 'recent-uploads'
+          ? recentUploads
+          : documents;
+          
+      openPreview(file, fileList);
+    } else {
+      onFileAction(action, file);
+    }
+  };
+
+  // Reusable file actions component
+  const FileActions = ({ file }) => (
+    <div className="flex items-center space-x-2">
+      <button
+        onClick={() => handleFileAction('preview', file)}
+        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 
+                   rounded-lg transition-colors"
+        title="Preview file"
+      >
+        <Eye className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => handleFileAction('download', file)}
+        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 
+                   rounded-lg transition-colors"
+        title="Download file"
+      >
+        <Download className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => handleFileAction('delete', file)}
+        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 
+                   rounded-lg transition-colors"
+        title="Delete file"
+      >
+        <Trash2 className="w-5 h-5" />
+      </button>
+    </div>
+  );
 
   switch (viewMode) {
     case 'dashboard':
@@ -412,6 +471,25 @@ const DashboardViews = ({
     default:
       return null;
   }
+};
+
+DashboardViews.propTypes = {
+  viewMode: PropTypes.string.isRequired,
+  documents: PropTypes.array.isRequired,
+  folders: PropTypes.array.isRequired,
+  selectedFolder: PropTypes.object,
+  loading: PropTypes.bool.isRequired,
+  error: PropTypes.object,
+  recentUploads: PropTypes.array.isRequired,
+  onViewModeChange: PropTypes.func.isRequired,
+  onFolderClick: PropTypes.func.isRequired,
+  onCreateFolder: PropTypes.func.isRequired,
+  onRefetch: PropTypes.func.isRequired,
+  onForceRefresh: PropTypes.func.isRequired,
+  onFileAction: PropTypes.func.isRequired,
+  formatFileSize: PropTypes.func.isRequired,
+  formatDate: PropTypes.func.isRequired,
+  getFileIcon: PropTypes.func.isRequired,
 };
 
 export default DashboardViews;

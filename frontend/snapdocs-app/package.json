@@ -6,7 +6,8 @@
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "react-router-dom": "^6.8.0",
-    "lucide-react": "^0.263.1"
+    "lucide-react": "^0.263.1",
+    "react-pdf": "^7.3.4"
   },
   "scripts": {
     "start": "react-scripts start",

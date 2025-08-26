@@ -14,35 +14,54 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #1f2937 0%, #7c3aed 50%, #8b5cf6 100%);
   min-height: 100vh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+/* Smooth scroll */
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Desktop */
 ::-webkit-scrollbar {
   width: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.1);
 }
-
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Page transitions */
+/* Touch-friendly area for buttons/icons */
+.touch-friendly {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Grid layout for mobile screens */
+.mobile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+/* Sidebar animation */
+.sidebar-transition {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Page enter transition */
 .page-transition {
   animation: pageEnter 0.6s ease-out;
 }
-
 @keyframes pageEnter {
   from {
     opacity: 0;
@@ -51,5 +70,31 @@ html {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  body {
+    font-size: 15px;
+    line-height: 1.4;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Scrollbar thinner on mobile */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Ensure tap targets are large enough */
+  button,
+  a,
+  input,
+  .touch-friendly {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
