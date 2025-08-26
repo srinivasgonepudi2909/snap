@@ -1,4 +1,4 @@
-// components/DashboardViews.jsx
+// components/dashboard/DashboardViews.jsx
 import React from 'react';
 import { FileText, Folder, Upload, Plus, Eye, Download, Trash2, AlertCircle } from 'lucide-react';
 import StatsCards from './StatsCards';

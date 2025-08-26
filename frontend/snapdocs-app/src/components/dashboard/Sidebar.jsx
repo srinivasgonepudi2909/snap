@@ -1,4 +1,3 @@
-// components/Sidebar.jsx
 import React from 'react';
 import { Home, FileText, Folder, Star, Share, Trash2, User, LogOut } from 'lucide-react';
 

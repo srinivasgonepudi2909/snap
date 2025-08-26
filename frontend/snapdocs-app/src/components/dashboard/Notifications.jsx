@@ -1,6 +1,5 @@
-// components/Notifications.jsx
 import React from 'react';
-import { AlertCircle, Eye } from 'lucide-react';
+import { AlertCircle, Eye, X } from 'lucide-react';
 
 const Notifications = ({ notifications }) => {
   if (notifications.length === 0) return null;

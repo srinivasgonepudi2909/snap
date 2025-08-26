@@ -1,4 +1,3 @@
-// components/DashboardHeader.jsx
 import React from 'react';
 import { ArrowLeft, Settings } from 'lucide-react';
 import SearchComponent from './SearchComponent';

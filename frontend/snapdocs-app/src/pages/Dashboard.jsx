@@ -1,16 +1,16 @@
-// pages/Dashboard.jsx (Modularized Version)
+// pages/Dashboard.jsx (Final Version with Fixed Imports)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Import custom hooks
 import { useDocuments } from '../hooks/useDocuments';
 
-// Import components
-import Sidebar from '../components/Sidebar';
-import DashboardHeader from '../components/DashboardHeader';
-import DashboardViews from '../components/DashboardViews';
-import CreateFolderModal from '../components/CreateFolderModal';
-import Notifications from '../components/Notifications';
+// Import dashboard components
+import Sidebar from '../components/dashboard/Sidebar';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
+import DashboardViews from '../components/dashboard/DashboardViews';
+import CreateFolderModal from '../components/dashboard/CreateFolderModal';
+import Notifications from '../components/dashboard/Notifications';
 
 const Dashboard = () => {
   const navigate = useNavigate();
