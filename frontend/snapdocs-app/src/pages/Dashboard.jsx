@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx - UPDATED WITH SEARCHCOMPONENT
+// pages/Dashboard.jsx - FIXED WITH PROPER SEARCH INTEGRATION
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -24,10 +24,19 @@ const Dashboard = () => {
   const [viewMode, setViewMode] = useState('dashboard');
   const [notifications, setNotifications] = useState([]);
   
-  // Search state
+  // Search state - FIXED
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
+
+  // Debug: Log documents when they change
+  useEffect(() => {
+    console.log('📊 Dashboard documents updated:', documents.length);
+    documents.forEach(doc => {
+      console.log('📄 Document:', doc.name || doc.original_name, 'Folder:', doc.folder_name || doc.folder_id);
+    });
+  }, [documents]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -66,9 +75,23 @@ const Dashboard = () => {
     fetchUserInfo();
   }, [navigate]);
 
-  // Handle search results
+  // Handle search results - FIXED
   const handleSearchResults = (results) => {
+    console.log('🔍 Dashboard received search results:', results.length);
+    console.log('📋 Search results:', results.map(r => r.name || r.original_name));
+    
     setSearchResults(results);
+    setIsSearchActive(results.length > 0);
+    
+    // If we have search results, switch to show them
+    if (results.length > 0 && viewMode === 'dashboard') {
+      // Don't change view mode, just mark search as active
+      console.log('✅ Search results available, showing search results');
+    } else if (results.length === 0) {
+      // Clear search results
+      setIsSearchActive(false);
+      console.log('❌ No search results, clearing search state');
+    }
   };
 
   const showNotification = (message, type = 'success') => {
@@ -91,36 +114,50 @@ const Dashboard = () => {
   };
 
   const handleViewModeChange = (mode) => {
+    console.log('🔄 Changing view mode to:', mode);
     setViewMode(mode);
-    setSearchResults([]); // Clear search when changing views
+    
+    // Clear search when changing views
+    setSearchResults([]);
+    setIsSearchActive(false);
+    
     if (mode === 'dashboard') setSelectedFolder(null);
     if (isMobile) setSidebarOpen(false);
   };
 
   const handleFolderClick = (folder) => {
+    console.log('📁 Opening folder:', folder.name);
     setSelectedFolder(folder);
     setViewMode('folder');
-    setSearchResults([]); // Clear search when entering folder
+    
+    // Clear search when entering folder
+    setSearchResults([]);
+    setIsSearchActive(false);
+    
     if (isMobile) setSidebarOpen(false);
   };
 
   const handleBackToDashboard = () => {
+    console.log('🏠 Going back to dashboard');
     setSelectedFolder(null);
     setViewMode('dashboard');
-    setSearchResults([]); // Clear search when going back
+    
+    // Clear search when going back
+    setSearchResults([]);
+    setIsSearchActive(false);
   };
 
   const handleFileAction = async (action, file) => {
     switch (action) {
       case 'view':
-        showNotification(`Viewing ${file.name}`, 'info');
+        showNotification(`Viewing ${file.name || file.original_name}`, 'info');
         break;
       case 'download':
-        showNotification(`Downloading ${file.name}`, 'info');
+        showNotification(`Downloading ${file.name || file.original_name}`, 'info');
         // Add actual download logic here
         break;
       case 'delete':
-        if (window.confirm(`Are you sure you want to delete ${file.name}?`)) {
+        if (window.confirm(`Are you sure you want to delete ${file.name || file.original_name}?`)) {
           try {
             const token = localStorage.getItem('token');
             const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/documents/${file._id}`, {
@@ -129,10 +166,10 @@ const Dashboard = () => {
             });
 
             if (response.ok) {
-              showNotification(`${file.name} deleted`);
+              showNotification(`${file.name || file.original_name} deleted`);
               refetch();
             } else {
-              showNotification(`Failed to delete ${file.name}`, 'error');
+              showNotification(`Failed to delete ${file.name || file.original_name}`, 'error');
             }
           } catch {
             showNotification('Error deleting file', 'error');
@@ -163,25 +200,39 @@ const Dashboard = () => {
   };
 
   const getFileIcon = (fileName) => {
-    const ext = fileName?.split('.').pop()?.toLowerCase();
+    if (!fileName) return '📄';
+    const ext = fileName.split('.').pop()?.toLowerCase();
     switch (ext) {
       case 'pdf': return '📄';
       case 'doc': case 'docx': return '📝';
       case 'xls': case 'xlsx': return '📊';
       case 'ppt': case 'pptx': return '📋';
-      case 'jpg': case 'jpeg': case 'png': case 'gif': return '🖼️';
+      case 'jpg': case 'jpeg': case 'png': case 'gif': case 'webp': case 'svg': return '🖼️';
       case 'zip': case 'rar': return '🗜️';
       case 'txt': return '📃';
+      case 'mp3': case 'wav': case 'flac': return '🎵';
+      case 'mp4': case 'avi': case 'mkv': return '🎬';
       default: return '📄';
     }
   };
 
-  // Get current documents to display based on search results
+  // Get current documents to display based on search state - FIXED
   const getCurrentDocuments = () => {
-    return searchResults.length > 0 ? searchResults : documents;
+    console.log('🔍 getCurrentDocuments - isSearchActive:', isSearchActive, 'searchResults:', searchResults.length, 'total documents:', documents.length);
+    
+    if (isSearchActive && searchResults.length > 0) {
+      console.log('✅ Returning search results');
+      return searchResults;
+    }
+    
+    console.log('✅ Returning all documents');
+    return documents;
   };
 
-  const hasSearchResults = searchResults.length > 0;
+  // Create a search query indicator for the views
+  const getSearchQuery = () => {
+    return isSearchActive ? 'search-active' : '';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
@@ -239,24 +290,44 @@ const Dashboard = () => {
 
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 space-y-6">
-              {/* Search Component */}
+              {/* Search Component - Pass all documents */}
               <SearchComponent
                 documents={documents}
                 folders={folders}
                 onSearchResults={handleSearchResults}
               />
 
+              {/* Search Results Indicator */}
+              {isSearchActive && (
+                <div className="bg-blue-600/20 border border-blue-500/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-blue-300">
+                      🔍 Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSearchResults([]);
+                        setIsSearchActive(false);
+                      }}
+                      className="text-blue-400 hover:text-blue-300 underline"
+                    >
+                      Clear Search
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Main Content */}
               <DashboardViews
                 viewMode={viewMode}
-                documents={getCurrentDocuments()}
+                documents={getCurrentDocuments()} // Pass the correct documents
                 folders={folders}
                 selectedFolder={selectedFolder}
                 loading={loading}
                 error={error}
                 recentUploads={recentUploads}
-                searchQuery={hasSearchResults ? 'search-active' : ''}
-                searchResults={searchResults}
+                searchQuery={getSearchQuery()} // Pass search state
+                searchResults={searchResults} // Pass actual search results
                 onViewModeChange={handleViewModeChange}
                 onFolderClick={handleFolderClick}
                 onCreateFolder={() => setCreateFolderOpen(true)}

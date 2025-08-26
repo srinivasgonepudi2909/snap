@@ -1,4 +1,4 @@
-// components/dashboard/DashboardViews.jsx - COMPLETE UPDATED VERSION
+// components/dashboard/DashboardViews.jsx - FIXED SEARCH RESULTS DISPLAY
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FileText, Folder, Upload, Plus, Eye, Download, Trash2, AlertCircle } from 'lucide-react';
@@ -44,9 +44,19 @@ const DashboardViews = ({
   const totalStorage = 15 * 1024 * 1024 * 1024; // 15GB
   const usedStorage = documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
 
+  // Check if we're showing search results
+  const isSearchActive = searchQuery === 'search-active';
+  
+  // Log for debugging
+  React.useEffect(() => {
+    console.log('🎭 DashboardViews - viewMode:', viewMode, 'documents:', documents.length, 'isSearchActive:', isSearchActive);
+  }, [viewMode, documents.length, isSearchActive]);
+
   // Get files for different contexts
   const getFilesNotInFolders = () => {
-    return documents.filter(doc => 
+    // Use original documents for this calculation, not search results
+    const originalDocuments = searchResults.length > 0 ? searchResults : documents;
+    return originalDocuments.filter(doc => 
       !doc.folder_name || 
       doc.folder_name === 'General' || 
       doc.folder_name === '' ||
@@ -68,9 +78,7 @@ const DashboardViews = ({
         ? documents.filter(d => (d.folder_name || d.folder_id) === selectedFolder?.name)
         : viewMode === 'recent-uploads'
           ? recentUploads
-          : searchQuery && searchResults
-            ? searchResults
-            : documents;
+          : documents; // Use current documents which may include search results
           
       openPreview(file, fileList);
     } else {
@@ -147,90 +155,131 @@ const DashboardViews = ({
     case 'dashboard':
       return (
         <>
-          <StatsCards
-            documentsCount={documents.length}
-            foldersCount={folders.length}
-            recentUploadsCount={recentUploads.length}
-            onViewModeChange={onViewModeChange}
-          />
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Quick Actions */}
-            <div className="lg:col-span-2 space-y-6">
-              <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded"></div>
-                <span>Quick Actions</span>
-              </h2>
-              
-              <FileUploader onFileUpload={onRefetch} selectedFolder={selectedFolder?.name} />
-              
-              <FolderGrid
-                folders={folders}
-                documents={documents}
-                loading={loading}
-                error={error}
-                onFolderClick={onFolderClick}
-                onCreateFolder={onCreateFolder}
-                onForceRefresh={onForceRefresh}
-              />
-
-              {/* Recent Files Section - ADDED */}
+          {/* Show search results if active */}
+          {isSearchActive ? (
+            <div className="space-y-6">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-white flex items-center space-x-2">
-                    <FileText className="w-6 h-6 text-green-400" />
-                    <span>Recent Files</span>
-                  </h3>
-                  {documents.length > 5 && (
-                    <button
-                      onClick={() => onViewModeChange('all-documents')}
-                      className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
-                    >
-                      View All →
-                    </button>
-                  )}
-                </div>
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span>Search Results ({documents.length})</span>
+                </h2>
                 
-                {getRecentFiles().length > 0 ? (
+                {documents.length > 0 ? (
                   <div className="space-y-3">
-                    {getRecentFiles().slice(0, 5).map((doc, index) => (
+                    {documents.map((doc, index) => (
                       <FileRow key={doc._id || index} doc={doc} showFolder={true} />
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <div className="text-white font-semibold mb-2">No files yet</div>
-                    <div className="text-gray-400">Upload your first file to see it here</div>
+                  <div className="text-center py-16">
+                    <div className="w-24 h-24 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <div className="text-4xl">🔍</div>
+                    </div>
+                    <div className="text-white font-semibold mb-2 text-xl">No results found</div>
+                    <div className="text-gray-400 mb-6">Try adjusting your search terms or filters</div>
                   </div>
                 )}
               </div>
+
+              {/* Preview Modal for search results */}
+              <FilePreviewModal
+                isOpen={isPreviewOpen}
+                onClose={closePreview}
+                file={currentFile}
+                allFiles={documents}
+                currentIndex={currentIndex}
+                onNavigate={navigatePreview}
+              />
             </div>
+          ) : (
+            <>
+              {/* Normal dashboard view */}
+              <StatsCards
+                documentsCount={documents.length}
+                foldersCount={folders.length}
+                recentUploadsCount={recentUploads.length}
+                onViewModeChange={onViewModeChange}
+              />
 
-            {/* Right Panel */}
-            <ActivityPanel
-              recentUploads={recentUploads}
-              usedStorage={usedStorage}
-              totalStorage={totalStorage}
-              documents={documents}
-              folders={folders}
-            />
-          </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Quick Actions */}
+                <div className="lg:col-span-2 space-y-6">
+                  <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+                    <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded"></div>
+                    <span>Quick Actions</span>
+                  </h2>
+                  
+                  <FileUploader onFileUpload={onRefetch} selectedFolder={selectedFolder?.name} />
+                  
+                  <FolderGrid
+                    folders={folders}
+                    documents={documents}
+                    loading={loading}
+                    error={error}
+                    onFolderClick={onFolderClick}
+                    onCreateFolder={onCreateFolder}
+                    onForceRefresh={onForceRefresh}
+                  />
 
-          {/* Preview Modal */}
-          <FilePreviewModal
-            isOpen={isPreviewOpen}
-            onClose={closePreview}
-            file={currentFile}
-            allFiles={documents}
-            currentIndex={currentIndex}
-            onNavigate={navigatePreview}
-          />
+                  {/* Recent Files Section */}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                        <FileText className="w-6 h-6 text-green-400" />
+                        <span>Recent Files</span>
+                      </h3>
+                      {documents.length > 5 && (
+                        <button
+                          onClick={() => onViewModeChange('all-documents')}
+                          className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
+                        >
+                          View All →
+                        </button>
+                      )}
+                    </div>
+                    
+                    {getRecentFiles().length > 0 ? (
+                      <div className="space-y-3">
+                        {getRecentFiles().slice(0, 5).map((doc, index) => (
+                          <FileRow key={doc._id || index} doc={doc} showFolder={true} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <div className="text-white font-semibold mb-2">No files yet</div>
+                        <div className="text-gray-400">Upload your first file to see it here</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Panel */}
+                <ActivityPanel
+                  recentUploads={recentUploads}
+                  usedStorage={usedStorage}
+                  totalStorage={totalStorage}
+                  documents={documents}
+                  folders={folders}
+                />
+              </div>
+
+              {/* Preview Modal */}
+              <FilePreviewModal
+                isOpen={isPreviewOpen}
+                onClose={closePreview}
+                file={currentFile}
+                allFiles={documents}
+                currentIndex={currentIndex}
+                onNavigate={navigatePreview}
+              />
+            </>
+          )}
         </>
       );
 
     case 'all-documents':
-      const displayDocuments = searchQuery ? searchResults : documents;
+      const displayDocuments = documents; // documents already contains search results if active
       
       return (
         <>
@@ -240,9 +289,9 @@ const DashboardViews = ({
                 <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
                   <FileText className="w-7 h-7 text-blue-400" />
                   <span>
-                    {searchQuery 
+                    {isSearchActive 
                       ? `Search Results (${displayDocuments.length})` 
-                      : `All Documents (${documents.length})`
+                      : `All Documents (${displayDocuments.length})`
                     }
                   </span>
                 </h2>
@@ -254,7 +303,7 @@ const DashboardViews = ({
                     <FileRow key={doc._id || index} doc={doc} showFolder={true} />
                   ))}
                 </div>
-              ) : searchQuery ? (
+              ) : isSearchActive ? (
                 <div className="text-center py-16">
                   <div className="w-24 h-24 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <div className="text-4xl">🔍</div>
@@ -352,7 +401,7 @@ const DashboardViews = ({
             </div>
           )}
 
-          {/* Files Not in Folders - IMPROVED SECTION */}
+          {/* Files Not in Folders - Use all documents, not search results for this section */}
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
               <FileText className="w-6 h-6 text-orange-400" />

@@ -1,4 +1,4 @@
-// components/dashboard/SearchComponent.jsx - UPDATED SIMPLIFIED VERSION
+// components/dashboard/SearchComponent.jsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 
@@ -12,53 +12,88 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
     size: ''
   });
 
+  // Debug: Log when component receives new documents
+  useEffect(() => {
+    console.log('🔍 SearchComponent received documents:', documents.length);
+  }, [documents]);
+
   // Perform search when query or filters change
   useEffect(() => {
+    console.log('🔄 Search triggered - Query:', searchQuery, 'Documents:', documents.length);
     performSearch();
   }, [searchQuery, filters, documents]);
 
   const performSearch = () => {
+    // If no search query and no filters, return empty results
     if (!searchQuery.trim() && !hasActiveFilters()) {
+      console.log('❌ No search query or filters, clearing results');
       onSearchResults([]);
       return;
     }
 
+    console.log('🔍 Starting search with query:', searchQuery);
     let results = [...documents];
+    console.log('📋 Starting with documents:', results.length);
 
-    // Text search
+    // Text search - search in multiple fields
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      results = results.filter(doc =>
-        (doc.name || '').toLowerCase().includes(query) ||
-        (doc.original_name || '').toLowerCase().includes(query) ||
-        (doc.folder_name || '').toLowerCase().includes(query)
-      );
+      console.log('🔎 Searching for:', query);
+      
+      results = results.filter(doc => {
+        const fileName = (doc.name || doc.original_name || '').toLowerCase();
+        const folderName = (doc.folder_name || doc.folder_id || '').toLowerCase();
+        
+        const matches = fileName.includes(query) || folderName.includes(query);
+        
+        if (matches) {
+          console.log('✅ Match found:', doc.name || doc.original_name);
+        }
+        
+        return matches;
+      });
+      
+      console.log('🎯 Text search results:', results.length);
     }
 
     // File type filter
     if (filters.fileType) {
+      console.log('🗂️ Applying file type filter:', filters.fileType);
       results = results.filter(doc => {
-        const fileExt = (doc.name || doc.original_name || '').split('.').pop()?.toLowerCase();
+        const fileName = doc.name || doc.original_name || '';
+        const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
+        
         switch (filters.fileType) {
-          case 'pdf': return fileExt === 'pdf';
-          case 'doc': return ['doc', 'docx'].includes(fileExt);
-          case 'image': return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
-          case 'excel': return ['xls', 'xlsx'].includes(fileExt);
-          case 'powerpoint': return ['ppt', 'pptx'].includes(fileExt);
-          default: return true;
+          case 'pdf': 
+            return fileExt === 'pdf';
+          case 'doc': 
+            return ['doc', 'docx'].includes(fileExt);
+          case 'image': 
+            return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileExt);
+          case 'excel': 
+            return ['xls', 'xlsx'].includes(fileExt);
+          case 'powerpoint': 
+            return ['ppt', 'pptx'].includes(fileExt);
+          default: 
+            return true;
         }
       });
+      console.log('🗂️ After file type filter:', results.length);
     }
 
     // Folder filter
     if (filters.folder) {
-      results = results.filter(doc => 
-        (doc.folder_name || doc.folder_id || 'General') === filters.folder
-      );
+      console.log('📁 Applying folder filter:', filters.folder);
+      results = results.filter(doc => {
+        const docFolder = doc.folder_name || doc.folder_id || 'General';
+        return docFolder === filters.folder;
+      });
+      console.log('📁 After folder filter:', results.length);
     }
 
     // Date range filter
     if (filters.dateRange) {
+      console.log('📅 Applying date filter:', filters.dateRange);
       const now = new Date();
       let cutoffDate;
       
@@ -80,25 +115,38 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
       }
 
       if (cutoffDate) {
-        results = results.filter(doc => 
-          doc.created_at && new Date(doc.created_at) >= cutoffDate
-        );
+        results = results.filter(doc => {
+          if (!doc.created_at) return false;
+          const docDate = new Date(doc.created_at);
+          return docDate >= cutoffDate;
+        });
       }
+      console.log('📅 After date filter:', results.length);
     }
 
     // Size filter
     if (filters.size) {
+      console.log('📏 Applying size filter:', filters.size);
       results = results.filter(doc => {
         const size = doc.file_size || 0;
         switch (filters.size) {
-          case 'small': return size < 1024 * 1024; // < 1MB
-          case 'medium': return size >= 1024 * 1024 && size <= 10 * 1024 * 1024; // 1-10MB
-          case 'large': return size > 10 * 1024 * 1024; // > 10MB
-          default: return true;
+          case 'small': 
+            return size < 1024 * 1024; // < 1MB
+          case 'medium': 
+            return size >= 1024 * 1024 && size <= 10 * 1024 * 1024; // 1-10MB
+          case 'large': 
+            return size > 10 * 1024 * 1024; // > 10MB
+          default: 
+            return true;
         }
       });
+      console.log('📏 After size filter:', results.length);
     }
 
+    console.log('🎯 Final search results:', results.length);
+    console.log('📋 Results:', results.map(r => r.name || r.original_name));
+    
+    // Return results to parent component
     onSearchResults(results);
   };
 
@@ -107,17 +155,25 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
   };
 
   const clearSearch = () => {
+    console.log('🧹 Clearing search');
     setSearchQuery('');
     setFilters({ fileType: '', folder: '', dateRange: '', size: '' });
     onSearchResults([]);
   };
 
   const clearFilters = () => {
+    console.log('🧹 Clearing filters');
     setFilters({ fileType: '', folder: '', dateRange: '', size: '' });
   };
 
   // Get unique folder names for filter dropdown
-  const uniqueFolders = [...new Set(documents.map(doc => doc.folder_name || doc.folder_id || 'General'))];
+  const uniqueFolders = [...new Set(
+    documents
+      .map(doc => doc.folder_name || doc.folder_id || 'General')
+      .filter(Boolean)
+  )];
+
+  console.log('📁 Available folders for filter:', uniqueFolders);
 
   return (
     <div className="relative">
@@ -128,7 +184,10 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           type="text"
           placeholder="Search files and folders..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            console.log('🔤 Search input changed:', e.target.value);
+            setSearchQuery(e.target.value);
+          }}
           className="flex-1 px-4 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none"
         />
         {(searchQuery || hasActiveFilters()) && (
@@ -142,7 +201,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
         )}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`p-3 border-l border-white/20 transition-colors ${
+          className={`p-3 border-l border-white/20 transition-colors relative ${
             hasActiveFilters() ? 'text-blue-400 bg-blue-600/20' : 'text-gray-400 hover:text-white'
           }`}
           title="Filters"
@@ -173,7 +232,10 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               <label className="block text-gray-300 text-sm mb-2">File Type</label>
               <select
                 value={filters.fileType}
-                onChange={(e) => setFilters(prev => ({ ...prev, fileType: e.target.value }))}
+                onChange={(e) => {
+                  console.log('🗂️ File type filter changed:', e.target.value);
+                  setFilters(prev => ({ ...prev, fileType: e.target.value }));
+                }}
                 className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
               >
                 <option value="">All Types</option>
@@ -190,7 +252,10 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               <label className="block text-gray-300 text-sm mb-2">Folder</label>
               <select
                 value={filters.folder}
-                onChange={(e) => setFilters(prev => ({ ...prev, folder: e.target.value }))}
+                onChange={(e) => {
+                  console.log('📁 Folder filter changed:', e.target.value);
+                  setFilters(prev => ({ ...prev, folder: e.target.value }));
+                }}
                 className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
               >
                 <option value="">All Folders</option>
@@ -205,7 +270,10 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               <label className="block text-gray-300 text-sm mb-2">Date Range</label>
               <select
                 value={filters.dateRange}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
+                onChange={(e) => {
+                  console.log('📅 Date filter changed:', e.target.value);
+                  setFilters(prev => ({ ...prev, dateRange: e.target.value }));
+                }}
                 className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
               >
                 <option value="">All Dates</option>
@@ -221,7 +289,10 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               <label className="block text-gray-300 text-sm mb-2">File Size</label>
               <select
                 value={filters.size}
-                onChange={(e) => setFilters(prev => ({ ...prev, size: e.target.value }))}
+                onChange={(e) => {
+                  console.log('📏 Size filter changed:', e.target.value);
+                  setFilters(prev => ({ ...prev, size: e.target.value }));
+                }}
                 className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500"
               >
                 <option value="">All Sizes</option>
