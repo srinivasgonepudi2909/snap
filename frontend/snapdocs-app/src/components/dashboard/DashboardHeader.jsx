@@ -1,3 +1,4 @@
+// components/dashboard/DashboardHeader.jsx - Fixed Z-Index
 import React from 'react';
 import { ArrowLeft, Settings } from 'lucide-react';
 import SearchComponent from './SearchComponent';
@@ -28,7 +29,7 @@ const DashboardHeader = ({
   const showBackButton = viewMode === 'folder' || viewMode !== 'dashboard';
 
   return (
-    <header className="bg-white/10 backdrop-blur-sm border-b border-white/10 p-6 flex-shrink-0">
+    <header className="bg-white/10 backdrop-blur-sm border-b border-white/10 p-6 flex-shrink-0 relative z-40">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           {showBackButton && (
@@ -44,7 +45,7 @@ const DashboardHeader = ({
           </h1>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 relative z-50">
           <SearchComponent />
           <button className="p-2 text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
             <Settings className="w-5 h-5" />
