@@ -1,4 +1,4 @@
-// components/dashboard/SearchComponent.jsx - GRAFANA THEMED
+// components/dashboard/SearchComponent.jsx - FIXED FILTER POSITIONING
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, X, Zap } from 'lucide-react';
 
@@ -119,6 +119,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
     setSearchQuery('');
     setFilters({ fileType: '', folder: '', dateRange: '', size: '' });
     onSearchResults([]);
+    setShowFilters(false);
   };
 
   const clearFilters = () => {
@@ -131,11 +132,23 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
       .filter(Boolean)
   )];
 
+  // Close filters when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilters && !event.target.closest('.search-container')) {
+        setShowFilters(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showFilters]);
+
   return (
-    <div className="relative">
-      {/* Grafana-style Main Search Bar */}
+    <div className="relative search-container">
+      {/* Main Search Bar */}
       <div className="flex items-center bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-700/50 overflow-hidden shadow-xl">
-        {/* Search icon with Grafana glow */}
+        {/* Search icon */}
         <div className="p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
           <Search className="w-5 h-5 text-blue-400" />
         </div>
@@ -151,7 +164,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           className="flex-1 px-4 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-0"
         />
         
-        {/* Quick actions */}
+        {/* Clear search button */}
         {(searchQuery || hasActiveFilters()) && (
           <button
             onClick={clearSearch}
@@ -162,7 +175,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           </button>
         )}
         
-        {/* Grafana-style filter button */}
+        {/* Filter button */}
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`p-3 border-l border-gray-700/50 transition-all duration-200 relative ${
@@ -181,10 +194,10 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
         </button>
       </div>
 
-      {/* Grafana-style Filters Panel */}
+      {/* Filters Panel - FIXED POSITIONING */}
       {showFilters && (
-        <div className="absolute top-full mt-2 right-0 bg-gray-800/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl p-6 min-w-96 z-50">
-          {/* Header with Grafana styling */}
+        <div className="absolute top-full mt-2 left-0 right-0 bg-gray-800/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl p-6 z-50 max-w-4xl">
+          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
               <Zap className="w-5 h-5 text-orange-400" />
@@ -198,7 +211,8 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </button>
           </div>
           
-          <div className="space-y-4">
+          {/* Filters Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* File Type Filter */}
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
@@ -271,8 +285,8 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </div>
           </div>
 
-          {/* Filter Actions with Grafana styling */}
-          <div className="flex space-x-3 mt-6 pt-4 border-t border-gray-700/50">
+          {/* Filter Actions */}
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-700/50">
             <button
               onClick={clearFilters}
               className="flex-1 px-4 py-2 text-gray-300 border border-gray-600/50 rounded-lg hover:bg-gray-700/50 hover:border-gray-500/50 transition-all duration-200"
@@ -287,7 +301,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </button>
           </div>
 
-          {/* Active Filters with Grafana styling */}
+          {/* Active Filters */}
           {hasActiveFilters() && (
             <div className="mt-4 pt-4 border-t border-gray-700/50">
               <div className="text-xs text-gray-400 mb-2">Active filters:</div>

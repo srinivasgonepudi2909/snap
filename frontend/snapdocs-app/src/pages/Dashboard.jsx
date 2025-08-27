@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx - UPDATED LATEST VERSION WITH IST TIMEZONE FIX
+// pages/Dashboard.jsx - UPDATED WITH DYNAMIC STATS INTEGRATION
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -33,10 +33,60 @@ const Dashboard = () => {
 
   const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
 
+  // Calculate dynamic stats
+  const [stats, setStats] = useState({
+    totalDocuments: 0,
+    totalFolders: 0,
+    recentUploads: 0,
+    totalStorage: 0,
+    usedStorage: 0,
+    averageFileSize: 0
+  });
+
+  // Update stats whenever documents or folders change
+  useEffect(() => {
+    const calculateStats = () => {
+      // Calculate total storage used
+      const usedStorage = documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
+      
+      // Calculate recent uploads (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const recentUploads = documents.filter(doc => {
+        if (!doc.created_at) return false;
+        const docDate = new Date(doc.created_at);
+        return docDate >= sevenDaysAgo;
+      }).length;
+
+      // Calculate average file size
+      const averageFileSize = documents.length > 0 ? usedStorage / documents.length : 0;
+
+      setStats({
+        totalDocuments: documents.length,
+        totalFolders: folders.length,
+        recentUploads: recentUploads,
+        totalStorage: 15 * 1024 * 1024 * 1024, // 15GB
+        usedStorage: usedStorage,
+        averageFileSize: averageFileSize
+      });
+
+      console.log('📊 Updated stats:', {
+        documents: documents.length,
+        folders: folders.length,
+        recentUploads,
+        usedStorage: `${(usedStorage / 1024 / 1024).toFixed(1)} MB`,
+        averageFileSize: `${(averageFileSize / 1024).toFixed(1)} KB`
+      });
+    };
+
+    calculateStats();
+  }, [documents, folders]);
+
   useEffect(() => {
     console.log('📊 Dashboard documents updated:', documents.length);
     documents.forEach(doc => {
-      console.log('📄 Document:', doc.name || doc.original_name, 'Folder:', doc.folder_name || doc.folder_id);
+      console.log('📄 Document:', doc.name || doc.original_name, 'Size:', doc.file_size, 'Folder:', doc.folder_name || doc.folder_id);
     });
   }, [documents]);
 
@@ -166,15 +216,16 @@ const Dashboard = () => {
     }
   };
 
+  // Calculate recent uploads dynamically
   const recentUploads = documents
     .sort((a, b) => new Date(b.created_at || Date.now()) - new Date(a.created_at || Date.now()))
     .slice(0, 5);
 
   const formatFileSize = (bytes) => {
-    if (!bytes) return 'Unknown size';
+    if (!bytes || bytes === 0) return '0 B';
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`;
   };
 
   // Updated formatDate function to use IST timezone
@@ -254,8 +305,8 @@ const Dashboard = () => {
         >
           <Sidebar
             viewMode={viewMode}
-            documentsCount={documents.length}
-            foldersCount={folders.length}
+            documentsCount={stats.totalDocuments}
+            foldersCount={stats.totalFolders}
             username={username}
             userEmail={userEmail}
             onViewModeChange={handleViewModeChange}
@@ -350,6 +401,8 @@ const Dashboard = () => {
                   formatFileSize={formatFileSize}
                   formatDate={formatDate}
                   getFileIcon={getFileIcon}
+                  // Pass dynamic stats
+                  stats={stats}
                 />
               </div>
             </div>

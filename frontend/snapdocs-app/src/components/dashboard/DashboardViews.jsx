@@ -1,4 +1,4 @@
-// components/dashboard/DashboardViews.jsx - FIXED SEARCH RESULTS DISPLAY
+// components/dashboard/DashboardViews.jsx - UPDATED WITH DYNAMIC STATS INTEGRATION
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FileText, Folder, Upload, Plus, Eye, Download, Trash2, AlertCircle } from 'lucide-react';
@@ -20,6 +20,7 @@ const DashboardViews = ({
   recentUploads,
   searchQuery,
   searchResults,
+  stats = {},
   onViewModeChange,
   onFolderClick,
   onCreateFolder,
@@ -40,9 +41,9 @@ const DashboardViews = ({
     navigatePreview
   } = useFilePreview();
 
-  // Calculate storage usage (mock data for now)
-  const totalStorage = 15 * 1024 * 1024 * 1024; // 15GB
-  const usedStorage = documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
+  // Use dynamic stats or calculate defaults
+  const totalStorage = stats.totalStorage || (15 * 1024 * 1024 * 1024); // 15GB
+  const usedStorage = stats.usedStorage || documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
 
   // Check if we're showing search results
   const isSearchActive = searchQuery === 'search-active';
@@ -50,7 +51,8 @@ const DashboardViews = ({
   // Log for debugging
   React.useEffect(() => {
     console.log('🎭 DashboardViews - viewMode:', viewMode, 'documents:', documents.length, 'isSearchActive:', isSearchActive);
-  }, [viewMode, documents.length, isSearchActive]);
+    console.log('📊 Stats received:', stats);
+  }, [viewMode, documents.length, isSearchActive, stats]);
 
   // Get files for different contexts
   const getFilesNotInFolders = () => {
@@ -193,11 +195,11 @@ const DashboardViews = ({
             </div>
           ) : (
             <>
-              {/* Normal dashboard view */}
+              {/* Normal dashboard view with dynamic stats */}
               <StatsCards
-                documentsCount={documents.length}
-                foldersCount={folders.length}
-                recentUploadsCount={recentUploads.length}
+                documentsCount={stats.totalDocuments || documents.length}
+                foldersCount={stats.totalFolders || folders.length}
+                recentUploadsCount={stats.recentUploads || recentUploads.length}
                 onViewModeChange={onViewModeChange}
               />
 
@@ -254,7 +256,7 @@ const DashboardViews = ({
                   </div>
                 </div>
 
-                {/* Right Panel */}
+                {/* Right Panel with Dynamic Stats */}
                 <ActivityPanel
                   recentUploads={recentUploads}
                   usedStorage={usedStorage}
@@ -593,6 +595,7 @@ DashboardViews.propTypes = {
   recentUploads: PropTypes.array.isRequired,
   searchQuery: PropTypes.string,
   searchResults: PropTypes.array,
+  stats: PropTypes.object,
   onViewModeChange: PropTypes.func.isRequired,
   onFolderClick: PropTypes.func.isRequired,
   onCreateFolder: PropTypes.func.isRequired,
