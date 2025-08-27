@@ -1,4 +1,4 @@
-// components/dashboard/SearchComponent.jsx - FIXED FILTER POSITIONING AND Z-INDEX
+// components/dashboard/SearchComponent.jsx - UPDATED WITH SOLID FILTER PANEL
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, X, Zap } from 'lucide-react';
 
@@ -115,6 +115,19 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
     return Object.values(filters).some(value => value !== '');
   };
 
+  const getActiveFiltersCount = () => {
+    return Object.values(filters).filter(value => value !== '').length;
+  };
+
+  const getActiveFiltersText = () => {
+    const activeFilters = [];
+    if (filters.fileType) activeFilters.push(`Type: ${filters.fileType}`);
+    if (filters.folder) activeFilters.push(`Folder: ${filters.folder}`);
+    if (filters.dateRange) activeFilters.push(`Date: ${filters.dateRange}`);
+    if (filters.size) activeFilters.push(`Size: ${filters.size}`);
+    return activeFilters.join(' | ');
+  };
+
   const clearSearch = () => {
     setSearchQuery('');
     setFilters({ fileType: '', folder: '', dateRange: '', size: '' });
@@ -132,7 +145,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
       .filter(Boolean)
   )];
 
-  // Close filters when clicking outside - IMPROVED
+  // Close filters when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showFilters && !event.target.closest('.search-container')) {
@@ -159,9 +172,9 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
   return (
     <div className="relative search-container">
       {/* Main Search Bar */}
-      <div className="flex items-center bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-700/50 overflow-hidden shadow-xl">
+      <div className="flex items-center bg-gray-800 rounded-lg border border-gray-600 overflow-hidden shadow-xl">
         {/* Search icon */}
-        <div className="p-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
+        <div className="p-2 bg-gradient-to-r from-blue-600/30 to-purple-600/30">
           <Search className="w-4 h-4 text-blue-400" />
         </div>
         
@@ -180,45 +193,62 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
         {(searchQuery || hasActiveFilters()) && (
           <button
             onClick={clearSearch}
-            className="p-1.5 text-gray-400 hover:text-white transition-colors mr-2 hover:bg-red-600/20 rounded-md"
+            className="p-1.5 text-gray-400 hover:text-white transition-colors mr-2 hover:bg-red-600/30 rounded-md"
             title="Clear search"
           >
             <X className="w-3 h-3" />
           </button>
         )}
         
-        {/* Filter button */}
+        {/* Filter button with active filters indicator */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`p-2 border-l border-gray-700/50 transition-all duration-200 relative text-sm ${
+          className={`relative p-2 border-l border-gray-600 transition-all duration-200 text-sm ${
             hasActiveFilters() 
-              ? 'text-orange-400 bg-orange-600/20' 
-              : 'text-gray-400 hover:text-white hover:bg-white/10'
+              ? 'text-orange-300 bg-orange-600/30 border-orange-500/50' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
           }`}
           title="Advanced Filters"
         >
           <Filter className="w-3 h-3" />
           {hasActiveFilters() && (
-            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse">
-              <div className="absolute inset-0 bg-orange-400 rounded-full animate-ping"></div>
+            <div className="absolute -top-1 -right-1 min-w-4 h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center px-1">
+              {getActiveFiltersCount()}
             </div>
           )}
         </button>
       </div>
 
-      {/* Filters Panel - FIXED Z-INDEX AND POSITIONING */}
+      {/* Active Filters Display - Show above filter panel */}
+      {hasActiveFilters() && (
+        <div className="mt-2 mb-1 px-3 py-2 bg-gray-700 rounded-lg border border-orange-500/50 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Filter className="w-3 h-3 text-orange-400" />
+              <span className="text-orange-200 text-sm font-medium">Active Filters:</span>
+              <span className="text-orange-300 text-sm">{getActiveFiltersText()}</span>
+            </div>
+            <button
+              onClick={clearFilters}
+              className="text-orange-400 hover:text-orange-300 text-sm underline transition-colors"
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Filters Panel - SOLID BACKGROUND, NO TRANSPARENCY */}
       {showFilters && (
         <>
           {/* Backdrop for mobile */}
           <div 
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] md:hidden"
+            className="fixed inset-0 bg-black/30 z-[100] md:hidden"
             onClick={() => setShowFilters(false)}
           />
           
-          {/* Filter Panel with VERY HIGH Z-INDEX */}
-          <div className="absolute top-full mt-2 right-0 w-80 md:w-96 bg-gray-800/98 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl p-4 z-[9999]">
-            {/* FIXED: Added very high z-index to ensure it appears above everything */}
-            
+          {/* Filter Panel - COMPLETELY SOLID */}
+          <div className="absolute top-full mt-2 right-0 w-80 md:w-96 bg-gray-800 rounded-xl border border-gray-600 shadow-2xl p-4 z-[9999]">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
@@ -227,7 +257,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               </div>
               <button
                 onClick={() => setShowFilters(false)}
-                className="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded"
+                className="text-gray-400 hover:text-white p-1 hover:bg-gray-700 rounded"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -243,7 +273,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                 <select
                   value={filters.fileType}
                   onChange={(e) => setFilters(prev => ({ ...prev, fileType: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-gray-700/80 text-white text-sm rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                  className="w-full px-2 py-1.5 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
                   <option value="">All Types</option>
                   <option value="pdf">📄 PDF Documents</option>
@@ -262,7 +292,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                 <select
                   value={filters.folder}
                   onChange={(e) => setFilters(prev => ({ ...prev, folder: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-gray-700/80 text-white text-sm rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                  className="w-full px-2 py-1.5 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
                   <option value="">All Folders</option>
                   {uniqueFolders.map(folder => (
@@ -279,7 +309,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                 <select
                   value={filters.dateRange}
                   onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-gray-700/80 text-white text-sm rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                  className="w-full px-2 py-1.5 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
                   <option value="">All Dates</option>
                   <option value="today">📅 Today</option>
@@ -297,7 +327,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                 <select
                   value={filters.size}
                   onChange={(e) => setFilters(prev => ({ ...prev, size: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-gray-700/80 text-white text-sm rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                  className="w-full px-2 py-1.5 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
                   <option value="">All Sizes</option>
                   <option value="small">📦 Small (&lt; 1MB)</option>
@@ -308,10 +338,10 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </div>
 
             {/* Filter Actions */}
-            <div className="flex space-x-2 pt-3 border-t border-gray-700/50">
+            <div className="flex space-x-2 pt-3 border-t border-gray-600">
               <button
                 onClick={clearFilters}
-                className="flex-1 px-3 py-1.5 text-xs text-gray-300 border border-gray-600/50 rounded-lg hover:bg-gray-700/50 hover:border-gray-500/50 transition-all duration-200"
+                className="flex-1 px-3 py-1.5 text-xs text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700 hover:border-gray-500 transition-all duration-200"
               >
                 Clear Filters
               </button>
@@ -322,39 +352,13 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                 Apply Filters
               </button>
             </div>
-
-            {/* Active Filters */}
-            {hasActiveFilters() && (
-              <div className="mt-3 pt-3 border-t border-gray-700/50">
-                <div className="text-xs text-gray-400 mb-2">Active filters:</div>
-                <div className="flex flex-wrap gap-1">
-                  {Object.entries(filters).map(([key, value]) => {
-                    if (!value) return null;
-                    return (
-                      <span
-                        key={key}
-                        className="px-2 py-1 bg-gradient-to-r from-orange-600/20 to-red-600/20 text-orange-300 text-xs rounded-full flex items-center space-x-1 border border-orange-500/30"
-                      >
-                        <span>{key}: {value}</span>
-                        <button
-                          onClick={() => setFilters(prev => ({ ...prev, [key]: '' }))}
-                          className="hover:text-orange-200 transition-colors"
-                        >
-                          <X className="w-2 h-2" />
-                        </button>
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         </>
       )}
 
       {/* Search Status Indicator */}
       {(searchQuery || hasActiveFilters()) && (
-        <div className="mt-2 px-3 py-2 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-md border border-blue-500/30 rounded-lg">
+        <div className="mt-2 px-3 py-2 bg-gradient-to-r from-blue-600/30 via-purple-600/30 to-pink-600/30 border border-blue-500/50 rounded-lg">
           <div className="text-blue-200 text-sm flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
@@ -362,7 +366,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                 🔍 {searchQuery && `Searching for: "${searchQuery}"`}
                 {hasActiveFilters() && (
                   <span className="ml-2 text-orange-300 text-xs">
-                    ({Object.values(filters).filter(v => v).length} filters active)
+                    ({getActiveFiltersCount()} filters active)
                   </span>
                 )}
               </span>
