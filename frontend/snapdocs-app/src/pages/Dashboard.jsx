@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx - FIXED WITH PROPER SEARCH INTEGRATION
+// pages/Dashboard.jsx - GRAFANA THEMED VERSION
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -24,13 +24,12 @@ const Dashboard = () => {
   const [viewMode, setViewMode] = useState('dashboard');
   const [notifications, setNotifications] = useState([]);
   
-  // Search state - FIXED
+  // Search state
   const [searchResults, setSearchResults] = useState([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
 
   const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
 
-  // Debug: Log documents when they change
   useEffect(() => {
     console.log('📊 Dashboard documents updated:', documents.length);
     documents.forEach(doc => {
@@ -75,20 +74,14 @@ const Dashboard = () => {
     fetchUserInfo();
   }, [navigate]);
 
-  // Handle search results - FIXED
   const handleSearchResults = (results) => {
     console.log('🔍 Dashboard received search results:', results.length);
-    console.log('📋 Search results:', results.map(r => r.name || r.original_name));
-    
     setSearchResults(results);
     setIsSearchActive(results.length > 0);
     
-    // If we have search results, switch to show them
     if (results.length > 0 && viewMode === 'dashboard') {
-      // Don't change view mode, just mark search as active
       console.log('✅ Search results available, showing search results');
     } else if (results.length === 0) {
-      // Clear search results
       setIsSearchActive(false);
       console.log('❌ No search results, clearing search state');
     }
@@ -116,11 +109,8 @@ const Dashboard = () => {
   const handleViewModeChange = (mode) => {
     console.log('🔄 Changing view mode to:', mode);
     setViewMode(mode);
-    
-    // Clear search when changing views
     setSearchResults([]);
     setIsSearchActive(false);
-    
     if (mode === 'dashboard') setSelectedFolder(null);
     if (isMobile) setSidebarOpen(false);
   };
@@ -129,11 +119,8 @@ const Dashboard = () => {
     console.log('📁 Opening folder:', folder.name);
     setSelectedFolder(folder);
     setViewMode('folder');
-    
-    // Clear search when entering folder
     setSearchResults([]);
     setIsSearchActive(false);
-    
     if (isMobile) setSidebarOpen(false);
   };
 
@@ -141,8 +128,6 @@ const Dashboard = () => {
     console.log('🏠 Going back to dashboard');
     setSelectedFolder(null);
     setViewMode('dashboard');
-    
-    // Clear search when going back
     setSearchResults([]);
     setIsSearchActive(false);
   };
@@ -154,7 +139,6 @@ const Dashboard = () => {
         break;
       case 'download':
         showNotification(`Downloading ${file.name || file.original_name}`, 'info');
-        // Add actual download logic here
         break;
       case 'delete':
         if (window.confirm(`Are you sure you want to delete ${file.name || file.original_name}?`)) {
@@ -216,7 +200,6 @@ const Dashboard = () => {
     }
   };
 
-  // Get current documents to display based on search state - FIXED
   const getCurrentDocuments = () => {
     console.log('🔍 getCurrentDocuments - isSearchActive:', isSearchActive, 'searchResults:', searchResults.length, 'total documents:', documents.length);
     
@@ -229,26 +212,30 @@ const Dashboard = () => {
     return documents;
   };
 
-  // Create a search query indicator for the views
   const getSearchQuery = () => {
     return isSearchActive ? 'search-active' : '';
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
+      {/* Grafana-style background overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-blue-900/40"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-600/20 via-transparent to-transparent"></div>
+      
       <Notifications notifications={notifications} />
 
       {isMobile && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      <div className="flex h-screen relative">
+      <div className="flex h-screen relative z-10">
         <div
           className={`
-            fixed z-40 inset-y-0 left-0 transform bg-gray-900 w-64
+            fixed z-40 inset-y-0 left-0 transform 
+            bg-gray-900/80 backdrop-blur-md border-r border-gray-700/50 w-64
             transition-transform duration-300 ease-in-out
             ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'relative translate-x-0'}
           `}
@@ -269,8 +256,11 @@ const Dashboard = () => {
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {isMobile && (
-            <div className="p-4 flex items-center justify-between bg-gray-800 text-white shadow-md">
-              <button onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <div className="p-4 flex items-center justify-between bg-gray-900/80 backdrop-blur-md text-white shadow-xl border-b border-gray-700/50">
+              <button 
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
                 {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
               <span className="text-lg font-semibold">Welcome, {username}</span>
@@ -290,26 +280,29 @@ const Dashboard = () => {
 
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 space-y-6">
-              {/* Search Component - Pass all documents */}
-              <SearchComponent
-                documents={documents}
-                folders={folders}
-                onSearchResults={handleSearchResults}
-              />
+              {/* Grafana-style Search Component */}
+              <div className="bg-gray-800/60 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl">
+                <SearchComponent
+                  documents={documents}
+                  folders={folders}
+                  onSearchResults={handleSearchResults}
+                />
+              </div>
 
               {/* Search Results Indicator */}
               {isSearchActive && (
-                <div className="bg-blue-600/20 border border-blue-500/30 rounded-lg p-4">
+                <div className="bg-blue-500/20 backdrop-blur-md border border-blue-400/30 rounded-xl p-4 shadow-lg">
                   <div className="flex items-center justify-between">
-                    <div className="text-blue-300">
-                      🔍 Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                    <div className="text-blue-200 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                      <span>🔍 Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}</span>
                     </div>
                     <button
                       onClick={() => {
                         setSearchResults([]);
                         setIsSearchActive(false);
                       }}
-                      className="text-blue-400 hover:text-blue-300 underline"
+                      className="text-blue-300 hover:text-blue-200 underline transition-colors"
                     >
                       Clear Search
                     </button>
@@ -317,27 +310,29 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Main Content */}
-              <DashboardViews
-                viewMode={viewMode}
-                documents={getCurrentDocuments()} // Pass the correct documents
-                folders={folders}
-                selectedFolder={selectedFolder}
-                loading={loading}
-                error={error}
-                recentUploads={recentUploads}
-                searchQuery={getSearchQuery()} // Pass search state
-                searchResults={searchResults} // Pass actual search results
-                onViewModeChange={handleViewModeChange}
-                onFolderClick={handleFolderClick}
-                onCreateFolder={() => setCreateFolderOpen(true)}
-                onRefetch={refetch}
-                onForceRefresh={forceRefresh}
-                onFileAction={handleFileAction}
-                formatFileSize={formatFileSize}
-                formatDate={formatDate}
-                getFileIcon={getFileIcon}
-              />
+              {/* Main Content with Grafana styling */}
+              <div className="space-y-6">
+                <DashboardViews
+                  viewMode={viewMode}
+                  documents={getCurrentDocuments()}
+                  folders={folders}
+                  selectedFolder={selectedFolder}
+                  loading={loading}
+                  error={error}
+                  recentUploads={recentUploads}
+                  searchQuery={getSearchQuery()}
+                  searchResults={searchResults}
+                  onViewModeChange={handleViewModeChange}
+                  onFolderClick={handleFolderClick}
+                  onCreateFolder={() => setCreateFolderOpen(true)}
+                  onRefetch={refetch}
+                  onForceRefresh={forceRefresh}
+                  onFileAction={handleFileAction}
+                  formatFileSize={formatFileSize}
+                  formatDate={formatDate}
+                  getFileIcon={getFileIcon}
+                />
+              </div>
             </div>
           </div>
         </main>
