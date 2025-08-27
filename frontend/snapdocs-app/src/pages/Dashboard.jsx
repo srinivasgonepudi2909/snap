@@ -1,15 +1,11 @@
-// pages/Dashboard.jsx - UPDATED WITH UNIFIED STORAGE INTEGRATION
+// pages/Dashboard.jsx - COMPLETE VERSION WITH POPUP NOTIFICATIONS
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 import { useDocuments } from '../hooks/useDocuments';
 import useMobile from '../hooks/useMobile';
-
-// Import the unified storage calculator
 import { useStorageCalculator } from '../utils/storageUtils';
-
-// Import IST date utilities
 import { formatDateIST, formatDateByContext, getCurrentDateIST } from '../utils/dateUtils';
 
 import Sidebar from '../components/dashboard/Sidebar';
@@ -18,6 +14,7 @@ import DashboardViews from '../components/dashboard/DashboardViews';
 import CreateFolderModal from '../components/dashboard/CreateFolderModal';
 import Notifications from '../components/dashboard/Notifications';
 import SearchComponent from '../components/dashboard/SearchComponent';
+import PopupModal from '../components/dashboard/PopupModal'; // Import the new popup component
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -34,10 +31,24 @@ const Dashboard = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
 
-  const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
+  // Popup states for operations
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupConfig, setPopupConfig] = useState({});
 
-  // Use unified storage calculator for consistent data across all components
-  const storageStats = useStorageCalculator(documents, 15); // 15GB total storage
+  const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
+  const storageStats = useStorageCalculator(documents, 15);
+
+  // Show popup notification
+  const showOperationPopup = (type, title, message, details = null, autoClose = false) => {
+    setPopupConfig({
+      type,
+      title,
+      message,
+      details,
+      autoClose
+    });
+    setShowPopup(true);
+  };
 
   // Log unified storage stats for debugging
   useEffect(() => {
@@ -111,7 +122,13 @@ const Dashboard = () => {
   };
 
   const handleFolderCreated = async () => {
-    showNotification('Folder created successfully!');
+    showOperationPopup(
+      'success',
+      'Folder Created! 📁',
+      'Your new folder has been created successfully and is ready to organize your documents.',
+      null,
+      true
+    );
     await forceRefresh();
   };
 
@@ -156,24 +173,78 @@ const Dashboard = () => {
         showNotification(`Downloading ${file.name || file.original_name}`, 'info');
         break;
       case 'delete':
-        if (window.confirm(`Are you sure you want to delete ${file.name || file.original_name}?`)) {
+        const fileName = file.name || file.original_name;
+        const fileSize = formatFileSize(file.file_size || file.size || 0);
+        
+        if (window.confirm(`Are you sure you want to delete "${fileName}"?\n\nThis action cannot be undone.`)) {
           try {
+            console.log(`🗑️ Attempting to delete file: ${fileName} (ID: ${file._id})`);
+            
             const token = localStorage.getItem('token');
             const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/documents/${file._id}`, {
               method: 'DELETE',
-              headers: { Authorization: `Bearer ${token}` },
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
             });
 
+            console.log(`📊 Delete response status: ${response.status}`);
+            const result = await response.json();
+            console.log(`📦 Delete response:`, result);
+
             if (response.ok) {
-              showNotification(`${file.name || file.original_name} deleted`);
-              refetch();
+              // Show success popup
+              showOperationPopup(
+                'delete',
+                'File Deleted Successfully! 🗑️',
+                `"${fileName}" has been permanently deleted from your SnapDocs vault.`,
+                [
+                  `📄 File: ${fileName}`,
+                  `📦 Size: ${fileSize}`,
+                  `📁 Folder: ${file.folder_name || file.folder_id || 'General'}`,
+                  `🕒 Deleted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+                ]
+              );
+              
+              // Refresh data after popup
+              setTimeout(() => {
+                refetch();
+              }, 1000);
+              
+              console.log(`✅ File deleted successfully: ${fileName}`);
             } else {
-              showNotification(`Failed to delete ${file.name || file.original_name}`, 'error');
+              // Show error popup
+              showOperationPopup(
+                'error',
+                'Delete Failed! ❌',
+                `Failed to delete "${fileName}". Please try again.`,
+                [
+                  `📄 File: ${fileName}`,
+                  `❌ Error: ${result.message || result.detail || 'Unknown error'}`,
+                  `📊 Status: ${response.status}`,
+                  `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+                ]
+              );
+              console.error(`❌ Delete failed: ${result.message || result.detail}`);
             }
-          } catch {
-            showNotification('Error deleting file', 'error');
+          } catch (error) {
+            // Show network error popup
+            showOperationPopup(
+              'error',
+              'Network Error! 🌐',
+              `Unable to delete "${fileName}" due to a network error. Please check your connection and try again.`,
+              [
+                `📄 File: ${fileName}`,
+                `🌐 Error: ${error.message}`,
+                `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+              ]
+            );
+            console.error(`❌ Network error deleting file:`, error);
           }
         }
+        break;
+      default:
         break;
     }
   };
@@ -182,8 +253,11 @@ const Dashboard = () => {
   const recentUploads = storageStats.recentUploads.slice(0, 5);
 
   const formatFileSize = (bytes) => {
-    return storageStats.formatBytes ? storageStats.formatBytes(bytes) : 
-      new Intl.NumberFormat('en', { style: 'unit', unit: 'byte' }).format(bytes);
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
   // Updated formatDate function to use IST timezone
@@ -191,7 +265,6 @@ const Dashboard = () => {
     if (!date) return 'Unknown date';
     
     try {
-      // Convert to IST and format
       return new Date(date).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -263,10 +336,10 @@ const Dashboard = () => {
         >
           <Sidebar
             viewMode={viewMode}
-            documentsCount={storageStats.totalFiles} // Use unified stats
+            documentsCount={storageStats.totalFiles}
             foldersCount={folders.length}
-            documents={documents} // NEW: Pass documents for real-time calculations
-            folders={folders} // NEW: Pass folders for real-time calculations
+            documents={documents}
+            folders={folders}
             username={username}
             userEmail={userEmail}
             onViewModeChange={handleViewModeChange}
@@ -303,7 +376,7 @@ const Dashboard = () => {
 
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 space-y-6">
-              {/* Grafana-style Search Component with FIXED Z-INDEX */}
+              {/* Search Component */}
               <div className="bg-gray-800/60 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl relative z-50">
                 <SearchComponent
                   documents={documents}
@@ -312,7 +385,7 @@ const Dashboard = () => {
                 />
               </div>
 
-              {/* Search Results Indicator with IST timestamp */}
+              {/* Search Results Indicator */}
               {isSearchActive && (
                 <div className="bg-blue-500/20 backdrop-blur-md border border-blue-400/30 rounded-xl p-4 shadow-lg relative z-40">
                   <div className="flex items-center justify-between">
@@ -340,7 +413,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Storage Status Banner - NEW */}
+              {/* Storage Status Banner */}
               {storageStats.warningLevel !== 'low' && (
                 <div className={`p-4 rounded-xl border backdrop-blur-md ${
                   storageStats.warningLevel === 'critical'
@@ -373,7 +446,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Main Content with Grafana styling */}
+              {/* Main Content */}
               <div className="space-y-6 relative z-30">
                 <DashboardViews
                   viewMode={viewMode}
@@ -394,7 +467,6 @@ const Dashboard = () => {
                   formatFileSize={formatFileSize}
                   formatDate={formatDate}
                   getFileIcon={getFileIcon}
-                  // Pass unified storage stats
                   stats={storageStats}
                 />
               </div>
@@ -403,10 +475,24 @@ const Dashboard = () => {
         </main>
       </div>
 
+      {/* Create Folder Modal */}
       <CreateFolderModal
         isOpen={createFolderOpen}
         onClose={() => setCreateFolderOpen(false)}
         onFolderCreated={handleFolderCreated}
+      />
+
+      {/* Operation Popup Modal */}
+      <PopupModal
+        isOpen={showPopup}
+        onClose={() => setShowPopup(false)}
+        type={popupConfig.type}
+        title={popupConfig.title}
+        message={popupConfig.message}
+        details={popupConfig.details}
+        showOkButton={true}
+        autoClose={popupConfig.autoClose}
+        autoCloseDelay={3000}
       />
     </div>
   );
