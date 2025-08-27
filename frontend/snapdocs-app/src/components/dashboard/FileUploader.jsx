@@ -1,6 +1,6 @@
-// components/FileUploader.jsx - UPDATED WITH BETTER ERROR HANDLING
+// components/FileUploader.jsx - UPDATED WITH GENERAL FOLDER DEFAULT
 import React, { useState, useRef } from 'react';
-import { Upload, Plus, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, Plus, AlertCircle, CheckCircle, Home } from 'lucide-react';
 
 const FileUploader = ({ onFileUpload, selectedFolder }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -9,6 +9,10 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [uploadResults, setUploadResults] = useState([]);
   const fileInputRef = useRef(null);
+
+  // Determine target folder - default to "General" if no folder selected
+  const targetFolder = selectedFolder || 'General';
+  const isDefaultUpload = !selectedFolder || selectedFolder === 'General';
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -44,17 +48,17 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
     const token = localStorage.getItem('token');
     const results = [];
     
-    console.log(`🚀 Starting upload of ${files.length} files to folder: ${selectedFolder || 'General'}`);
+    console.log(`🚀 Starting upload of ${files.length} files to folder: ${targetFolder}`);
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder_name', selectedFolder || 'General');
+      formData.append('folder_name', targetFolder); // Always specify folder
       
       try {
-        setUploadStatus(`Uploading ${file.name}... (${i + 1}/${files.length})`);
-        console.log(`📤 Uploading: ${file.name} (${file.size} bytes)`);
+        setUploadStatus(`Uploading ${file.name} to ${targetFolder}... (${i + 1}/${files.length})`);
+        console.log(`📤 Uploading: ${file.name} (${file.size} bytes) to ${targetFolder}`);
         
         const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/upload`, {
           method: 'POST',
@@ -72,10 +76,11 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
           results.push({ 
             file: file.name, 
             status: 'success', 
-            message: 'Uploaded successfully',
-            data: result.data 
+            message: `Uploaded to ${targetFolder}`,
+            data: result.data,
+            folder: targetFolder
           });
-          console.log(`✅ Upload successful: ${file.name}`);
+          console.log(`✅ Upload successful: ${file.name} -> ${targetFolder}`);
         } else {
           results.push({ 
             file: file.name, 
@@ -105,7 +110,7 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
     const failCount = results.filter(r => r.status === 'error').length;
     
     if (successCount > 0) {
-      setUploadStatus(`✅ Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''}!`);
+      setUploadStatus(`✅ Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''} to ${targetFolder}!`);
       
       // Trigger parent component refresh
       setTimeout(() => {
@@ -128,6 +133,27 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
 
   return (
     <div className="space-y-4">
+      {/* Folder indicator */}
+      <div className={`
+        px-4 py-2 rounded-lg border flex items-center space-x-2 text-sm
+        ${isDefaultUpload 
+          ? 'bg-blue-500/10 border-blue-500/30 text-blue-200' 
+          : 'bg-gray-700/50 border-gray-600/50 text-gray-300'
+        }
+      `}>
+        {isDefaultUpload ? (
+          <Home className="w-4 h-4" />
+        ) : (
+          <div className="text-lg">📁</div>
+        )}
+        <span>
+          {isDefaultUpload 
+            ? `Files will be uploaded to General folder (default)` 
+            : `Files will be uploaded to "${targetFolder}" folder`
+          }
+        </span>
+      </div>
+
       {/* Main upload area */}
       <div 
         className={`bg-white/10 backdrop-blur-sm rounded-2xl p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${
@@ -154,7 +180,12 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
           </h3>
           
           <p className="text-gray-400 mb-4">
-            {selectedFolder ? `Upload to: ${selectedFolder}` : 'Or click to browse and upload'}
+            {uploading 
+              ? `Uploading to ${targetFolder}...`
+              : isDefaultUpload 
+              ? 'Files will be saved to General folder by default'
+              : `Or click to browse and upload to ${targetFolder}`
+            }
           </p>
           
           {uploading && (
@@ -228,6 +259,11 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   )}
                   <span className="truncate font-medium">{result.file}</span>
+                  {result.folder && result.status === 'success' && (
+                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                      📁 {result.folder}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs ml-2 flex-shrink-0">{result.message}</span>
               </div>
@@ -241,6 +277,12 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
         <div className="text-center text-sm text-gray-400">
           <p>Supported formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, GIF, TXT, ZIP, RAR</p>
           <p>Maximum file size: 50MB per file</p>
+          {isDefaultUpload && (
+            <p className="text-blue-400 mt-2 flex items-center justify-center space-x-1">
+              <Home className="w-4 h-4" />
+              <span>Files will be automatically organized in General folder</span>
+            </p>
+          )}
         </div>
       )}
     </div>
