@@ -1,57 +1,25 @@
-// components/ActivityPanel.jsx - REAL-TIME STORAGE CALCULATIONS
+// components/ActivityPanel.jsx - UNIFIED STORAGE INTEGRATION
 import React from 'react';
 import { Activity, FileText, HardDrive, BarChart3, TrendingUp } from 'lucide-react';
+import { useStorageCalculator } from '../../utils/storageUtils';
 
 const ActivityPanel = ({ 
   recentUploads, 
-  usedStorage, 
-  totalStorage, 
   documents,
   folders 
 }) => {
-  // Calculate REAL storage stats dynamically
-  const calculateRealUsedStorage = () => {
-    return documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
-  };
+  // Use unified storage calculator - same logic as other components
+  const storageStats = useStorageCalculator(documents, 15); // 15GB total storage
 
-  // Use real calculated storage or fallback
-  const realUsedStorage = calculateRealUsedStorage();
-  const actualUsedStorage = realUsedStorage || usedStorage || 0;
-  const actualTotalStorage = totalStorage || (15 * 1024 * 1024 * 1024); // 15GB default
-  
-  // Calculate real storage percentage
-  const storagePercentage = actualTotalStorage > 0 ? (actualUsedStorage / actualTotalStorage) * 100 : 0;
-  const remainingStorage = actualTotalStorage - actualUsedStorage;
-  const remainingPercentage = 100 - storagePercentage;
-
-  const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return '0 B';
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`;
-  };
-
-  // Calculate average file size
-  const getAverageFileSize = () => {
-    if (documents.length === 0) return '0 B';
-    const totalSize = documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
-    return formatFileSize(totalSize / documents.length);
-  };
-
-  // Get storage status color based on usage
-  const getStorageStatusColor = () => {
-    if (storagePercentage >= 90) return 'from-red-500 to-red-600';
-    if (storagePercentage >= 75) return 'from-orange-500 to-orange-600';
-    if (storagePercentage >= 50) return 'from-yellow-500 to-yellow-600';
-    return 'from-blue-500 to-purple-600';
-  };
-
-  const getStorageStatusText = () => {
-    if (storagePercentage >= 95) return 'Storage Almost Full!';
-    if (storagePercentage >= 90) return 'Storage Running Low';
-    if (storagePercentage >= 75) return 'Storage Getting Full';
-    return `${remainingPercentage.toFixed(1)}% Available`;
-  };
+  // Log for debugging
+  React.useEffect(() => {
+    console.log('📊 ActivityPanel unified storage stats:', {
+      totalFiles: storageStats.totalFiles,
+      usedStorage: storageStats.usedFormatted,
+      usagePercentage: storageStats.usagePercentage.toFixed(1) + '%',
+      recentUploads: storageStats.recentUploadsCount
+    });
+  }, [storageStats]);
 
   return (
     <div className="space-y-6">
@@ -96,26 +64,27 @@ const ActivityPanel = ({
         )}
       </div>
 
-      {/* REAL-TIME Storage Usage */}
+      {/* UNIFIED Storage Usage */}
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
         <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
           <HardDrive className="w-5 h-5 text-blue-400" />
           <span>Storage Usage</span>
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
         </h3>
         <div className="space-y-4">
           {/* Real-time usage stats */}
           <div className="flex justify-between text-sm">
             <span className="text-gray-300">Used Storage</span>
-            <span className="text-white font-semibold">
-              {formatFileSize(actualUsedStorage)} of {formatFileSize(actualTotalStorage)}
+            <span className="text-white font-semibold font-mono">
+              {storageStats.usedFormatted} of {storageStats.totalFormatted}
             </span>
           </div>
           
           {/* Dynamic progress bar */}
           <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden relative">
             <div 
-              className={`bg-gradient-to-r ${getStorageStatusColor()} h-full rounded-full transition-all duration-1000 relative`}
-              style={{width: `${Math.min(storagePercentage, 100)}%`}}
+              className={`bg-gradient-to-r ${storageStats.colors.progress} h-full rounded-full transition-all duration-1000 relative`}
+              style={{width: `${Math.min(storageStats.usagePercentage, 100)}%`}}
             >
               <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
             </div>
@@ -123,42 +92,40 @@ const ActivityPanel = ({
           
           {/* Storage status */}
           <div className="flex justify-between items-center">
-            <div className={`text-xs font-medium ${
-              storagePercentage >= 90 ? 'text-red-400' :
-              storagePercentage >= 75 ? 'text-orange-400' :
-              storagePercentage >= 50 ? 'text-yellow-400' :
-              'text-green-400'
-            }`}>
-              {getStorageStatusText()}
+            <div className={`text-xs font-medium ${storageStats.colors.text}`}>
+              {storageStats.statusText}
             </div>
             <div className="text-xs text-gray-400">
-              {formatFileSize(remainingStorage)} remaining
+              {storageStats.remainingFormatted} remaining
             </div>
           </div>
 
           {/* Usage breakdown */}
           <div className="bg-white/5 rounded-lg p-3 space-y-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-300">Documents ({documents.length})</span>
-              <span className="text-white font-mono">{formatFileSize(actualUsedStorage)}</span>
+              <span className="text-gray-300">Documents ({storageStats.totalFiles})</span>
+              <span className="text-white font-mono">{storageStats.usedFormatted}</span>
             </div>
             <div className="flex justify-between items-center text-xs">
               <span className="text-gray-300">Usage Percentage</span>
-              <span className="text-white font-mono">{storagePercentage.toFixed(1)}%</span>
+              <span className={`font-mono font-semibold ${storageStats.colors.text}`}>
+                {storageStats.usagePercentage.toFixed(1)}%
+              </span>
             </div>
             <div className="flex justify-between items-center text-xs">
               <span className="text-gray-300">Free Space</span>
-              <span className="text-green-400 font-mono">{formatFileSize(remainingStorage)}</span>
+              <span className="text-green-400 font-mono">{storageStats.remainingFormatted}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* REAL-TIME Quick Stats */}
+      {/* UNIFIED Quick Stats */}
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
         <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
           <BarChart3 className="w-5 h-5 text-green-400" />
           <span>Live Statistics</span>
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
         </h3>
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -166,7 +133,7 @@ const ActivityPanel = ({
               <FileText className="w-4 h-4" />
               <span>Total Files</span>
             </span>
-            <span className="text-white font-semibold text-lg tabular-nums">{documents.length}</span>
+            <span className="text-white font-semibold text-lg tabular-nums">{storageStats.totalFiles}</span>
           </div>
           
           <div className="flex justify-between items-center">
@@ -183,7 +150,7 @@ const ActivityPanel = ({
               <span>Avg. File Size</span>
             </span>
             <span className="text-white font-semibold text-lg tabular-nums">
-              {getAverageFileSize()}
+              {storageStats.averageFileSizeFormatted}
             </span>
           </div>
 
@@ -192,8 +159,8 @@ const ActivityPanel = ({
               <TrendingUp className="w-4 h-4 text-blue-400" />
               <span>Storage Used</span>
             </span>
-            <span className="text-white font-semibold text-lg tabular-nums">
-              {storagePercentage.toFixed(1)}%
+            <span className={`font-semibold text-lg tabular-nums ${storageStats.colors.text}`}>
+              {storageStats.usagePercentage.toFixed(1)}%
             </span>
           </div>
 
@@ -204,32 +171,49 @@ const ActivityPanel = ({
               <span>Recent Uploads</span>
             </span>
             <span className="text-white font-semibold text-lg tabular-nums">
-              {recentUploads.length}
+              {storageStats.recentUploadsCount}
             </span>
           </div>
         </div>
 
         {/* Storage warning */}
-        {storagePercentage >= 85 && (
+        {storageStats.warningLevel !== 'low' && (
           <div className={`mt-4 p-3 rounded-lg border ${
-            storagePercentage >= 95 ? 'bg-red-600/20 border-red-500/50' :
-            storagePercentage >= 90 ? 'bg-orange-600/20 border-orange-500/50' :
+            storageStats.warningLevel === 'critical' ? 'bg-red-600/20 border-red-500/50' :
+            storageStats.warningLevel === 'high' ? 'bg-orange-600/20 border-orange-500/50' :
             'bg-yellow-600/20 border-yellow-500/50'
           }`}>
             <div className="flex items-center space-x-2 text-sm">
               <div className="w-4 h-4 text-yellow-400">⚠️</div>
               <span className={
-                storagePercentage >= 95 ? 'text-red-300' :
-                storagePercentage >= 90 ? 'text-orange-300' :
+                storageStats.warningLevel === 'critical' ? 'text-red-300' :
+                storageStats.warningLevel === 'high' ? 'text-orange-300' :
                 'text-yellow-300'
               }>
-                {storagePercentage >= 95 ? 'Storage almost full! Consider upgrading.' :
-                 storagePercentage >= 90 ? 'Storage running low. Clean up files.' :
+                {storageStats.warningLevel === 'critical' ? 'Storage almost full! Consider upgrading.' :
+                 storageStats.warningLevel === 'high' ? 'Storage running low. Clean up files.' :
                  'Storage getting full. Monitor usage.'}
               </span>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Real-time indicator */}
+      <div className="bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10">
+        <div className="flex items-center justify-center space-x-2 text-xs text-gray-400">
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          <span>Data updates in real-time</span>
+          <span>•</span>
+          <span className="font-mono">
+            {new Date().toLocaleTimeString('en-US', { 
+              timeZone: 'Asia/Kolkata', 
+              hour: '2-digit', 
+              minute: '2-digit',
+              second: '2-digit'
+            })} IST
+          </span>
+        </div>
       </div>
     </div>
   );

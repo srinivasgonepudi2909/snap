@@ -1,10 +1,13 @@
-// pages/Dashboard.jsx - UPDATED WITH DYNAMIC STATS INTEGRATION
+// pages/Dashboard.jsx - UPDATED WITH UNIFIED STORAGE INTEGRATION
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 import { useDocuments } from '../hooks/useDocuments';
 import useMobile from '../hooks/useMobile';
+
+// Import the unified storage calculator
+import { useStorageCalculator } from '../utils/storageUtils';
 
 // Import IST date utilities
 import { formatDateIST, formatDateByContext, getCurrentDateIST } from '../utils/dateUtils';
@@ -33,62 +36,21 @@ const Dashboard = () => {
 
   const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
 
-  // Calculate dynamic stats
-  const [stats, setStats] = useState({
-    totalDocuments: 0,
-    totalFolders: 0,
-    recentUploads: 0,
-    totalStorage: 0,
-    usedStorage: 0,
-    averageFileSize: 0
-  });
+  // Use unified storage calculator for consistent data across all components
+  const storageStats = useStorageCalculator(documents, 15); // 15GB total storage
 
-  // Update stats whenever documents or folders change
+  // Log unified storage stats for debugging
   useEffect(() => {
-    const calculateStats = () => {
-      // Calculate total storage used
-      const usedStorage = documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
-      
-      // Calculate recent uploads (last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      const recentUploads = documents.filter(doc => {
-        if (!doc.created_at) return false;
-        const docDate = new Date(doc.created_at);
-        return docDate >= sevenDaysAgo;
-      }).length;
-
-      // Calculate average file size
-      const averageFileSize = documents.length > 0 ? usedStorage / documents.length : 0;
-
-      setStats({
-        totalDocuments: documents.length,
-        totalFolders: folders.length,
-        recentUploads: recentUploads,
-        totalStorage: 15 * 1024 * 1024 * 1024, // 15GB
-        usedStorage: usedStorage,
-        averageFileSize: averageFileSize
-      });
-
-      console.log('📊 Updated stats:', {
-        documents: documents.length,
-        folders: folders.length,
-        recentUploads,
-        usedStorage: `${(usedStorage / 1024 / 1024).toFixed(1)} MB`,
-        averageFileSize: `${(averageFileSize / 1024).toFixed(1)} KB`
-      });
-    };
-
-    calculateStats();
-  }, [documents, folders]);
-
-  useEffect(() => {
-    console.log('📊 Dashboard documents updated:', documents.length);
-    documents.forEach(doc => {
-      console.log('📄 Document:', doc.name || doc.original_name, 'Size:', doc.file_size, 'Folder:', doc.folder_name || doc.folder_id);
+    console.log('📊 Dashboard unified storage stats:', {
+      totalFiles: storageStats.totalFiles,
+      totalFolders: folders.length,
+      recentUploads: storageStats.recentUploadsCount,
+      usedStorage: storageStats.usedFormatted,
+      usagePercentage: storageStats.usagePercentage.toFixed(1) + '%',
+      statusText: storageStats.statusText,
+      warningLevel: storageStats.warningLevel
     });
-  }, [documents]);
+  }, [storageStats, folders.length]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -216,16 +178,12 @@ const Dashboard = () => {
     }
   };
 
-  // Calculate recent uploads dynamically
-  const recentUploads = documents
-    .sort((a, b) => new Date(b.created_at || Date.now()) - new Date(a.created_at || Date.now()))
-    .slice(0, 5);
+  // Calculate recent uploads using unified calculator
+  const recentUploads = storageStats.recentUploads.slice(0, 5);
 
   const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return '0 B';
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`;
+    return storageStats.formatBytes ? storageStats.formatBytes(bytes) : 
+      new Intl.NumberFormat('en', { style: 'unit', unit: 'byte' }).format(bytes);
   };
 
   // Updated formatDate function to use IST timezone
@@ -305,8 +263,10 @@ const Dashboard = () => {
         >
           <Sidebar
             viewMode={viewMode}
-            documentsCount={stats.totalDocuments}
-            foldersCount={stats.totalFolders}
+            documentsCount={storageStats.totalFiles} // Use unified stats
+            foldersCount={folders.length}
+            documents={documents} // NEW: Pass documents for real-time calculations
+            folders={folders} // NEW: Pass folders for real-time calculations
             username={username}
             userEmail={userEmail}
             onViewModeChange={handleViewModeChange}
@@ -343,8 +303,8 @@ const Dashboard = () => {
 
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 space-y-6">
-              {/* Grafana-style Search Component */}
-              <div className="bg-gray-800/60 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl">
+              {/* Grafana-style Search Component with FIXED Z-INDEX */}
+              <div className="bg-gray-800/60 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl relative z-50">
                 <SearchComponent
                   documents={documents}
                   folders={folders}
@@ -354,7 +314,7 @@ const Dashboard = () => {
 
               {/* Search Results Indicator with IST timestamp */}
               {isSearchActive && (
-                <div className="bg-blue-500/20 backdrop-blur-md border border-blue-400/30 rounded-xl p-4 shadow-lg">
+                <div className="bg-blue-500/20 backdrop-blur-md border border-blue-400/30 rounded-xl p-4 shadow-lg relative z-40">
                   <div className="flex items-center justify-between">
                     <div className="text-blue-200 flex items-center space-x-2">
                       <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
@@ -380,8 +340,41 @@ const Dashboard = () => {
                 </div>
               )}
 
+              {/* Storage Status Banner - NEW */}
+              {storageStats.warningLevel !== 'low' && (
+                <div className={`p-4 rounded-xl border backdrop-blur-md ${
+                  storageStats.warningLevel === 'critical'
+                    ? 'bg-red-600/20 border-red-500/50 text-red-300'
+                    : storageStats.warningLevel === 'high'
+                    ? 'bg-orange-600/20 border-orange-500/50 text-orange-300'
+                    : 'bg-yellow-600/20 border-yellow-500/50 text-yellow-300'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl">
+                        {storageStats.warningLevel === 'critical' ? '🚨' : 
+                         storageStats.warningLevel === 'high' ? '⚠️' : '📊'}
+                      </div>
+                      <div>
+                        <div className="font-semibold">{storageStats.statusText}</div>
+                        <div className="text-sm opacity-90">
+                          {storageStats.usedFormatted} of {storageStats.totalFormatted} used 
+                          • {storageStats.remainingFormatted} remaining
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold">
+                        {storageStats.usagePercentage.toFixed(1)}%
+                      </div>
+                      <div className="text-xs opacity-75">Storage Used</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Main Content with Grafana styling */}
-              <div className="space-y-6">
+              <div className="space-y-6 relative z-30">
                 <DashboardViews
                   viewMode={viewMode}
                   documents={getCurrentDocuments()}
@@ -401,8 +394,8 @@ const Dashboard = () => {
                   formatFileSize={formatFileSize}
                   formatDate={formatDate}
                   getFileIcon={getFileIcon}
-                  // Pass dynamic stats
-                  stats={stats}
+                  // Pass unified storage stats
+                  stats={storageStats}
                 />
               </div>
             </div>

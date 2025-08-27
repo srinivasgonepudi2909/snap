@@ -1,11 +1,14 @@
-// components/dashboard/Sidebar.jsx - GRAFANA THEMED
+// components/dashboard/Sidebar.jsx - GRAFANA THEMED WITH REAL-TIME STORAGE
 import React from 'react';
 import { Home, FileText, Folder, Star, Share, Trash2, User, LogOut, TrendingUp } from 'lucide-react';
+import { useStorageCalculator } from '../../utils/storageUtils';
 
 const Sidebar = ({ 
   viewMode, 
   documentsCount, 
   foldersCount, 
+  documents = [], // NEW: Accept documents array for real-time calculations
+  folders = [],   // NEW: Accept folders array
   username, 
   userEmail, 
   onViewModeChange, 
@@ -14,6 +17,9 @@ const Sidebar = ({
   sidebarOpen,
   setSidebarOpen
 }) => {
+  // Calculate real-time storage stats
+  const storageStats = useStorageCalculator(documents, 15); // 15GB total storage
+
   const SnapDocsLogo = () => (
     <div className="flex items-center space-x-3 mb-8 px-2">
       {/* Grafana-style logo with gradient */}
@@ -50,7 +56,7 @@ const Sidebar = ({
       id: 'all-documents',
       icon: FileText,
       label: 'Files',
-      count: documentsCount,
+      count: storageStats.totalFiles, // Use real-time count
       color: 'text-green-400',
       onClick: () => handleNavClick(() => onViewModeChange('all-documents'))
     },
@@ -58,7 +64,7 @@ const Sidebar = ({
       id: 'all-folders',
       icon: Folder,
       label: 'Folders',
-      count: foldersCount,
+      count: folders.length, // Use real-time folders count
       color: 'text-purple-400',
       onClick: () => handleNavClick(() => onViewModeChange('all-folders'))
     },
@@ -87,6 +93,10 @@ const Sidebar = ({
       onClick: () => handleNavClick(() => console.log('Trash clicked'))
     }
   ];
+
+  // Get appropriate colors based on storage usage
+  const progressBarClass = `bg-gradient-to-r ${storageStats.colors.progress}`;
+  const textColorClass = storageStats.colors.text;
 
   return (
     <aside className="h-full flex flex-col relative">
@@ -139,28 +149,83 @@ const Sidebar = ({
           })}
         </nav>
 
-        {/* Analytics Section - Grafana style */}
+        {/* REAL-TIME Analytics Section - Grafana style */}
         <div className="mt-8 p-4 bg-gradient-to-r from-gray-800/50 to-gray-700/50 rounded-xl border border-gray-700/50 backdrop-blur-sm">
           <div className="flex items-center space-x-2 mb-3">
             <TrendingUp className="w-4 h-4 text-green-400" />
-            <span className="text-sm font-semibold text-gray-300">Quick Stats</span>
+            <span className="text-sm font-semibold text-gray-300">Live Storage Stats</span>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           </div>
           
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-400">Storage Used</span>
-              <span className="text-xs text-white font-mono">45%</span>
+              <span className={`text-xs font-mono font-semibold ${textColorClass}`}>
+                {storageStats.usagePercentage.toFixed(1)}%
+              </span>
             </div>
             
             <div className="w-full bg-gray-700/50 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full rounded-full transition-all duration-1000" style={{width: '45%'}}>
+              <div 
+                className={`${progressBarClass} h-full rounded-full transition-all duration-1000`} 
+                style={{width: `${Math.min(storageStats.usagePercentage, 100)}%`}}
+              >
                 <div className="h-full bg-white/20 animate-pulse"></div>
               </div>
             </div>
             
-            <div className="text-xs text-gray-400 mt-2">
-              2.1 GB of 5.0 GB used
+            <div className="text-xs text-gray-400 mt-2 space-y-1">
+              <div className="flex justify-between">
+                <span>Used:</span>
+                <span className="font-mono text-gray-300">{storageStats.usedFormatted}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total:</span>
+                <span className="font-mono text-gray-300">{storageStats.totalFormatted}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Free:</span>
+                <span className="font-mono text-green-400">{storageStats.remainingFormatted}</span>
+              </div>
             </div>
+
+            {/* Storage Warning */}
+            {storageStats.warningLevel !== 'low' && (
+              <div className={`mt-2 p-2 rounded-lg text-xs ${
+                storageStats.warningLevel === 'critical' 
+                  ? 'bg-red-600/20 text-red-300 border border-red-500/30'
+                  : storageStats.warningLevel === 'high'
+                  ? 'bg-orange-600/20 text-orange-300 border border-orange-500/30'
+                  : 'bg-yellow-600/20 text-yellow-300 border border-yellow-500/30'
+              }`}>
+                <div className="flex items-center space-x-1">
+                  <span>⚠️</span>
+                  <span>{storageStats.statusText}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* File Statistics */}
+          <div className="mt-3 pt-3 border-t border-gray-700/50 space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-400">Total Files:</span>
+              <span className="text-white font-mono">{storageStats.totalFiles}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-400">Recent (7d):</span>
+              <span className="text-blue-400 font-mono">{storageStats.recentUploadsCount}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-400">Avg Size:</span>
+              <span className="text-gray-300 font-mono">{storageStats.averageFileSizeFormatted}</span>
+            </div>
+          </div>
+
+          {/* Real-time indicator */}
+          <div className="mt-2 flex items-center justify-center space-x-1 text-xs text-gray-500">
+            <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
+            <span>Updates in real-time</span>
           </div>
         </div>
       </div>

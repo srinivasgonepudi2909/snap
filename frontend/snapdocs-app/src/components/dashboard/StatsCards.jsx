@@ -1,17 +1,16 @@
-// components/dashboard/StatsCards.jsx - REAL-TIME DATA FROM RIGHT SIDE STORAGE
+// components/dashboard/StatsCards.jsx - UNIFIED REAL-TIME STORAGE DATA
 import React, { useEffect, useState } from 'react';
 import { FileText, Folder, Upload, TrendingUp, Activity, BarChart3, HardDrive } from 'lucide-react';
+import { useStorageCalculator } from '../../utils/storageUtils';
 
 const StatsCards = ({ 
-  documentsCount, 
-  foldersCount, 
-  recentUploadsCount,
-  documents = [], // Documents array for real-time calculations
-  folders = [],   // Folders array for real-time calculations  
-  onViewModeChange,
-  // NEW: Accept real-time storage data from ActivityPanel
-  realTimeStats = null
+  documents = [], // Use documents array for real-time calculations
+  folders = [],   // Use folders array for real-time calculations  
+  onViewModeChange
 }) => {
+  // Get unified storage calculations
+  const storageStats = useStorageCalculator(documents, 15); // 15GB total storage
+
   // State for animated counters
   const [animatedCounts, setAnimatedCounts] = useState({
     documents: 0,
@@ -19,39 +18,6 @@ const StatsCards = ({
     uploads: 0,
     storagePercentage: 0
   });
-
-  // Calculate real-time storage usage (same logic as ActivityPanel)
-  const calculateRealTimeStorage = () => {
-    const totalBytes = documents.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
-    const totalGB = 15; // 15GB limit
-    const usedGB = totalBytes / (1024 * 1024 * 1024);
-    const percentage = Math.min((usedGB / totalGB) * 100, 100);
-    
-    return {
-      usedBytes: totalBytes,
-      usedGB: usedGB,
-      totalGB: totalGB,
-      percentage: percentage,
-      remainingGB: totalGB - usedGB,
-      remainingPercentage: Math.max(100 - percentage, 0)
-    };
-  };
-
-  const realTimeStorage = calculateRealTimeStorage();
-
-  // Calculate recent uploads (last 7 days) in real-time
-  const calculateRecentUploads = () => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    return documents.filter(doc => {
-      if (!doc.created_at) return false;
-      const docDate = new Date(doc.created_at);
-      return docDate >= sevenDaysAgo;
-    }).length;
-  };
-
-  const realTimeRecentUploads = calculateRecentUploads();
 
   // Animate counters when values change
   useEffect(() => {
@@ -74,35 +40,12 @@ const StatsCards = ({
       return () => clearTimeout(timer);
     };
 
-    // Use real-time calculated values instead of passed props
-    animateCounter(documents.length, animatedCounts.documents, 'documents');
+    // Use real-time calculated values
+    animateCounter(storageStats.totalFiles, animatedCounts.documents, 'documents');
     animateCounter(folders.length, animatedCounts.folders, 'folders');
-    animateCounter(realTimeRecentUploads, animatedCounts.uploads, 'uploads');
-    animateCounter(Math.round(realTimeStorage.percentage), Math.round(animatedCounts.storagePercentage), 'storagePercentage');
-  }, [documents.length, folders.length, realTimeRecentUploads, realTimeStorage.percentage, animatedCounts]);
-
-  // Format file size
-  const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return '0 B';
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`;
-  };
-
-  // Get storage status color
-  const getStorageColor = (percentage) => {
-    if (percentage >= 90) return 'from-red-500/20 via-red-600/15 to-red-500/20';
-    if (percentage >= 75) return 'from-orange-500/20 via-orange-600/15 to-yellow-500/20';
-    if (percentage >= 50) return 'from-yellow-500/20 via-yellow-600/15 to-orange-500/20';
-    return 'from-blue-500/20 via-blue-600/15 to-cyan-500/20';
-  };
-
-  const getStorageTextColor = (percentage) => {
-    if (percentage >= 90) return 'text-red-400';
-    if (percentage >= 75) return 'text-orange-400';
-    if (percentage >= 50) return 'text-yellow-400';
-    return 'text-blue-400';
-  };
+    animateCounter(storageStats.recentUploadsCount, animatedCounts.uploads, 'uploads');
+    animateCounter(Math.round(storageStats.usagePercentage), Math.round(animatedCounts.storagePercentage), 'storagePercentage');
+  }, [storageStats.totalFiles, folders.length, storageStats.recentUploadsCount, storageStats.usagePercentage, animatedCounts]);
 
   // Calculate trends (mock data - in real app, compare with previous period)
   const getTrend = (current, type) => {
@@ -110,27 +53,37 @@ const StatsCards = ({
     return current > 0 ? `+${trendValue}%` : '0%';
   };
 
+  // Console log for debugging
+  useEffect(() => {
+    console.log('📊 StatsCards updated with:', {
+      totalFiles: storageStats.totalFiles,
+      totalFolders: folders.length,
+      recentUploads: storageStats.recentUploadsCount,
+      storageUsed: storageStats.usedFormatted,
+      storagePercentage: storageStats.usagePercentage.toFixed(1) + '%'
+    });
+  }, [storageStats, folders]);
+
   const statsData = [
     {
       icon: FileText,
       value: animatedCounts.documents,
-      actualValue: documents.length, // Use real-time documents count
+      actualValue: storageStats.totalFiles,
       label: 'Total Documents',
       color: 'text-blue-400',
       bgGradient: 'from-blue-500/20 via-blue-600/15 to-cyan-500/20',
       borderColor: 'border-blue-500/30',
       glowColor: 'shadow-blue-500/20',
-      trend: getTrend(documents.length, 'documents'),
+      trend: getTrend(storageStats.totalFiles, 'documents'),
       trendIcon: TrendingUp,
       onClick: () => onViewModeChange('all-documents'),
       description: 'All your files',
-      // NEW: Add real-time storage info
-      extraInfo: `Storage: ${formatFileSize(realTimeStorage.usedBytes)}`
+      extraInfo: `Storage: ${storageStats.usedFormatted}`
     },
     {
       icon: Folder,
       value: animatedCounts.folders,
-      actualValue: folders.length, // Use real-time folders count
+      actualValue: folders.length,
       label: 'Folders',
       color: 'text-purple-400',
       bgGradient: 'from-purple-500/20 via-purple-600/15 to-pink-500/20',
@@ -140,45 +93,51 @@ const StatsCards = ({
       trendIcon: BarChart3,
       onClick: () => onViewModeChange('all-folders'),
       description: 'Organized collections',
-      // NEW: Show average files per folder
-      extraInfo: folders.length > 0 ? `Avg: ${Math.round(documents.length / folders.length)} files/folder` : 'No folders yet'
+      extraInfo: folders.length > 0 
+        ? `Avg: ${Math.round(storageStats.totalFiles / folders.length)} files/folder` 
+        : 'No folders yet'
     },
     {
       icon: Upload,
       value: animatedCounts.uploads,
-      actualValue: realTimeRecentUploads, // Use real-time calculated recent uploads
+      actualValue: storageStats.recentUploadsCount,
       label: 'Recent Uploads',
       color: 'text-green-400',
       bgGradient: 'from-green-500/20 via-green-600/15 to-emerald-500/20',
       borderColor: 'border-green-500/30',
       glowColor: 'shadow-green-500/20',
-      trend: getTrend(realTimeRecentUploads, 'uploads'),
+      trend: getTrend(storageStats.recentUploadsCount, 'uploads'),
       trendIcon: Activity,
       onClick: () => onViewModeChange('recent-uploads'),
       description: 'Last 7 days',
-      // NEW: Show percentage of total uploads
-      extraInfo: documents.length > 0 ? `${Math.round((realTimeRecentUploads / documents.length) * 100)}% of total` : 'No uploads yet'
+      extraInfo: storageStats.totalFiles > 0 
+        ? `${Math.round((storageStats.recentUploadsCount / storageStats.totalFiles) * 100)}% of total` 
+        : 'No uploads yet'
     },
-    // NEW: Add storage card with real-time data
     {
       icon: HardDrive,
       value: animatedCounts.storagePercentage,
-      actualValue: Math.round(realTimeStorage.percentage),
+      actualValue: Math.round(storageStats.usagePercentage),
       label: 'Storage Used',
-      color: getStorageTextColor(realTimeStorage.percentage),
-      bgGradient: getStorageColor(realTimeStorage.percentage),
-      borderColor: realTimeStorage.percentage >= 90 ? 'border-red-500/30' : 
-                   realTimeStorage.percentage >= 75 ? 'border-orange-500/30' : 
-                   realTimeStorage.percentage >= 50 ? 'border-yellow-500/30' : 'border-blue-500/30',
-      glowColor: realTimeStorage.percentage >= 90 ? 'shadow-red-500/20' :
-                 realTimeStorage.percentage >= 75 ? 'shadow-orange-500/20' :
-                 realTimeStorage.percentage >= 50 ? 'shadow-yellow-500/20' : 'shadow-blue-500/20',
-      trend: realTimeStorage.percentage < 100 ? `${realTimeStorage.remainingPercentage.toFixed(1)}% free` : 'Full!',
+      color: storageStats.colors.text,
+      bgGradient: storageStats.colors.gradient,
+      borderColor: storageStats.colors.border,
+      glowColor: storageStats.colors.text.replace('text-', 'shadow-').replace('400', '500/20'),
+      trend: storageStats.usagePercentage < 100 
+        ? `${storageStats.remainingPercentage.toFixed(1)}% free` 
+        : 'Full!',
       trendIcon: HardDrive,
       onClick: () => {}, // No click action for storage
-      description: `${realTimeStorage.usedGB.toFixed(1)}GB of ${realTimeStorage.totalGB}GB`,
-      extraInfo: `${formatFileSize(realTimeStorage.usedBytes)} used`,
-      isPercentage: true
+      description: `${storageStats.usagePercentage.toFixed(1)}% of ${storageStats.totalFormatted}`,
+      extraInfo: `${storageStats.remainingFormatted} remaining`,
+      isPercentage: true,
+      // Add storage-specific data
+      storageData: {
+        usedBytes: storageStats.usedBytes,
+        totalBytes: storageStats.totalBytes,
+        usagePercentage: storageStats.usagePercentage,
+        progressClass: storageStats.colors.progress
+      }
     }
   ];
 
@@ -188,18 +147,19 @@ const StatsCards = ({
         const Icon = stat.icon;
         const TrendIcon = stat.trendIcon;
         const isAnimating = stat.value !== stat.actualValue;
+        const isStorageCard = stat.label === 'Storage Used';
         
         return (
           <button 
             key={index}
             onClick={stat.onClick}
-            disabled={stat.label === 'Storage Used'} // Disable click for storage card
+            disabled={isStorageCard} // Disable click for storage card
             className={`
               relative group bg-gradient-to-br ${stat.bgGradient} backdrop-blur-md 
               rounded-xl p-5 border ${stat.borderColor} hover:scale-[1.02] 
               transition-all duration-300 text-left shadow-lg ${stat.glowColor} 
               hover:shadow-xl overflow-hidden 
-              ${stat.label === 'Storage Used' ? 'cursor-default' : 'active:scale-95 cursor-pointer'}
+              ${isStorageCard ? 'cursor-default' : 'active:scale-95 cursor-pointer'}
             `}
           >
             {/* Background pattern */}
@@ -244,23 +204,18 @@ const StatsCards = ({
                   {stat.description}
                 </div>
 
-                {/* NEW: Extra real-time info */}
+                {/* Extra real-time info */}
                 <div className="text-xs text-gray-500 pt-1 border-t border-white/10 group-hover:text-gray-400 transition-colors">
                   {stat.extraInfo}
                 </div>
               </div>
 
               {/* Storage progress bar for storage card */}
-              {stat.label === 'Storage Used' && (
+              {isStorageCard && stat.storageData && (
                 <div className="mt-3 w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
                   <div 
-                    className={`bg-gradient-to-r ${
-                      realTimeStorage.percentage >= 90 ? 'from-red-500 to-red-600' :
-                      realTimeStorage.percentage >= 75 ? 'from-orange-500 to-orange-600' :
-                      realTimeStorage.percentage >= 50 ? 'from-yellow-500 to-yellow-600' :
-                      'from-blue-500 to-purple-600'
-                    } h-full rounded-full transition-all duration-1000 relative`}
-                    style={{ width: `${Math.min(realTimeStorage.percentage, 100)}%` }}
+                    className={`bg-gradient-to-r ${stat.storageData.progressClass} h-full rounded-full transition-all duration-1000 relative`}
+                    style={{ width: `${Math.min(stat.storageData.usagePercentage, 100)}%` }}
                   >
                     <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                   </div>
@@ -301,7 +256,7 @@ const StatsCards = ({
             second: '2-digit'
           })} IST</span>
           <span className="text-green-400 font-semibold">
-            • {documents.length} files • {formatFileSize(realTimeStorage.usedBytes)} used
+            • {storageStats.totalFiles} files • {storageStats.usedFormatted} used
           </span>
         </div>
       </div>
