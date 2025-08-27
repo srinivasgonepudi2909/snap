@@ -358,7 +358,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                   }}
                   className="w-full px-3 py-2 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
-                  <option value="">All Types ({documents.length})</option>
+                  <option value="">All Types</option>
                   <option value="pdf">📄 PDF Documents ({getFileTypeCount('pdf')})</option>
                   <option value="doc">📝 Word Documents ({getFileTypeCount('doc')})</option>
                   <option value="image">🖼️ Images ({getFileTypeCount('image')})</option>
@@ -382,7 +382,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                   }}
                   className="w-full px-3 py-2 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
-                  <option value="">All Folders ({documents.length})</option>
+                  <option value="">All Folders</option>
                   {uniqueFolders.map(folderName => {
                     const count = getFolderCount(folderName);
                     const folderIcon = folderName === 'General' ? '📂' : 
