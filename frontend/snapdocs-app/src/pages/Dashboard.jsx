@@ -1,10 +1,13 @@
-// pages/Dashboard.jsx - GRAFANA THEMED VERSION
+// pages/Dashboard.jsx - UPDATED LATEST VERSION WITH IST TIMEZONE FIX
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 import { useDocuments } from '../hooks/useDocuments';
 import useMobile from '../hooks/useMobile';
+
+// Import IST date utilities
+import { formatDateIST, formatDateByContext, getCurrentDateIST } from '../utils/dateUtils';
 
 import Sidebar from '../components/dashboard/Sidebar';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
@@ -174,13 +177,22 @@ const Dashboard = () => {
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
+  // Updated formatDate function to use IST timezone
   const formatDate = (date) => {
     if (!date) return 'Unknown date';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    
+    try {
+      // Convert to IST and format
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+    } catch (error) {
+      console.error('Error formatting date to IST:', error);
+      return 'Invalid date';
+    }
   };
 
   const getFileIcon = (fileName) => {
@@ -289,13 +301,20 @@ const Dashboard = () => {
                 />
               </div>
 
-              {/* Search Results Indicator */}
+              {/* Search Results Indicator with IST timestamp */}
               {isSearchActive && (
                 <div className="bg-blue-500/20 backdrop-blur-md border border-blue-400/30 rounded-xl p-4 shadow-lg">
                   <div className="flex items-center justify-between">
                     <div className="text-blue-200 flex items-center space-x-2">
                       <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
                       <span>🔍 Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}</span>
+                      <span className="text-xs text-blue-300">
+                        ({new Date().toLocaleTimeString('en-US', { 
+                          timeZone: 'Asia/Kolkata', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })} IST)
+                      </span>
                     </div>
                     <button
                       onClick={() => {

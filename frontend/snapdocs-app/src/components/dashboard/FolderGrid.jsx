@@ -1,4 +1,4 @@
-// components/FolderGrid.jsx
+// components/FolderGrid.jsx - FIXED WITH IST TIMEZONE
 import React from 'react';
 import { Folder, Plus, FolderOpen } from 'lucide-react';
 
@@ -11,6 +11,30 @@ const FolderGrid = ({
   onCreateFolder,
   onForceRefresh 
 }) => {
+  
+  // Helper function to format date in IST
+  const formatDateIST = (dateString) => {
+    if (!dateString) return 'Unknown date';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Convert to IST (UTC+5:30)
+      const istDate = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+      
+      // Format the date
+      return istDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-12 border border-white/20 text-center">
@@ -101,11 +125,9 @@ const FolderGrid = ({
               <div className="text-center">
                 <div className="text-sm text-gray-300 bg-white/10 border border-white/20 rounded-lg px-3 py-2 inline-flex items-center gap-2">
                   <span>📅</span>
-                  {new Date(folder.created_at).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
+                  <span title={`Created: ${new Date(folder.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`}>
+                    {formatDateIST(folder.created_at)}
+                  </span>
                 </div>
               </div>
             </div>
