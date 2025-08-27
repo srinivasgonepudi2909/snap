@@ -1,4 +1,4 @@
-// components/dashboard/SearchComponent.jsx - FIXED FILTER POSITIONING & BUTTON SIZE
+// components/dashboard/SearchComponent.jsx - FIXED FILTER POSITIONING
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, X, Zap } from 'lucide-react';
 
@@ -146,7 +146,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
 
   return (
     <div className="relative search-container">
-      {/* Main Search Bar - SMALLER HEIGHT */}
+      {/* Main Search Bar */}
       <div className="flex items-center bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-700/50 overflow-hidden shadow-xl">
         {/* Search icon */}
         <div className="p-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
@@ -175,7 +175,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           </button>
         )}
         
-        {/* Filter button - SMALLER */}
+        {/* Filter button */}
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`p-2 border-l border-gray-700/50 transition-all duration-200 relative text-sm ${
@@ -194,9 +194,9 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
         </button>
       </div>
 
-      {/* Filters Panel - FIXED VERTICAL POSITIONING */}
+      {/* Filters Panel - FIXED TO SHOW ON RIGHT SIDE */}
       {showFilters && (
-        <div className="absolute top-full mt-2 left-0 right-0 bg-gray-800/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl p-4 z-50 max-w-2xl">
+        <div className="absolute top-full mt-2 right-0 w-80 md:w-96 bg-gray-800/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl p-4 z-50">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
@@ -211,8 +211,8 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </button>
           </div>
           
-          {/* Filters Grid - SMALLER LAYOUT */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          {/* Filters Grid */}
+          <div className="grid grid-cols-1 gap-3 mb-4">
             {/* File Type Filter */}
             <div>
               <label className="block text-gray-300 text-xs font-medium mb-1">
@@ -285,7 +285,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </div>
           </div>
 
-          {/* Filter Actions - SMALLER BUTTONS */}
+          {/* Filter Actions */}
           <div className="flex space-x-2 pt-3 border-t border-gray-700/50">
             <button
               onClick={clearFilters}
