@@ -1,12 +1,13 @@
-// components/FileUploader.jsx
+// components/FileUploader.jsx - UPDATED WITH BETTER ERROR HANDLING
 import React, { useState, useRef } from 'react';
-import { Upload, Plus } from 'lucide-react';
+import { Upload, Plus, AlertCircle, CheckCircle } from 'lucide-react';
 
 const FileUploader = ({ onFileUpload, selectedFolder }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [uploadResults, setUploadResults] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleDragOver = (e) => {
@@ -38,10 +39,12 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
     setUploading(true);
     setUploadProgress(0);
     setUploadStatus('Starting upload...');
+    setUploadResults([]);
     
     const token = localStorage.getItem('token');
-    let successCount = 0;
-    let failCount = 0;
+    const results = [];
+    
+    console.log(`🚀 Starting upload of ${files.length} files to folder: ${selectedFolder || 'General'}`);
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -50,25 +53,43 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
       formData.append('folder_name', selectedFolder || 'General');
       
       try {
-        setUploadStatus(`Uploading ${file.name}...`);
+        setUploadStatus(`Uploading ${file.name}... (${i + 1}/${files.length})`);
+        console.log(`📤 Uploading: ${file.name} (${file.size} bytes)`);
         
         const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/upload`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            ...(token && { 'Authorization': `Bearer ${token}` }),
           },
           body: formData
         });
 
-        if (response.ok) {
-          successCount++;
-          console.log(`✅ Uploaded: ${file.name}`);
+        console.log(`📊 Upload response status: ${response.status}`);
+        const result = await response.json();
+        console.log(`📦 Upload response:`, result);
+
+        if (response.ok && result.success) {
+          results.push({ 
+            file: file.name, 
+            status: 'success', 
+            message: 'Uploaded successfully',
+            data: result.data 
+          });
+          console.log(`✅ Upload successful: ${file.name}`);
         } else {
-          failCount++;
-          console.error(`❌ Failed to upload: ${file.name}`);
+          results.push({ 
+            file: file.name, 
+            status: 'error', 
+            message: result.message || result.detail || `Failed with status ${response.status}` 
+          });
+          console.error(`❌ Upload failed: ${file.name} - ${result.message || result.detail}`);
         }
       } catch (error) {
-        failCount++;
+        results.push({ 
+          file: file.name, 
+          status: 'error', 
+          message: `Network error: ${error.message}` 
+        });
         console.error(`❌ Upload error for ${file.name}:`, error);
       }
       
@@ -77,87 +98,151 @@ const FileUploader = ({ onFileUpload, selectedFolder }) => {
     
     setUploading(false);
     setUploadProgress(0);
-    setUploadStatus('');
+    setUploadResults(results);
     
-    // Show results
+    // Count successful uploads
+    const successCount = results.filter(r => r.status === 'success').length;
+    const failCount = results.filter(r => r.status === 'error').length;
+    
     if (successCount > 0) {
-      setUploadStatus(`✅ Uploaded ${successCount} file${successCount > 1 ? 's' : ''} successfully!`);
-      setTimeout(() => setUploadStatus(''), 3000);
-      onFileUpload && onFileUpload();
+      setUploadStatus(`✅ Successfully uploaded ${successCount} file${successCount > 1 ? 's' : ''}!`);
+      
+      // Trigger parent component refresh
+      setTimeout(() => {
+        onFileUpload && onFileUpload();
+      }, 1000);
+    } else {
+      setUploadStatus(`❌ Upload failed for all files`);
     }
     
     if (failCount > 0) {
-      console.warn(`❌ Failed to upload ${failCount} file${failCount > 1 ? 's' : ''}`);
+      console.warn(`❌ ${failCount} file${failCount > 1 ? 's' : ''} failed to upload`);
     }
+    
+    // Clear status after 5 seconds
+    setTimeout(() => {
+      setUploadStatus('');
+      setUploadResults([]);
+    }, 5000);
   };
 
   return (
-    <div 
-      className={`bg-white/10 backdrop-blur-sm rounded-2xl p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${
-        isDragging 
-          ? 'border-blue-400 bg-blue-400/10 scale-105' 
-          : 'border-blue-400/50 hover:border-blue-400'
-      } ${uploading ? 'pointer-events-none' : ''}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onClick={() => !uploading && fileInputRef.current?.click()}
-    >
-      <div className="text-center">
-        <Upload className={`w-16 h-16 mx-auto mb-4 transition-all duration-300 ${
-          isDragging ? 'text-blue-300 scale-110' : uploading ? 'text-green-400 animate-bounce' : 'text-blue-400'
-        }`} />
-        
-        <h3 className="text-xl font-semibold text-white mb-2">
-          {isDragging 
-            ? 'Drop files here!' 
-            : uploading 
-            ? `Uploading... ${Math.round(uploadProgress)}%` 
-            : 'Drag & Drop Files Here'}
-        </h3>
-        
-        <p className="text-gray-400 mb-4">
-          {uploadStatus || (selectedFolder ? `Upload to: ${selectedFolder}` : 'Or click to browse and upload')}
-        </p>
-        
-        {uploading && (
-          <div className="w-full bg-gray-700 rounded-full h-3 mb-4 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-purple-600 h-full rounded-full transition-all duration-300 relative" 
-              style={{width: `${uploadProgress}%`}}
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+    <div className="space-y-4">
+      {/* Main upload area */}
+      <div 
+        className={`bg-white/10 backdrop-blur-sm rounded-2xl p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${
+          isDragging 
+            ? 'border-blue-400 bg-blue-400/10 scale-105' 
+            : 'border-blue-400/50 hover:border-blue-400'
+        } ${uploading ? 'pointer-events-none opacity-75' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => !uploading && fileInputRef.current?.click()}
+      >
+        <div className="text-center">
+          <Upload className={`w-16 h-16 mx-auto mb-4 transition-all duration-300 ${
+            isDragging ? 'text-blue-300 scale-110' : uploading ? 'text-green-400 animate-bounce' : 'text-blue-400'
+          }`} />
+          
+          <h3 className="text-xl font-semibold text-white mb-2">
+            {isDragging 
+              ? 'Drop files here!' 
+              : uploading 
+              ? `Uploading... ${Math.round(uploadProgress)}%` 
+              : 'Drag & Drop Files Here'}
+          </h3>
+          
+          <p className="text-gray-400 mb-4">
+            {selectedFolder ? `Upload to: ${selectedFolder}` : 'Or click to browse and upload'}
+          </p>
+          
+          {uploading && (
+            <div className="w-full bg-gray-700 rounded-full h-3 mb-4 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-purple-600 h-full rounded-full transition-all duration-300 relative" 
+                style={{width: `${uploadProgress}%`}}
+              >
+                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+              </div>
             </div>
-          </div>
-        )}
-        
-        <button 
-          className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
-            uploading 
-              ? 'bg-green-600 text-white cursor-not-allowed' 
-              : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-105'
-          }`}
-          disabled={uploading}
-        >
-          {uploading ? (
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-              <span>Uploading...</span>
-            </div>
-          ) : (
-            'Choose Files'
           )}
-        </button>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          onChange={handleFileSelect}
-          className="hidden"
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
-        />
+          
+          {!uploading && (
+            <button 
+              className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 bg-blue-600 hover:bg-blue-700 text-white hover:scale-105"
+            >
+              <Plus className="w-5 h-5 inline mr-2" />
+              Choose Files
+            </button>
+          )}
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
+          />
+        </div>
       </div>
+
+      {/* Upload status */}
+      {uploadStatus && (
+        <div className={`p-4 rounded-xl border ${
+          uploadStatus.includes('✅') 
+            ? 'bg-green-600/20 border-green-500/50 text-green-300'
+            : uploadStatus.includes('❌')
+            ? 'bg-red-600/20 border-red-500/50 text-red-300'
+            : 'bg-blue-600/20 border-blue-500/50 text-blue-300'
+        }`}>
+          <div className="flex items-center space-x-2">
+            {uploadStatus.includes('✅') ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : uploadStatus.includes('❌') ? (
+              <AlertCircle className="w-5 h-5" />
+            ) : (
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-current border-t-transparent"></div>
+            )}
+            <span>{uploadStatus}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Upload results */}
+      {uploadResults.length > 0 && (
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+          <h4 className="text-white font-semibold mb-3">Upload Results</h4>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {uploadResults.map((result, index) => (
+              <div key={index} className={`flex items-center justify-between p-2 rounded-lg ${
+                result.status === 'success' 
+                  ? 'bg-green-600/20 text-green-300'
+                  : 'bg-red-600/20 text-red-300'
+              }`}>
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  {result.status === 'success' ? (
+                    <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  )}
+                  <span className="truncate font-medium">{result.file}</span>
+                </div>
+                <span className="text-xs ml-2 flex-shrink-0">{result.message}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upload hints */}
+      {!uploading && (
+        <div className="text-center text-sm text-gray-400">
+          <p>Supported formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, GIF, TXT, ZIP, RAR</p>
+          <p>Maximum file size: 50MB per file</p>
+        </div>
+      )}
     </div>
   );
 };

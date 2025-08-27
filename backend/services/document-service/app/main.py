@@ -1,4 +1,4 @@
-# app/main.py
+# backend/services/document-service/app/main.py - UPDATED WITH STATIC FILE SERVING
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +27,7 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS Configuration
+# CORS Configuration - More permissive for file serving
 cors_origins = [url.strip() for url in FRONTEND_URLS.split(",")] + ["*"]  # Allow all for dev
 
 app.add_middleware(
@@ -36,11 +36,21 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "Content-Type", "Content-Length"]
 )
 
+# Create upload directory if it doesn't exist
+upload_dir_path = os.path.abspath(UPLOAD_DIRECTORY)
+os.makedirs(upload_dir_path, exist_ok=True)
+print(f"📁 Upload directory: {upload_dir_path}")
+
 # Mount static files for serving uploaded documents
-if os.path.exists(UPLOAD_DIRECTORY):
-    app.mount("/files", StaticFiles(directory=UPLOAD_DIRECTORY), name="files")
+# This serves files at /files/{filename} route
+try:
+    app.mount("/files", StaticFiles(directory=upload_dir_path), name="files")
+    print(f"✅ Static files mounted at /files from {upload_dir_path}")
+except Exception as e:
+    print(f"⚠️ Warning: Could not mount static files: {e}")
 
 # Include routers
 app.include_router(documents_router, prefix="/api/v1")
@@ -81,9 +91,9 @@ def detailed_health_check():
     
     # Check upload directory
     try:
-        upload_dir = os.path.abspath(UPLOAD_DIRECTORY)
-        if os.path.exists(upload_dir) and os.access(upload_dir, os.W_OK):
-            health_status["dependencies"]["file_storage"] = "available"
+        if os.path.exists(upload_dir_path) and os.access(upload_dir_path, os.W_OK):
+            file_count = len([f for f in os.listdir(upload_dir_path) if os.path.isfile(os.path.join(upload_dir_path, f))])
+            health_status["dependencies"]["file_storage"] = f"available ({file_count} files)"
         else:
             health_status["dependencies"]["file_storage"] = "unavailable"
             health_status["status"] = "degraded"
@@ -100,17 +110,44 @@ def root():
         "message": "SnapDocs Document Service API",
         "version": SERVICE_VERSION,
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
+        "file_serving": "/files/{filename}",
+        "api": "/api/v1"
     }
+
+# Add a specific endpoint to test file serving
+@app.get("/test/files")
+def test_file_serving():
+    """Test file serving capability"""
+    try:
+        files = []
+        if os.path.exists(upload_dir_path):
+            files = [f for f in os.listdir(upload_dir_path) if os.path.isfile(os.path.join(upload_dir_path, f))]
+        
+        return {
+            "success": True,
+            "upload_directory": upload_dir_path,
+            "files_count": len(files),
+            "sample_files": files[:5],  # Show first 5 files
+            "file_serving_url": "/files/{filename}",
+            "message": "File serving is configured"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "upload_directory": upload_dir_path
+        }
 
 # Startup event
 @app.on_event("startup")
 async def startup_event():
     """Startup tasks"""
     print(f"🚀 Starting {SERVICE_NAME} v{SERVICE_VERSION}")
-    print(f"📁 Upload directory: {os.path.abspath(UPLOAD_DIRECTORY)}")
+    print(f"📁 Upload directory: {upload_dir_path}")
     print(f"🔧 Debug mode: {DEBUG}")
     print(f"🌐 CORS origins: {cors_origins}")
+    print(f"📡 Static files serving from: /files/")
 
 # Shutdown event
 @app.on_event("shutdown")
