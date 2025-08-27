@@ -1,4 +1,4 @@
-// components/dashboard/SearchComponent.jsx - UPDATED WITH SOLID FILTER PANEL
+// components/dashboard/SearchComponent.jsx - FIXED WITH COMPLETE FOLDER FILTER
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, X, Zap } from 'lucide-react';
 
@@ -13,8 +13,12 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
   });
 
   useEffect(() => {
-    console.log('🔍 SearchComponent received documents:', documents.length);
-  }, [documents]);
+    console.log('🔍 SearchComponent received:', {
+      documents: documents.length,
+      folders: folders.length,
+      folderNames: folders.map(f => f.name)
+    });
+  }, [documents, folders]);
 
   useEffect(() => {
     console.log('🔄 Search triggered - Query:', searchQuery, 'Documents:', documents.length);
@@ -28,7 +32,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
       return;
     }
 
-    console.log('🔍 Starting search with query:', searchQuery);
+    console.log('🔍 Starting search with query:', searchQuery, 'Filters:', filters);
     let results = [...documents];
 
     // Text search
@@ -53,16 +57,23 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           case 'image': return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileExt);
           case 'excel': return ['xls', 'xlsx'].includes(fileExt);
           case 'powerpoint': return ['ppt', 'pptx'].includes(fileExt);
+          case 'archive': return ['zip', 'rar', '7z'].includes(fileExt);
+          case 'text': return ['txt', 'md', 'csv'].includes(fileExt);
           default: return true;
         }
       });
+      console.log('📄 After file type filter:', results.length);
     }
 
+    // FIXED: Folder filter - now properly handles all folders
     if (filters.folder) {
       results = results.filter(doc => {
         const docFolder = doc.folder_name || doc.folder_id || 'General';
-        return docFolder === filters.folder;
+        const match = docFolder === filters.folder;
+        console.log(`📁 Checking folder: doc folder="${docFolder}", filter="${filters.folder}", match=${match}`);
+        return match;
       });
+      console.log('📁 After folder filter:', results.length);
     }
 
     if (filters.dateRange) {
@@ -93,6 +104,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           return docDate >= cutoffDate;
         });
       }
+      console.log('📅 After date filter:', results.length);
     }
 
     if (filters.size) {
@@ -105,6 +117,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
           default: return true;
         }
       });
+      console.log('📦 After size filter:', results.length);
     }
 
     console.log('🎯 Final search results:', results.length);
@@ -139,11 +152,72 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
     setFilters({ fileType: '', folder: '', dateRange: '', size: '' });
   };
 
-  const uniqueFolders = [...new Set(
-    documents
-      .map(doc => doc.folder_name || doc.folder_id || 'General')
-      .filter(Boolean)
-  )];
+  // FIXED: Get all unique folders from both sources
+  const getAllFolders = () => {
+    const folderSet = new Set();
+    
+    // Add folders from documents (files that are in folders)
+    documents.forEach(doc => {
+      const folderName = doc.folder_name || doc.folder_id;
+      if (folderName && folderName !== 'General') {
+        folderSet.add(folderName);
+      }
+    });
+    
+    // Add folders from the folders array (all created folders)
+    folders.forEach(folder => {
+      if (folder.name && folder.name !== 'General') {
+        folderSet.add(folder.name);
+      }
+    });
+    
+    // Always include General folder
+    folderSet.add('General');
+    
+    const uniqueFolders = Array.from(folderSet).sort();
+    console.log('📁 All available folders:', uniqueFolders);
+    return uniqueFolders;
+  };
+
+  // Get all unique file types from documents
+  const getAllFileTypes = () => {
+    const fileTypeSet = new Set();
+    documents.forEach(doc => {
+      const fileName = doc.name || doc.original_name || '';
+      const fileExt = fileName.split('.').pop()?.toLowerCase();
+      if (fileExt) {
+        fileTypeSet.add(fileExt);
+      }
+    });
+    return Array.from(fileTypeSet).sort();
+  };
+
+  // Get document count by file type for display
+  const getFileTypeCount = (type) => {
+    return documents.filter(doc => {
+      const fileName = doc.name || doc.original_name || '';
+      const fileExt = fileName.split('.').pop()?.toLowerCase() || '';
+      
+      switch (type) {
+        case 'pdf': return fileExt === 'pdf';
+        case 'doc': return ['doc', 'docx'].includes(fileExt);
+        case 'image': return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileExt);
+        case 'excel': return ['xls', 'xlsx'].includes(fileExt);
+        case 'powerpoint': return ['ppt', 'pptx'].includes(fileExt);
+        case 'archive': return ['zip', 'rar', '7z'].includes(fileExt);
+        case 'text': return ['txt', 'md', 'csv'].includes(fileExt);
+        default: return false;
+      }
+    }).length;
+  };
+
+  // Get document count by folder for display
+  const getFolderCount = (folderName) => {
+    return documents.filter(doc => {
+      const docFolder = doc.folder_name || doc.folder_id || 'General';
+      return docFolder === folderName;
+    }).length;
+  };
 
   // Close filters when clicking outside
   useEffect(() => {
@@ -168,6 +242,9 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
       };
     }
   }, [showFilters]);
+
+  const uniqueFolders = getAllFolders();
+  const uniqueFileTypes = getAllFileTypes();
 
   return (
     <div className="relative search-container">
@@ -219,7 +296,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
         </button>
       </div>
 
-      {/* Active Filters Display - Show above filter panel */}
+      {/* Active Filters Display */}
       {hasActiveFilters() && (
         <div className="mt-2 mb-1 px-3 py-2 bg-gray-700 rounded-lg border border-orange-500/50 shadow-lg">
           <div className="flex items-center justify-between">
@@ -238,7 +315,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
         </div>
       )}
 
-      {/* Filters Panel - SOLID BACKGROUND, NO TRANSPARENCY */}
+      {/* Filters Panel - SOLID BACKGROUND */}
       {showFilters && (
         <>
           {/* Backdrop for mobile */}
@@ -254,6 +331,9 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               <div className="flex items-center space-x-2">
                 <Zap className="w-4 h-4 text-orange-400" />
                 <h3 className="text-white font-semibold text-sm">Advanced Filters</h3>
+                <div className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
+                  {documents.length} total files
+                </div>
               </div>
               <button
                 onClick={() => setShowFilters(false)}
@@ -264,52 +344,76 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </div>
             
             {/* Filters Grid */}
-            <div className="grid grid-cols-1 gap-3 mb-4">
-              {/* File Type Filter */}
+            <div className="grid grid-cols-1 gap-4 mb-4">
+              {/* File Type Filter - UPDATED WITH COUNTS */}
               <div>
-                <label className="block text-gray-300 text-xs font-medium mb-1">
-                  File Type
+                <label className="block text-gray-300 text-xs font-medium mb-2">
+                  File Type ({uniqueFileTypes.length} types available)
                 </label>
                 <select
                   value={filters.fileType}
-                  onChange={(e) => setFilters(prev => ({ ...prev, fileType: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  onChange={(e) => {
+                    console.log('📄 File type filter changed to:', e.target.value);
+                    setFilters(prev => ({ ...prev, fileType: e.target.value }));
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
-                  <option value="">All Types</option>
-                  <option value="pdf">📄 PDF Documents</option>
-                  <option value="doc">📝 Word Documents</option>
-                  <option value="image">🖼️ Images</option>
-                  <option value="excel">📊 Spreadsheets</option>
-                  <option value="powerpoint">📋 Presentations</option>
+                  <option value="">All Types ({documents.length})</option>
+                  <option value="pdf">📄 PDF Documents ({getFileTypeCount('pdf')})</option>
+                  <option value="doc">📝 Word Documents ({getFileTypeCount('doc')})</option>
+                  <option value="image">🖼️ Images ({getFileTypeCount('image')})</option>
+                  <option value="excel">📊 Spreadsheets ({getFileTypeCount('excel')})</option>
+                  <option value="powerpoint">📋 Presentations ({getFileTypeCount('powerpoint')})</option>
+                  <option value="archive">🗜️ Archives ({getFileTypeCount('archive')})</option>
+                  <option value="text">📃 Text Files ({getFileTypeCount('text')})</option>
                 </select>
               </div>
 
-              {/* Folder Filter */}
+              {/* FIXED: Folder Filter - NOW SHOWS ALL FOLDERS */}
               <div>
-                <label className="block text-gray-300 text-xs font-medium mb-1">
-                  Folder
+                <label className="block text-gray-300 text-xs font-medium mb-2">
+                  Folder ({uniqueFolders.length} folders available)
                 </label>
                 <select
                   value={filters.folder}
-                  onChange={(e) => setFilters(prev => ({ ...prev, folder: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  onChange={(e) => {
+                    console.log('📁 Folder filter changed to:', e.target.value);
+                    setFilters(prev => ({ ...prev, folder: e.target.value }));
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
-                  <option value="">All Folders</option>
-                  {uniqueFolders.map(folder => (
-                    <option key={folder} value={folder}>📁 {folder}</option>
-                  ))}
+                  <option value="">All Folders ({documents.length})</option>
+                  {uniqueFolders.map(folderName => {
+                    const count = getFolderCount(folderName);
+                    const folderIcon = folderName === 'General' ? '📂' : 
+                      folders.find(f => f.name === folderName)?.icon || '📁';
+                    
+                    return (
+                      <option key={folderName} value={folderName}>
+                        {folderIcon} {folderName} ({count})
+                      </option>
+                    );
+                  })}
                 </select>
+                
+                {/* Debug info for folder filter */}
+                <div className="mt-1 text-xs text-gray-500">
+                  Debug: Found {folders.length} created folders, {uniqueFolders.length} total folders
+                </div>
               </div>
 
-              {/* Date Range Filter */}
+              {/* Date Range Filter - ENHANCED */}
               <div>
-                <label className="block text-gray-300 text-xs font-medium mb-1">
+                <label className="block text-gray-300 text-xs font-medium mb-2">
                   Date Range
                 </label>
                 <select
                   value={filters.dateRange}
-                  onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  onChange={(e) => {
+                    console.log('📅 Date filter changed to:', e.target.value);
+                    setFilters(prev => ({ ...prev, dateRange: e.target.value }));
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
                   <option value="">All Dates</option>
                   <option value="today">📅 Today</option>
@@ -319,15 +423,18 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
                 </select>
               </div>
 
-              {/* Size Filter */}
+              {/* File Size Filter - ENHANCED */}
               <div>
-                <label className="block text-gray-300 text-xs font-medium mb-1">
+                <label className="block text-gray-300 text-xs font-medium mb-2">
                   File Size
                 </label>
                 <select
                   value={filters.size}
-                  onChange={(e) => setFilters(prev => ({ ...prev, size: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  onChange={(e) => {
+                    console.log('📦 Size filter changed to:', e.target.value);
+                    setFilters(prev => ({ ...prev, size: e.target.value }));
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 text-white text-sm rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 >
                   <option value="">All Sizes</option>
                   <option value="small">📦 Small (&lt; 1MB)</option>
@@ -337,17 +444,35 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
               </div>
             </div>
 
+            {/* Quick Stats */}
+            <div className="bg-gray-700/50 rounded-lg p-3 mb-4">
+              <div className="text-xs text-gray-300 space-y-1">
+                <div className="flex justify-between">
+                  <span>Total Documents:</span>
+                  <span className="text-white font-mono">{documents.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Folders:</span>
+                  <span className="text-white font-mono">{uniqueFolders.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>File Types:</span>
+                  <span className="text-white font-mono">{uniqueFileTypes.length}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Filter Actions */}
             <div className="flex space-x-2 pt-3 border-t border-gray-600">
               <button
                 onClick={clearFilters}
-                className="flex-1 px-3 py-1.5 text-xs text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700 hover:border-gray-500 transition-all duration-200"
+                className="flex-1 px-3 py-2 text-xs text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700 hover:border-gray-500 transition-all duration-200"
               >
                 Clear Filters
               </button>
               <button
                 onClick={() => setShowFilters(false)}
-                className="flex-1 px-3 py-1.5 text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg"
+                className="flex-1 px-3 py-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg"
               >
                 Apply Filters
               </button>
