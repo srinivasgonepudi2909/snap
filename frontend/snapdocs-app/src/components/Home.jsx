@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
          FileText, Users, Award, Phone, Mail, MapPin, Calendar } from 'lucide-react';
+import PopupModal from './dashboard/PopupModal'; // ADD THIS IMPORT
 
 const Home = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const navigate = useNavigate(); // Added navigate hook
+  const navigate = useNavigate();
   const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeModal, setActiveModal] = useState('login');
@@ -15,7 +16,10 @@ const Home = () => {
   // --- USER STATE ---
   const [userEmail, setUserEmail] = useState("");
   const [username, setUsername] = useState("");
-  const [message, setMessage] = useState({ text: '', type: '' }); // For success/error messages
+  
+  // REPLACE the basic message state with popup states
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupConfig, setPopupConfig] = useState({});
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -60,12 +64,16 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const showMessage = (text, type = 'success') => {
-    setMessage({ text, type });
-    // Auto-hide message after 5 seconds
-    setTimeout(() => {
-      setMessage({ text: '', type: '' });
-    }, 5000);
+  // NEW: Beautiful popup message function
+  const showPopupMessage = (type, title, message, details = null, autoClose = false) => {
+    setPopupConfig({
+      type,
+      title,
+      message,
+      details,
+      autoClose
+    });
+    setShowPopup(true);
   };
 
   const SnapDocsLogo = () => (
@@ -126,7 +134,13 @@ const Home = () => {
                     localStorage.removeItem('username');
                     setUserEmail('');
                     setUsername('');
-                    showMessage('Logged out successfully!');
+                    showPopupMessage(
+                      'success',
+                      'Logged Out Successfully! 👋',
+                      'You have been safely logged out of your SnapDocs account.',
+                      ['🔒 Your session has been cleared', '🛡️ All data is secure', '👋 Come back anytime!'],
+                      true
+                    );
                   }}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
                 >
@@ -169,7 +183,7 @@ const Home = () => {
     </header>
   );
 
-  // Login Modal Component (Updated with navigation)
+  // UPDATED: Login Modal Component with Beautiful Popup Messages
   const LoginModal = () => {
     const [localEmail, setLocalEmail] = React.useState('');
     const [localPassword, setLocalPassword] = React.useState('');
@@ -195,17 +209,57 @@ const Home = () => {
           localStorage.setItem('username', data.username || 'User');
           setUserEmail(localEmail);
           setUsername(data.username || 'User');
-          showMessage(`Welcome back, ${data.username || 'User'}!`);
+          
+          // Close login modal first
           setIsLoginOpen(false);
           setLocalEmail('');
           setLocalPassword('');
           
-          // Navigate to dashboard after successful login
-          navigate('/dashboard');
+          // Show beautiful success popup
+          showPopupMessage(
+            'success',
+            'Welcome Back! 🎉',
+            `Successfully logged into your SnapDocs account. Welcome back, ${data.username || 'User'}!`,
+            [
+              `👤 Logged in as: ${data.username || 'User'}`,
+              `📧 Email: ${localEmail}`,
+              `🕒 Login time: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
+              `🔒 Session secured with encryption`
+            ]
+          );
+          
+          // Navigate to dashboard after showing popup
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 2000);
         } else {
+          // Show beautiful error popup
+          showPopupMessage(
+            'error',
+            'Login Failed! ❌',
+            'Unable to log into your account. Please check your credentials and try again.',
+            [
+              `📧 Email: ${localEmail}`,
+              `❌ Error: ${data.detail || 'Invalid credentials'}`,
+              `🔒 Your account remains secure`,
+              `💡 Forgot your password? Contact support`
+            ]
+          );
           setLocalError(data.detail || 'Login failed. Please check your credentials.');
         }
       } catch (error) {
+        // Show network error popup
+        showPopupMessage(
+          'error',
+          'Connection Error! 🌐',
+          'Unable to connect to SnapDocs servers. Please check your internet connection and try again.',
+          [
+            `🌐 Network Error: ${error.message}`,
+            `📧 Attempted email: ${localEmail}`,
+            `🕒 Attempt time: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
+            `💡 Please check your internet connection`
+          ]
+        );
         setLocalError('Network error. Please check your connection and try again.');
       } finally {
         setLocalLoading(false);
@@ -266,7 +320,7 @@ const Home = () => {
     ) : null;
   };
 
-  // Signup Modal Component (Unchanged)
+  // UPDATED: Signup Modal Component with Beautiful Popup Messages
   const SignupModal = () => {
     const [localFirstName, setLocalFirstName] = React.useState('');
     const [localLastName, setLocalLastName] = React.useState('');
@@ -284,12 +338,14 @@ const Home = () => {
       setLocalLoading(true);
       setLocalError('');
 
+      const fullName = `${localFirstName} ${localLastName}`.trim();
+
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: `${localFirstName} ${localLastName}`.trim(),
+            username: fullName,
             email: localEmail,
             password: localPassword
           })
@@ -297,20 +353,66 @@ const Home = () => {
 
         const data = await response.json();
         if (response.ok) {
-          showMessage('Account created successfully! Please login with your credentials.');
+          // Close signup modal
           setIsSignupOpen(false);
-          setIsLoginOpen(true);
-          setActiveModal('login');
+          
           // Clear form
           setLocalFirstName('');
           setLocalLastName('');
           setLocalEmail('');
           setLocalPhoneNumber('');
           setLocalPassword('');
+          
+          // Show beautiful success popup
+          showPopupMessage(
+            'success',
+            'Account Created Successfully! 🎉',
+            `Welcome to SnapDocs, ${fullName}! Your account has been created and is ready to secure your documents.`,
+            [
+              `👤 Account Name: ${fullName}`,
+              `📧 Email: ${localEmail}`,
+              `📱 Phone: ${localCountry.code} ${localPhoneNumber}`,
+              `🕒 Created: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
+              `🔒 Your account is secured with encryption`,
+              `💡 Please login with your new credentials`
+            ]
+          );
+          
+          // Switch to login modal after popup
+          setTimeout(() => {
+            setIsLoginOpen(true);
+            setActiveModal('login');
+          }, 3000);
         } else {
+          // Show beautiful error popup
+          showPopupMessage(
+            'error',
+            'Account Creation Failed! ❌',
+            'Unable to create your SnapDocs account. Please check your information and try again.',
+            [
+              `👤 Name: ${fullName}`,
+              `📧 Email: ${localEmail}`,
+              `❌ Error: ${data.detail || 'Account creation failed'}`,
+              `🕒 Attempt: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
+              `💡 Please verify your email isn't already registered`
+            ]
+          );
           setLocalError(data.detail || 'Signup failed. Please try again.');
         }
       } catch (error) {
+        // Show network error popup
+        showPopupMessage(
+          'error',
+          'Connection Error! 🌐',
+          'Unable to connect to SnapDocs servers. Please check your internet connection and try again.',
+          [
+            `🌐 Network Error: ${error.message}`,
+            `👤 Name: ${fullName}`,
+            `📧 Email: ${localEmail}`,
+            `🕒 Attempt: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
+            `💡 Please check your internet connection`
+          ]
+        );
         setLocalError('Network error. Please check your connection and try again.');
       } finally {
         setLocalLoading(false);
@@ -477,23 +579,18 @@ const Home = () => {
       <LoginModal />
       <SignupModal />
       
-      {/* Message Display */}
-      {message.text && (
-        <div className={`fixed top-20 right-6 z-50 px-6 py-3 rounded-xl shadow-2xl border backdrop-blur-sm transition-all duration-300 ${
-          message.type === 'error' 
-            ? 'bg-red-600/20 border-red-500/50 text-red-300' 
-            : 'bg-green-600/20 border-green-500/50 text-green-300'
-        }`}>
-          <div className="flex items-center">
-            {message.type === 'error' ? (
-              <X className="w-5 h-5 mr-2" />
-            ) : (
-              <Check className="w-5 h-5 mr-2" />
-            )}
-            <span>{message.text}</span>
-          </div>
-        </div>
-      )}
+      {/* BEAUTIFUL POPUP MODAL - REPLACES BASIC MESSAGES */}
+      <PopupModal
+        isOpen={showPopup}
+        onClose={() => setShowPopup(false)}
+        type={popupConfig.type}
+        title={popupConfig.title}
+        message={popupConfig.message}
+        details={popupConfig.details}
+        showOkButton={true}
+        autoClose={popupConfig.autoClose}
+        autoCloseDelay={3000}
+      />
       
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 relative overflow-hidden">
