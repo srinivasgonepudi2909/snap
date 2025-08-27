@@ -1,3 +1,5 @@
+import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
+         FileText, Users, Award, Phone, Mail, MapPin, Calendar, AlertCircle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
@@ -321,6 +323,7 @@ const Home = () => {
   };
 
   // UPDATED: Signup Modal Component with Beautiful Popup Messages
+  // UPDATED: Signup Modal Component with Password Policy and Duplicate Prevention
   const SignupModal = () => {
     const [localFirstName, setLocalFirstName] = React.useState('');
     const [localLastName, setLocalLastName] = React.useState('');
@@ -332,6 +335,130 @@ const Home = () => {
     const [localError, setLocalError] = React.useState('');
     const [localCountry, setLocalCountry] = React.useState({ code: '+91', flag: '🇮🇳', name: 'India' });
     const [localCountryOpen, setLocalCountryOpen] = React.useState(false);
+    
+    // NEW: Password validation states
+    const [passwordValidation, setPasswordValidation] = React.useState({
+      minLength: false,
+      hasCapital: false,
+      hasNumber: false,
+      hasSpecial: false,
+      isValid: false
+    });
+    
+    // NEW: Username and email availability states
+    const [usernameStatus, setUsernameStatus] = React.useState({ checking: false, available: null, message: '' });
+    const [emailStatus, setEmailStatus] = React.useState({ checking: false, available: null, message: '' });
+
+    // NEW: Password validation function
+    const validatePassword = (password) => {
+      const validation = {
+        minLength: password.length >= 8,
+        hasCapital: /[A-Z]/.test(password),
+        hasNumber: /[0-9]/.test(password),
+        hasSpecial: /[!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]/.test(password),
+      };
+      
+      validation.isValid = validation.minLength && validation.hasCapital && validation.hasNumber && validation.hasSpecial;
+      
+      setPasswordValidation(validation);
+      return validation.isValid;
+    };
+
+    // NEW: Check username availability
+    const checkUsernameAvailability = async (username) => {
+      if (username.length < 3) {
+        setUsernameStatus({ checking: false, available: false, message: 'Username must be at least 3 characters' });
+        return;
+      }
+
+      setUsernameStatus({ checking: true, available: null, message: 'Checking availability...' });
+      
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/check-username/${username}`);
+        const data = await response.json();
+        
+        setUsernameStatus({
+          checking: false,
+          available: data.available,
+          message: data.message
+        });
+      } catch (error) {
+        setUsernameStatus({ checking: false, available: null, message: 'Unable to check availability' });
+      }
+    };
+
+    // NEW: Check email availability
+    const checkEmailAvailability = async (email) => {
+      if (!email || !email.includes('@')) return;
+
+      setEmailStatus({ checking: true, available: null, message: 'Checking availability...' });
+      
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/check-email/${email}`);
+        const data = await response.json();
+        
+        setEmailStatus({
+          checking: false,
+          available: data.available,
+          message: data.message
+        });
+      } catch (error) {
+        setEmailStatus({ checking: false, available: null, message: 'Unable to check availability' });
+      }
+    };
+
+    // Handle password change with validation
+    const handlePasswordChange = (e) => {
+      const password = e.target.value;
+      setLocalPassword(password);
+      validatePassword(password);
+    };
+
+    // Handle username change with debounced availability check
+    const handleUsernameChange = (e) => {
+      const fullName = `${localFirstName} ${localLastName}`.trim();
+      
+      // Clear previous timeout
+      if (window.usernameTimeout) {
+        clearTimeout(window.usernameTimeout);
+      }
+      
+      // Check availability after 500ms delay
+      window.usernameTimeout = setTimeout(() => {
+        if (fullName.length >= 3) {
+          checkUsernameAvailability(fullName);
+        }
+      }, 500);
+    };
+
+    // Handle email change with debounced availability check
+    const handleEmailChange = (e) => {
+      const email = e.target.value;
+      setLocalEmail(email);
+      
+      // Clear previous timeout
+      if (window.emailTimeout) {
+        clearTimeout(window.emailTimeout);
+      }
+      
+      // Check availability after 500ms delay
+      window.emailTimeout = setTimeout(() => {
+        if (email.includes('@')) {
+          checkEmailAvailability(email);
+        }
+      }, 500);
+    };
+
+    // Update first/last name handlers
+    const handleFirstNameChange = (e) => {
+      setLocalFirstName(e.target.value);
+      handleUsernameChange();
+    };
+
+    const handleLastNameChange = (e) => {
+      setLocalLastName(e.target.value);
+      handleUsernameChange();
+    };
 
     const handleLocalSubmit = async (e) => {
       e.preventDefault();
@@ -339,6 +466,31 @@ const Home = () => {
       setLocalError('');
 
       const fullName = `${localFirstName} ${localLastName}`.trim();
+
+      // Client-side validations
+      if (!fullName || fullName.length < 3) {
+        setLocalError('Full name must be at least 3 characters long');
+        setLocalLoading(false);
+        return;
+      }
+
+      if (!passwordValidation.isValid) {
+        setLocalError('Please ensure your password meets all the requirements below');
+        setLocalLoading(false);
+        return;
+      }
+
+      if (usernameStatus.available === false) {
+        setLocalError('Please choose a different name as this one is already taken');
+        setLocalLoading(false);
+        return;
+      }
+
+      if (emailStatus.available === false) {
+        setLocalError('This email is already registered. Please use a different email or try logging in');
+        setLocalLoading(false);
+        return;
+      }
 
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/signup`, {
@@ -352,7 +504,7 @@ const Home = () => {
         });
 
         const data = await response.json();
-        if (response.ok) {
+        if (response.ok && data.success) {
           // Close signup modal
           setIsSignupOpen(false);
           
@@ -384,17 +536,17 @@ const Home = () => {
             setActiveModal('login');
           }, 3000);
         } else {
-          // Show beautiful error popup
+          // Show specific error message from backend
           showPopupMessage(
             'error',
             'Account Creation Failed! ❌',
-            'Unable to create your SnapDocs account. Please check your information and try again.',
+            data.detail || 'Unable to create your SnapDocs account. Please try again.',
             [
               `👤 Name: ${fullName}`,
               `📧 Email: ${localEmail}`,
               `❌ Error: ${data.detail || 'Account creation failed'}`,
               `🕒 Attempt: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
-              `💡 Please verify your email isn't already registered`
+              `💡 Please verify your information and try again`
             ]
           );
           setLocalError(data.detail || 'Signup failed. Please try again.');
@@ -440,28 +592,71 @@ const Home = () => {
               <div>
                 <label className="block text-gray-300 text-sm font-semibold mb-2">First Name</label>
                 <input
-                  type="text" value={localFirstName} onChange={(e) => setLocalFirstName(e.target.value)}
+                  type="text" 
+                  value={localFirstName} 
+                  onChange={handleFirstNameChange}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="First name" required autoComplete="given-name"
+                  placeholder="First name" 
+                  required 
+                  autoComplete="given-name"
                 />
               </div>
               <div>
                 <label className="block text-gray-300 text-sm font-semibold mb-2">Last Name</label>
                 <input
-                  type="text" value={localLastName} onChange={(e) => setLocalLastName(e.target.value)}
+                  type="text" 
+                  value={localLastName} 
+                  onChange={handleLastNameChange}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Last name" required autoComplete="family-name"
+                  placeholder="Last name" 
+                  required 
+                  autoComplete="family-name"
                 />
               </div>
             </div>
+
+            {/* Username Status Display */}
+            {(localFirstName || localLastName) && (
+              <div className="text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">Username: <span className="font-semibold text-white">{`${localFirstName} ${localLastName}`.trim()}</span></span>
+                  {usernameStatus.checking && <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent"></div>}
+                </div>
+                {usernameStatus.message && (
+                  <div className={`mt-1 text-xs ${
+                    usernameStatus.available === true ? 'text-green-400' : 
+                    usernameStatus.available === false ? 'text-red-400' : 'text-gray-400'
+                  }`}>
+                    {usernameStatus.available === true ? '✅ ' : usernameStatus.available === false ? '❌ ' : ''}
+                    {usernameStatus.message}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
               <input
-                type="email" value={localEmail} onChange={(e) => setLocalEmail(e.target.value)}
+                type="email" 
+                value={localEmail} 
+                onChange={handleEmailChange}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="Enter your email" required autoComplete="email"
+                placeholder="Enter your email" 
+                required 
+                autoComplete="email"
               />
+              {emailStatus.message && (
+                <div className={`mt-1 text-xs ${
+                  emailStatus.available === true ? 'text-green-400' : 
+                  emailStatus.available === false ? 'text-red-400' : 'text-gray-400'
+                }`}>
+                  {emailStatus.checking && <div className="inline-block animate-spin rounded-full h-3 w-3 border border-blue-400 border-t-transparent mr-2"></div>}
+                  {emailStatus.available === true ? '✅ ' : emailStatus.available === false ? '❌ ' : ''}
+                  {emailStatus.message}
+                </div>
+              )}
             </div>
+            
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Phone Number</label>
               <div className="flex gap-2">
@@ -496,27 +691,95 @@ const Home = () => {
                   )}
                 </div>
                 <input
-                  type="tel" value={localPhoneNumber} onChange={(e) => setLocalPhoneNumber(e.target.value)}
+                  type="tel" 
+                  value={localPhoneNumber} 
+                  onChange={(e) => setLocalPhoneNumber(e.target.value)}
                   className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Phone number" autoComplete="tel"
+                  placeholder="Phone number" 
+                  autoComplete="tel"
                 />
               </div>
             </div>
+            
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Password</label>
               <div className="relative">
                 <input
-                  type={localShowPassword ? "text" : "password"} value={localPassword} onChange={(e) => setLocalPassword(e.target.value)}
+                  type={localShowPassword ? "text" : "password"} 
+                  value={localPassword} 
+                  onChange={handlePasswordChange}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors pr-12"
-                  placeholder="Create a strong password" required minLength="6" autoComplete="new-password"
+                  placeholder="Create a strong password" 
+                  required 
+                  minLength="8" 
+                  autoComplete="new-password"
                 />
-                <button type="button" onClick={() => setLocalShowPassword(!localShowPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                <button 
+                  type="button" 
+                  onClick={() => setLocalShowPassword(!localShowPassword)} 
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                >
                   {localShowPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              
+              {/* Password Strength Indicator */}
+              {localPassword && (
+                <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                  <div className="text-xs text-gray-300 mb-2 font-semibold">Password Requirements:</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className={`flex items-center space-x-1 ${passwordValidation.minLength ? 'text-green-400' : 'text-red-400'}`}>
+                      <span>{passwordValidation.minLength ? '✅' : '❌'}</span>
+                      <span>8+ characters</span>
+                    </div>
+                    <div className={`flex items-center space-x-1 ${passwordValidation.hasCapital ? 'text-green-400' : 'text-red-400'}`}>
+                      <span>{passwordValidation.hasCapital ? '✅' : '❌'}</span>
+                      <span>Capital letter</span>
+                    </div>
+                    <div className={`flex items-center space-x-1 ${passwordValidation.hasNumber ? 'text-green-400' : 'text-red-400'}`}>
+                      <span>{passwordValidation.hasNumber ? '✅' : '❌'}</span>
+                      <span>Number</span>
+                    </div>
+                    <div className={`flex items-center space-x-1 ${passwordValidation.hasSpecial ? 'text-green-400' : 'text-red-400'}`}>
+                      <span>{passwordValidation.hasSpecial ? '✅' : '❌'}</span>
+                      <span>Special char</span>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-700 rounded-full h-1">
+                      <div 
+                        className={`h-1 rounded-full transition-all duration-300 ${
+                          passwordValidation.isValid ? 'bg-green-500' :
+                          Object.values(passwordValidation).filter(Boolean).length >= 3 ? 'bg-yellow-500' :
+                          Object.values(passwordValidation).filter(Boolean).length >= 2 ? 'bg-orange-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{
+                          width: `${(Object.values(passwordValidation).filter(Boolean).length / 4) * 100}%`
+                        }}
+                      ></div>
+                    </div>
+                    <div className={`text-xs mt-1 font-semibold ${
+                      passwordValidation.isValid ? 'text-green-400' :
+                      Object.values(passwordValidation).filter(Boolean).length >= 3 ? 'text-yellow-400' :
+                      Object.values(passwordValidation).filter(Boolean).length >= 2 ? 'text-orange-400' :
+                      'text-red-400'
+                    }`}>
+                      {passwordValidation.isValid ? 'Strong password!' :
+                       Object.values(passwordValidation).filter(Boolean).length >= 3 ? 'Almost there!' :
+                       Object.values(passwordValidation).filter(Boolean).length >= 2 ? 'Getting better...' :
+                       'Weak password'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <button type="submit" disabled={localLoading}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+            
+            <button 
+              type="submit" 
+              disabled={localLoading || !passwordValidation.isValid || usernameStatus.available === false || emailStatus.available === false}
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
               {localLoading ? 'Creating Account...' : 'Create SnapDocs Account'}
             </button>
           </form>
