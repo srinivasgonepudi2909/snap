@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx - COMPLETE VERSION WITH POPUP NOTIFICATIONS
+// pages/Dashboard.jsx - COMPLETE VERSION WITH CUSTOM DELETE CONFIRMATION MODAL
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -12,9 +12,10 @@ import Sidebar from '../components/dashboard/Sidebar';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import DashboardViews from '../components/dashboard/DashboardViews';
 import CreateFolderModal from '../components/dashboard/CreateFolderModal';
+import DeleteConfirmationModal from '../components/dashboard/DeleteConfirmationModal'; // NEW IMPORT
 import Notifications from '../components/dashboard/Notifications';
 import SearchComponent from '../components/dashboard/SearchComponent';
-import PopupModal from '../components/dashboard/PopupModal'; // Import the new popup component
+import PopupModal from '../components/dashboard/PopupModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -34,6 +35,10 @@ const Dashboard = () => {
   // Popup states for operations
   const [showPopup, setShowPopup] = useState(false);
   const [popupConfig, setPopupConfig] = useState({});
+
+  // NEW: Delete confirmation modal states
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
 
   const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
   const storageStats = useStorageCalculator(documents, 15);
@@ -164,6 +169,7 @@ const Dashboard = () => {
     setIsSearchActive(false);
   };
 
+  // UPDATED: File action handler - no more window.confirm()
   const handleFileAction = async (action, file) => {
     switch (action) {
       case 'view':
@@ -173,80 +179,97 @@ const Dashboard = () => {
         showNotification(`Downloading ${file.name || file.original_name}`, 'info');
         break;
       case 'delete':
-        const fileName = file.name || file.original_name;
-        const fileSize = formatFileSize(file.file_size || file.size || 0);
-        
-        if (window.confirm(`Are you sure you want to delete "${fileName}"?\n\nThis action cannot be undone.`)) {
-          try {
-            console.log(`🗑️ Attempting to delete file: ${fileName} (ID: ${file._id})`);
-            
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/documents/${file._id}`, {
-              method: 'DELETE',
-              headers: { 
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-            });
-
-            console.log(`📊 Delete response status: ${response.status}`);
-            const result = await response.json();
-            console.log(`📦 Delete response:`, result);
-
-            if (response.ok) {
-              // Show success popup
-              showOperationPopup(
-                'delete',
-                'File Deleted Successfully! 🗑️',
-                `"${fileName}" has been permanently deleted from your SnapDocs vault.`,
-                [
-                  `📄 File: ${fileName}`,
-                  `📦 Size: ${fileSize}`,
-                  `📁 Folder: ${file.folder_name || file.folder_id || 'General'}`,
-                  `🕒 Deleted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-                ]
-              );
-              
-              // Refresh data after popup
-              setTimeout(() => {
-                refetch();
-              }, 1000);
-              
-              console.log(`✅ File deleted successfully: ${fileName}`);
-            } else {
-              // Show error popup
-              showOperationPopup(
-                'error',
-                'Delete Failed! ❌',
-                `Failed to delete "${fileName}". Please try again.`,
-                [
-                  `📄 File: ${fileName}`,
-                  `❌ Error: ${result.message || result.detail || 'Unknown error'}`,
-                  `📊 Status: ${response.status}`,
-                  `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-                ]
-              );
-              console.error(`❌ Delete failed: ${result.message || result.detail}`);
-            }
-          } catch (error) {
-            // Show network error popup
-            showOperationPopup(
-              'error',
-              'Network Error! 🌐',
-              `Unable to delete "${fileName}" due to a network error. Please check your connection and try again.`,
-              [
-                `📄 File: ${fileName}`,
-                `🌐 Error: ${error.message}`,
-                `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-              ]
-            );
-            console.error(`❌ Network error deleting file:`, error);
-          }
-        }
+        // Open custom delete confirmation modal instead of window.confirm
+        setFileToDelete(file);
+        setDeleteModalOpen(true);
         break;
       default:
         break;
     }
+  };
+
+  // NEW: Handle the actual delete operation
+  const handleConfirmDelete = async () => {
+    if (!fileToDelete) return;
+
+    const fileName = fileToDelete.name || fileToDelete.original_name;
+    const fileSize = formatFileSize(fileToDelete.file_size || fileToDelete.size || 0);
+    
+    try {
+      console.log(`🗑️ Attempting to delete file: ${fileName} (ID: ${fileToDelete._id})`);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_DOCUMENT_API}/api/v1/documents/${fileToDelete._id}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      console.log(`📊 Delete response status: ${response.status}`);
+      const result = await response.json();
+      console.log(`📦 Delete response:`, result);
+
+      if (response.ok) {
+        // Show success popup
+        showOperationPopup(
+          'delete',
+          'File Deleted Successfully! 🗑️',
+          `"${fileName}" has been permanently deleted from your SnapDocs vault.`,
+          [
+            `📄 File: ${fileName}`,
+            `📦 Size: ${fileSize}`,
+            `📁 Folder: ${fileToDelete.folder_name || fileToDelete.folder_id || 'General'}`,
+            `🕒 Deleted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+          ]
+        );
+        
+        // Refresh data after popup
+        setTimeout(() => {
+          refetch();
+        }, 1000);
+        
+        console.log(`✅ File deleted successfully: ${fileName}`);
+      } else {
+        // Show error popup
+        showOperationPopup(
+          'error',
+          'Delete Failed! ❌',
+          `Failed to delete "${fileName}". Please try again.`,
+          [
+            `📄 File: ${fileName}`,
+            `❌ Error: ${result.message || result.detail || 'Unknown error'}`,
+            `📊 Status: ${response.status}`,
+            `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+          ]
+        );
+        console.error(`❌ Delete failed: ${result.message || result.detail}`);
+      }
+    } catch (error) {
+      // Show network error popup
+      showOperationPopup(
+        'error',
+        'Network Error! 🌐',
+        `Unable to delete "${fileName}" due to a network error. Please check your connection and try again.`,
+        [
+          `📄 File: ${fileName}`,
+          `🌐 Error: ${error.message}`,
+          `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+        ]
+      );
+      console.error(`❌ Network error deleting file:`, error);
+    } finally {
+      // Reset delete modal state
+      setFileToDelete(null);
+      setDeleteModalOpen(false);
+    }
+  };
+
+  // NEW: Handle delete modal close
+  const handleDeleteModalClose = () => {
+    setDeleteModalOpen(false);
+    setFileToDelete(null);
   };
 
   // Calculate recent uploads using unified calculator
@@ -480,6 +503,15 @@ const Dashboard = () => {
         isOpen={createFolderOpen}
         onClose={() => setCreateFolderOpen(false)}
         onFolderCreated={handleFolderCreated}
+      />
+
+      {/* NEW: Custom Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={handleDeleteModalClose}
+        onConfirm={handleConfirmDelete}
+        file={fileToDelete}
+        formatFileSize={formatFileSize}
       />
 
       {/* Operation Popup Modal */}
