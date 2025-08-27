@@ -1,4 +1,4 @@
-// components/dashboard/SearchComponent.jsx - FIXED FILTER POSITIONING
+// components/dashboard/SearchComponent.jsx - FIXED FILTER POSITIONING & BUTTON SIZE
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, X, Zap } from 'lucide-react';
 
@@ -146,11 +146,11 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
 
   return (
     <div className="relative search-container">
-      {/* Main Search Bar */}
+      {/* Main Search Bar - SMALLER HEIGHT */}
       <div className="flex items-center bg-gray-800/80 backdrop-blur-md rounded-lg border border-gray-700/50 overflow-hidden shadow-xl">
         {/* Search icon */}
-        <div className="p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
-          <Search className="w-5 h-5 text-blue-400" />
+        <div className="p-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
+          <Search className="w-4 h-4 text-blue-400" />
         </div>
         
         <input
@@ -161,67 +161,67 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             console.log('🔤 Search input changed:', e.target.value);
             setSearchQuery(e.target.value);
           }}
-          className="flex-1 px-4 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-0"
+          className="flex-1 px-3 py-2 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-0 text-sm"
         />
         
         {/* Clear search button */}
         {(searchQuery || hasActiveFilters()) && (
           <button
             onClick={clearSearch}
-            className="p-2 text-gray-400 hover:text-white transition-colors mr-2 hover:bg-red-600/20 rounded-md"
+            className="p-1.5 text-gray-400 hover:text-white transition-colors mr-2 hover:bg-red-600/20 rounded-md"
             title="Clear search"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3" />
           </button>
         )}
         
-        {/* Filter button */}
+        {/* Filter button - SMALLER */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`p-3 border-l border-gray-700/50 transition-all duration-200 relative ${
+          className={`p-2 border-l border-gray-700/50 transition-all duration-200 relative text-sm ${
             hasActiveFilters() 
               ? 'text-orange-400 bg-orange-600/20' 
               : 'text-gray-400 hover:text-white hover:bg-white/10'
           }`}
           title="Advanced Filters"
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-3 h-3" />
           {hasActiveFilters() && (
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse">
+            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse">
               <div className="absolute inset-0 bg-orange-400 rounded-full animate-ping"></div>
             </div>
           )}
         </button>
       </div>
 
-      {/* Filters Panel - FIXED POSITIONING */}
+      {/* Filters Panel - FIXED VERTICAL POSITIONING */}
       {showFilters && (
-        <div className="absolute top-full mt-2 left-0 right-0 bg-gray-800/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl p-6 z-50 max-w-4xl">
+        <div className="absolute top-full mt-2 left-0 right-0 bg-gray-800/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl p-4 z-50 max-w-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <Zap className="w-5 h-5 text-orange-400" />
-              <h3 className="text-white font-semibold">Advanced Filters</h3>
+              <Zap className="w-4 h-4 text-orange-400" />
+              <h3 className="text-white font-semibold text-sm">Advanced Filters</h3>
             </div>
             <button
               onClick={() => setShowFilters(false)}
               className="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </button>
           </div>
           
-          {/* Filters Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Filters Grid - SMALLER LAYOUT */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             {/* File Type Filter */}
             <div>
-              <label className="block text-gray-300 text-sm font-medium mb-2">
+              <label className="block text-gray-300 text-xs font-medium mb-1">
                 File Type
               </label>
               <select
                 value={filters.fileType}
                 onChange={(e) => setFilters(prev => ({ ...prev, fileType: e.target.value }))}
-                className="w-full px-3 py-2 bg-gray-700/80 text-white rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                className="w-full px-2 py-1.5 bg-gray-700/80 text-white text-sm rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
               >
                 <option value="">All Types</option>
                 <option value="pdf">📄 PDF Documents</option>
@@ -234,13 +234,13 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
 
             {/* Folder Filter */}
             <div>
-              <label className="block text-gray-300 text-sm font-medium mb-2">
+              <label className="block text-gray-300 text-xs font-medium mb-1">
                 Folder
               </label>
               <select
                 value={filters.folder}
                 onChange={(e) => setFilters(prev => ({ ...prev, folder: e.target.value }))}
-                className="w-full px-3 py-2 bg-gray-700/80 text-white rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                className="w-full px-2 py-1.5 bg-gray-700/80 text-white text-sm rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
               >
                 <option value="">All Folders</option>
                 {uniqueFolders.map(folder => (
@@ -251,13 +251,13 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
 
             {/* Date Range Filter */}
             <div>
-              <label className="block text-gray-300 text-sm font-medium mb-2">
+              <label className="block text-gray-300 text-xs font-medium mb-1">
                 Date Range
               </label>
               <select
                 value={filters.dateRange}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                className="w-full px-3 py-2 bg-gray-700/80 text-white rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                className="w-full px-2 py-1.5 bg-gray-700/80 text-white text-sm rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
               >
                 <option value="">All Dates</option>
                 <option value="today">📅 Today</option>
@@ -269,13 +269,13 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
 
             {/* Size Filter */}
             <div>
-              <label className="block text-gray-300 text-sm font-medium mb-2">
+              <label className="block text-gray-300 text-xs font-medium mb-1">
                 File Size
               </label>
               <select
                 value={filters.size}
                 onChange={(e) => setFilters(prev => ({ ...prev, size: e.target.value }))}
-                className="w-full px-3 py-2 bg-gray-700/80 text-white rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                className="w-full px-2 py-1.5 bg-gray-700/80 text-white text-sm rounded-lg border border-gray-600/50 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
               >
                 <option value="">All Sizes</option>
                 <option value="small">📦 Small (&lt; 1MB)</option>
@@ -285,17 +285,17 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </div>
           </div>
 
-          {/* Filter Actions */}
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-700/50">
+          {/* Filter Actions - SMALLER BUTTONS */}
+          <div className="flex space-x-2 pt-3 border-t border-gray-700/50">
             <button
               onClick={clearFilters}
-              className="flex-1 px-4 py-2 text-gray-300 border border-gray-600/50 rounded-lg hover:bg-gray-700/50 hover:border-gray-500/50 transition-all duration-200"
+              className="flex-1 px-3 py-1.5 text-xs text-gray-300 border border-gray-600/50 rounded-lg hover:bg-gray-700/50 hover:border-gray-500/50 transition-all duration-200"
             >
               Clear Filters
             </button>
             <button
               onClick={() => setShowFilters(false)}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg"
+              className="flex-1 px-3 py-1.5 text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg"
             >
               Apply Filters
             </button>
@@ -303,22 +303,22 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
 
           {/* Active Filters */}
           {hasActiveFilters() && (
-            <div className="mt-4 pt-4 border-t border-gray-700/50">
+            <div className="mt-3 pt-3 border-t border-gray-700/50">
               <div className="text-xs text-gray-400 mb-2">Active filters:</div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1">
                 {Object.entries(filters).map(([key, value]) => {
                   if (!value) return null;
                   return (
                     <span
                       key={key}
-                      className="px-3 py-1 bg-gradient-to-r from-orange-600/20 to-red-600/20 text-orange-300 text-xs rounded-full flex items-center space-x-2 border border-orange-500/30"
+                      className="px-2 py-1 bg-gradient-to-r from-orange-600/20 to-red-600/20 text-orange-300 text-xs rounded-full flex items-center space-x-1 border border-orange-500/30"
                     >
                       <span>{key}: {value}</span>
                       <button
                         onClick={() => setFilters(prev => ({ ...prev, [key]: '' }))}
                         className="hover:text-orange-200 transition-colors"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-2 h-2" />
                       </button>
                     </span>
                   );
@@ -331,14 +331,14 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
 
       {/* Search Status Indicator */}
       {(searchQuery || hasActiveFilters()) && (
-        <div className="mt-3 px-4 py-3 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-md border border-blue-500/30 rounded-lg">
+        <div className="mt-2 px-3 py-2 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-md border border-blue-500/30 rounded-lg">
           <div className="text-blue-200 text-sm flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
               <span>
                 🔍 {searchQuery && `Searching for: "${searchQuery}"`}
                 {hasActiveFilters() && (
-                  <span className="ml-2 text-orange-300">
+                  <span className="ml-2 text-orange-300 text-xs">
                     ({Object.values(filters).filter(v => v).length} filters active)
                   </span>
                 )}
@@ -346,7 +346,7 @@ const SearchComponent = ({ documents = [], folders = [], onSearchResults }) => {
             </div>
             <button 
               onClick={clearSearch}
-              className="text-blue-300 hover:text-blue-200 underline ml-2 transition-colors"
+              className="text-blue-300 hover:text-blue-200 underline ml-2 transition-colors text-xs"
             >
               Clear
             </button>

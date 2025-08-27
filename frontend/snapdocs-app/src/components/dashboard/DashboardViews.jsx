@@ -1,4 +1,4 @@
-// components/dashboard/DashboardViews.jsx - UPDATED WITH DYNAMIC STATS INTEGRATION
+// components/dashboard/DashboardViews.jsx - COMPLETE FIX WITH REAL-TIME STATS
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FileText, Folder, Upload, Plus, Eye, Download, Trash2, AlertCircle } from 'lucide-react';
@@ -56,7 +56,6 @@ const DashboardViews = ({
 
   // Get files for different contexts
   const getFilesNotInFolders = () => {
-    // Use original documents for this calculation, not search results
     const originalDocuments = searchResults.length > 0 ? searchResults : documents;
     return originalDocuments.filter(doc => 
       !doc.folder_name || 
@@ -75,12 +74,11 @@ const DashboardViews = ({
   // File action handler with preview support
   const handleFileAction = (action, file) => {
     if (action === 'preview' || action === 'view') {
-      // Pass the appropriate file list based on current view
       const fileList = viewMode === 'folder' 
         ? documents.filter(d => (d.folder_name || d.folder_id) === selectedFolder?.name)
         : viewMode === 'recent-uploads'
           ? recentUploads
-          : documents; // Use current documents which may include search results
+          : documents;
           
       openPreview(file, fileList);
     } else {
@@ -183,7 +181,6 @@ const DashboardViews = ({
                 )}
               </div>
 
-              {/* Preview Modal for search results */}
               <FilePreviewModal
                 isOpen={isPreviewOpen}
                 onClose={closePreview}
@@ -195,11 +192,12 @@ const DashboardViews = ({
             </div>
           ) : (
             <>
-              {/* Normal dashboard view with dynamic stats */}
+              {/* Normal dashboard view with REAL-TIME STATS */}
               <StatsCards
                 documentsCount={stats.totalDocuments || documents.length}
                 foldersCount={stats.totalFolders || folders.length}
                 recentUploadsCount={stats.recentUploads || recentUploads.length}
+                documents={documents} // 👈 PASS DOCUMENTS FOR REAL-TIME CALCULATIONS
                 onViewModeChange={onViewModeChange}
               />
 
@@ -256,12 +254,12 @@ const DashboardViews = ({
                   </div>
                 </div>
 
-                {/* Right Panel with Dynamic Stats */}
+                {/* Right Panel with REAL-TIME Stats */}
                 <ActivityPanel
                   recentUploads={recentUploads}
                   usedStorage={usedStorage}
                   totalStorage={totalStorage}
-                  documents={documents}
+                  documents={documents} // 👈 PASS DOCUMENTS FOR REAL-TIME CALCULATIONS
                   folders={folders}
                 />
               </div>
@@ -281,7 +279,7 @@ const DashboardViews = ({
       );
 
     case 'all-documents':
-      const displayDocuments = documents; // documents already contains search results if active
+      const displayDocuments = documents;
       
       return (
         <>
@@ -323,7 +321,6 @@ const DashboardViews = ({
             </div>
           </div>
 
-          {/* Preview Modal */}
           <FilePreviewModal
             isOpen={isPreviewOpen}
             onClose={closePreview}
@@ -345,9 +342,9 @@ const DashboardViews = ({
             </h2>
             <button 
               onClick={onCreateFolder}
-              className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg"
+              className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg text-sm"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
               <span>New Folder</span>
             </button>
           </div>
@@ -403,7 +400,7 @@ const DashboardViews = ({
             </div>
           )}
 
-          {/* Files Not in Folders - Use all documents, not search results for this section */}
+          {/* Files Not in Folders */}
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
               <FileText className="w-6 h-6 text-orange-400" />
@@ -489,7 +486,6 @@ const DashboardViews = ({
             </div>
           </div>
 
-          {/* Preview Modal */}
           <FilePreviewModal
             isOpen={isPreviewOpen}
             onClose={closePreview}
@@ -568,7 +564,6 @@ const DashboardViews = ({
             </div>
           </div>
 
-          {/* Preview Modal */}
           <FilePreviewModal
             isOpen={isPreviewOpen}
             onClose={closePreview}
