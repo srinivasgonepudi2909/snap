@@ -9,7 +9,7 @@ RUN apk add --no-cache python3 make g++ libc6-compat
 COPY package*.json ./
 
 # Prefer npm ci when lockfile exists, fallback to npm install
-RUN npm ci --silent || npm install --silent
+RUN npm ci  || npm install 
 
 # Copy app and env (React needs REACT_APP_* at build time)
 COPY . .
