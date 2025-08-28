@@ -1,21 +1,36 @@
+// Updated Home.jsx with Beautiful Authentication Popups
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 import { Upload, Folder, Shield, Check, Star, Lock, ArrowRight, X, Eye, EyeOff, ChevronDown, 
          FileText, Users, Award, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 
+// Import the new AuthPopup component
+import AuthPopup, { useAuthPopup } from './auth/AuthPopup';
+
 const Home = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const navigate = useNavigate(); // Added navigate hook
+  const navigate = useNavigate();
   const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeModal, setActiveModal] = useState('login');
   const [selectedCountry, setSelectedCountry] = useState({ code: '+91', flag: '🇮🇳', name: 'India' });
   const [isCountryOpen, setIsCountryOpen] = useState(false);
 
+  // Initialize the auth popup hook
+  const {
+    popup,
+    hidePopup,
+    showLoginSuccess,
+    showLoginError,
+    showLoginLoading,
+    showSignupSuccess,
+    showSignupError,
+    showSignupLoading
+  } = useAuthPopup();
+
   // --- USER STATE ---
   const [userEmail, setUserEmail] = useState("");
   const [username, setUsername] = useState("");
-  const [message, setMessage] = useState({ text: '', type: '' }); // For success/error messages
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -59,14 +74,6 @@ const Home = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const showMessage = (text, type = 'success') => {
-    setMessage({ text, type });
-    // Auto-hide message after 5 seconds
-    setTimeout(() => {
-      setMessage({ text: '', type: '' });
-    }, 5000);
-  };
 
   const SnapDocsLogo = () => (
     <Link to="/" className="flex items-center space-x-3 group cursor-pointer">
@@ -126,7 +133,7 @@ const Home = () => {
                     localStorage.removeItem('username');
                     setUserEmail('');
                     setUsername('');
-                    showMessage('Logged out successfully!');
+                    // Could show a logout success popup here if needed
                   }}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300"
                 >
@@ -169,46 +176,67 @@ const Home = () => {
     </header>
   );
 
-  // Login Modal Component (Updated with navigation)
+  // Login Modal Component with popup integration
   const LoginModal = () => {
     const [localEmail, setLocalEmail] = React.useState('');
     const [localPassword, setLocalPassword] = React.useState('');
     const [localShowPassword, setLocalShowPassword] = React.useState(false);
-    const [localLoading, setLocalLoading] = React.useState(false);
-    const [localError, setLocalError] = React.useState('');
 
     const handleLocalSubmit = async (e) => {
       e.preventDefault();
-      setLocalLoading(true);
-      setLocalError('');
+      console.log("🔍 Login attempt started");
+
+      // Show loading popup immediately
+      showLoginLoading();
 
       try {
+        console.log("🌐 Sending request to:", `${process.env.REACT_APP_BACKEND_URL}/login`);
+        
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: localEmail, password: localPassword })
         });
 
+        console.log("📊 Response status:", response.status);
         const data = await response.json();
-        if (response.ok) {
+        console.log("📦 Response data:", data);
+
+        if (response.ok && data.access_token) {
+          console.log("✅ Login successful, storing token");
           localStorage.setItem('token', data.access_token);
           localStorage.setItem('username', data.username || 'User');
           setUserEmail(localEmail);
           setUsername(data.username || 'User');
-          showMessage(`Welcome back, ${data.username || 'User'}!`);
+          
+          // Hide loading and show success popup
+          hidePopup();
+          setTimeout(() => {
+            showLoginSuccess(data.username || 'User');
+          }, 200);
+          
+          // Close modal and navigate
           setIsLoginOpen(false);
           setLocalEmail('');
           setLocalPassword('');
           
-          // Navigate to dashboard after successful login
-          navigate('/dashboard');
+          // Navigate to dashboard after popup
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 2000);
         } else {
-          setLocalError(data.detail || 'Login failed. Please check your credentials.');
+          console.log("❌ Login failed");
+          hidePopup();
+          setTimeout(() => {
+            showLoginError(data.detail || 'Invalid credentials. Please check your email and password.');
+          }, 200);
         }
       } catch (error) {
-        setLocalError('Network error. Please check your connection and try again.');
-      } finally {
-        setLocalLoading(false);
+        console.error("🔥 Login error", error);
+        hidePopup();
+        setTimeout(() => {
+          showLoginError('Network error. Please check your internet connection and try again.');
+        }, 200);
       }
     };
 
@@ -223,11 +251,6 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Welcome Back</h2>
             <p className="text-gray-400">Login to access your digital vault</p>
           </div>
-          {localError && (
-            <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
-              {localError}
-            </div>
-          )}
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div>
               <label className="block text-gray-300 text-sm font-semibold mb-2">Email Address</label>
@@ -250,9 +273,9 @@ const Home = () => {
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={localLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {localLoading ? 'Logging in...' : 'Login to SnapDocs'}
+            <button type="submit"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+              Login to SnapDocs
             </button>
           </form>
           <div className="text-center mt-6">
@@ -266,7 +289,7 @@ const Home = () => {
     ) : null;
   };
 
-  // Signup Modal Component (Unchanged)
+  // Signup Modal Component with popup integration
   const SignupModal = () => {
     const [localFirstName, setLocalFirstName] = React.useState('');
     const [localLastName, setLocalLastName] = React.useState('');
@@ -274,33 +297,44 @@ const Home = () => {
     const [localPhoneNumber, setLocalPhoneNumber] = React.useState('');
     const [localPassword, setLocalPassword] = React.useState('');
     const [localShowPassword, setLocalShowPassword] = React.useState(false);
-    const [localLoading, setLocalLoading] = React.useState(false);
-    const [localError, setLocalError] = React.useState('');
     const [localCountry, setLocalCountry] = React.useState({ code: '+91', flag: '🇮🇳', name: 'India' });
     const [localCountryOpen, setLocalCountryOpen] = React.useState(false);
 
     const handleLocalSubmit = async (e) => {
       e.preventDefault();
-      setLocalLoading(true);
-      setLocalError('');
+      
+      const fullUsername = `${localFirstName} ${localLastName}`.trim();
+      
+      // Show loading popup immediately
+      showSignupLoading();
 
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: `${localFirstName} ${localLastName}`.trim(),
+            username: fullUsername,
             email: localEmail,
             password: localPassword
           })
         });
 
         const data = await response.json();
-        if (response.ok) {
-          showMessage('Account created successfully! Please login with your credentials.');
+        
+        if (response.ok && data.message) {
+          console.log("✅ Signup successful");
+          
+          // Hide loading and show success popup
+          hidePopup();
+          setTimeout(() => {
+            showSignupSuccess(fullUsername);
+          }, 200);
+          
+          // Close signup modal and open login modal
           setIsSignupOpen(false);
           setIsLoginOpen(true);
           setActiveModal('login');
+          
           // Clear form
           setLocalFirstName('');
           setLocalLastName('');
@@ -308,12 +342,18 @@ const Home = () => {
           setLocalPhoneNumber('');
           setLocalPassword('');
         } else {
-          setLocalError(data.detail || 'Signup failed. Please try again.');
+          console.log("❌ Signup failed");
+          hidePopup();
+          setTimeout(() => {
+            showSignupError(data.detail || 'Account creation failed. Please try again with different credentials.');
+          }, 200);
         }
       } catch (error) {
-        setLocalError('Network error. Please check your connection and try again.');
-      } finally {
-        setLocalLoading(false);
+        console.error("🔥 Signup error", error);
+        hidePopup();
+        setTimeout(() => {
+          showSignupError('Network error. Please check your internet connection and try again.');
+        }, 200);
       }
     };
 
@@ -328,11 +368,6 @@ const Home = () => {
             <h2 className="text-3xl font-bold text-white mt-6 mb-2">Create Account</h2>
             <p className="text-gray-400">Join thousands securing their documents</p>
           </div>
-          {localError && (
-            <div className="bg-red-600/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl mb-4">
-              {localError}
-            </div>
-          )}
           <form onSubmit={handleLocalSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -413,9 +448,9 @@ const Home = () => {
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={localLoading}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {localLoading ? 'Creating Account...' : 'Create SnapDocs Account'}
+            <button type="submit"
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+              Create SnapDocs Account
             </button>
           </form>
           <div className="text-center mt-6">
@@ -477,23 +512,16 @@ const Home = () => {
       <LoginModal />
       <SignupModal />
       
-      {/* Message Display */}
-      {message.text && (
-        <div className={`fixed top-20 right-6 z-50 px-6 py-3 rounded-xl shadow-2xl border backdrop-blur-sm transition-all duration-300 ${
-          message.type === 'error' 
-            ? 'bg-red-600/20 border-red-500/50 text-red-300' 
-            : 'bg-green-600/20 border-green-500/50 text-green-300'
-        }`}>
-          <div className="flex items-center">
-            {message.type === 'error' ? (
-              <X className="w-5 h-5 mr-2" />
-            ) : (
-              <Check className="w-5 h-5 mr-2" />
-            )}
-            <span>{message.text}</span>
-          </div>
-        </div>
-      )}
+      {/* Authentication Popup */}
+      <AuthPopup
+        isOpen={popup.isOpen}
+        onClose={hidePopup}
+        type={popup.type}
+        action={popup.action}
+        title={popup.title}
+        message={popup.message}
+        details={popup.details}
+      />
       
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 relative overflow-hidden">
