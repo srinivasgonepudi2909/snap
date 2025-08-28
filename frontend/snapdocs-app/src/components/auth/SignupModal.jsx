@@ -1,6 +1,7 @@
-// components/auth/SignupModal.jsx - ENHANCED VERSION
-import React, { useState, useEffect } from 'react';
-import { X, Eye, EyeOff, ChevronDown } from 'lucide-react';
+// components/auth/SignupModal.jsx - ENHANCED WITH PASSWORD POLICY & REAL-TIME VALIDATION
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, Eye, EyeOff, ChevronDown, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
 const SnapDocsLogo = () => (
   <div className="flex items-center space-x-3 group cursor-pointer justify-center">
@@ -15,6 +16,86 @@ const SnapDocsLogo = () => (
   </div>
 );
 
+const PasswordPolicyIndicator = ({ password, confirmPassword }) => {
+  const [policy, setPolicy] = useState({
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,  
+    hasNumber: false,
+    hasSpecial: false,
+    passwordsMatch: false
+  });
+
+  useEffect(() => {
+    if (!password) {
+      setPolicy({
+        minLength: false,
+        hasUppercase: false,
+        hasLowercase: false,
+        hasNumber: false,
+        hasSpecial: false,
+        passwordsMatch: false
+      });
+      return;
+    }
+
+    setPolicy({
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      passwordsMatch: password === confirmPassword && password.length > 0 && confirmPassword.length > 0
+    });
+  }, [password, confirmPassword]);
+
+  const allValid = Object.values(policy).every(Boolean);
+  const passwordValid = policy.minLength && policy.hasUppercase && policy.hasLowercase && policy.hasNumber && policy.hasSpecial;
+
+  const PolicyItem = ({ isValid, text }) => (
+    <div className={`flex items-center space-x-2 text-sm transition-colors duration-200 ${
+      isValid ? 'text-green-400' : 'text-gray-400'
+    }`}>
+      {isValid ? (
+        <CheckCircle className="w-4 h-4 text-green-400" />
+      ) : (
+        <div className="w-4 h-4 rounded-full border border-gray-500"></div>
+      )}
+      <span>{text}</span>
+    </div>
+  );
+
+  return (
+    <div className={`mt-2 p-3 rounded-lg border transition-all duration-300 ${
+      allValid 
+        ? 'bg-green-600/20 border-green-500/50' 
+        : 'bg-gray-700/50 border-gray-600/50'
+    }`}>
+      <div className="text-sm font-medium text-white mb-2 flex items-center space-x-2">
+        <span>Password Requirements</span>
+        {allValid && <CheckCircle className="w-4 h-4 text-green-400" />}
+      </div>
+      
+      <div className="space-y-1">
+        <PolicyItem isValid={policy.minLength} text="At least 8 characters" />
+        <PolicyItem isValid={policy.hasUppercase} text="One uppercase letter (A-Z)" />
+        <PolicyItem isValid={policy.hasLowercase} text="One lowercase letter (a-z)" />
+        <PolicyItem isValid={policy.hasNumber} text="One number (0-9)" />
+        <PolicyItem isValid={policy.hasSpecial} text="One special character (!@#$%^&*)" />
+        {confirmPassword && (
+          <PolicyItem isValid={policy.passwordsMatch} text="Passwords match" />
+        )}
+      </div>
+      
+      {passwordValid && !confirmPassword && (
+        <div className="mt-2 text-xs text-blue-300 bg-blue-600/20 px-2 py-1 rounded">
+          ✓ Password meets all requirements. Now confirm your password.
+        </div>
+      )}
+    </div>
+  );
+};
+
 const SignupModal = ({ 
   isOpen, 
   onClose, 
@@ -27,11 +108,17 @@ const SignupModal = ({
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState({ code: '+91', flag: '🇮🇳', name: 'India' });
   const [isCountryOpen, setIsCountryOpen] = useState(false);
   const [errors, setErrors] = useState({});
-
+  
+  // Real-time validation states
+  const [emailAvailability, setEmailAvailability] = useState({ checking: false, available: null, message: '' });
+  const [usernameAvailability, setUsernameAvailability] = useState({ checking: false, available: null, message: '' });
+  
   const countries = [
     { code: '+91', flag: '🇮🇳', name: 'India' },
     { code: '+1', flag: '🇺🇸', name: 'United States' },
@@ -50,11 +137,113 @@ const SignupModal = ({
       setEmail('');
       setPhoneNumber('');
       setPassword('');
+      setConfirmPassword('');
       setShowPassword(false);
+      setShowConfirmPassword(false);
       setIsCountryOpen(false);
       setErrors({});
+      setEmailAvailability({ checking: false, available: null, message: '' });
+      setUsernameAvailability({ checking: false, available: null, message: '' });
     }
   }, [isOpen]);
+
+  // Debounced email availability check
+  const checkEmailAvailability = useCallback(
+    debounce(async (emailToCheck) => {
+      if (!emailToCheck || !/\S+@\S+\.\S+/.test(emailToCheck)) return;
+      
+      setEmailAvailability({ checking: true, available: null, message: 'Checking...' });
+      
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/check-email-availability`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailToCheck })
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+          setEmailAvailability({ 
+            checking: false, 
+            available: result.data.is_available,
+            message: result.data.message
+          });
+        } else {
+          setEmailAvailability({ checking: false, available: null, message: 'Error checking email' });
+        }
+      } catch (error) {
+        setEmailAvailability({ checking: false, available: null, message: 'Error checking email' });
+      }
+    }, 800),
+    []
+  );
+
+  // Debounced username availability check
+  const checkUsernameAvailability = useCallback(
+    debounce(async (usernameToCheck) => {
+      if (!usernameToCheck || usernameToCheck.length < 3) return;
+      
+      setUsernameAvailability({ checking: true, available: null, message: 'Checking...' });
+      
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/check-username-availability`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: usernameToCheck })
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+          setUsernameAvailability({ 
+            checking: false, 
+            available: result.data.is_available,
+            message: result.data.message
+          });
+        } else {
+          setUsernameAvailability({ checking: false, available: null, message: 'Error checking username' });
+        }
+      } catch (error) {
+        setUsernameAvailability({ checking: false, available: null, message: 'Error checking username' });
+      }
+    }, 800),
+    []
+  );
+
+  // Handle email change with availability check
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+    
+    if (newEmail && /\S+@\S+\.\S+/.test(newEmail)) {
+      checkEmailAvailability(newEmail);
+    } else {
+      setEmailAvailability({ checking: false, available: null, message: '' });
+    }
+  };
+
+  // Handle username change with availability check
+  const handleUsernameChange = (field, value) => {
+    if (field === 'firstName') {
+      setFirstName(value);
+    } else {
+      setLastName(value);
+    }
+    
+    const fullUsername = field === 'firstName' 
+      ? `${value} ${lastName}`.trim()
+      : `${firstName} ${value}`.trim();
+    
+    if (fullUsername.length >= 3) {
+      checkUsernameAvailability(fullUsername);
+    } else {
+      setUsernameAvailability({ checking: false, available: null, message: '' });
+    }
+    
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+  };
 
   // Handle escape key and outside clicks
   useEffect(() => {
@@ -102,12 +291,34 @@ const SignupModal = ({
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Email is invalid';
+    } else if (emailAvailability.available === false) {
+      newErrors.email = 'Email is already registered';
+    }
+    
+    const fullUsername = `${firstName.trim()} ${lastName.trim()}`;
+    if (usernameAvailability.available === false) {
+      newErrors.firstName = 'This name combination is already taken';
     }
     
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else {
+      // Check password policy
+      const hasMinLength = password.length >= 8;
+      const hasUppercase = /[A-Z]/.test(password);
+      const hasLowercase = /[a-z]/.test(password);
+      const hasNumber = /\d/.test(password);
+      const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      
+      if (!hasMinLength || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+        newErrors.password = 'Password does not meet security requirements';
+      }
+    }
+    
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
     
     setErrors(newErrors);
@@ -123,21 +334,26 @@ const SignupModal = ({
     onSubmit({
       username: fullUsername,
       email,
-      password
+      password,
+      confirm_password: confirmPassword
     });
   };
 
   const handleClose = () => {
-    if (loading) return; // Prevent closing during loading
+    if (loading) return;
     
     setFirstName('');
     setLastName('');
     setEmail('');
     setPhoneNumber('');
     setPassword('');
+    setConfirmPassword('');
     setShowPassword(false);
+    setShowConfirmPassword(false);
     setIsCountryOpen(false);
     setErrors({});
+    setEmailAvailability({ checking: false, available: null, message: '' });
+    setUsernameAvailability({ checking: false, available: null, message: '' });
     onClose();
   };
 
@@ -149,12 +365,18 @@ const SignupModal = ({
 
   if (!isOpen) return null;
 
+  const isFormValid = firstName && lastName && email && password && confirmPassword && 
+                     password === confirmPassword && emailAvailability.available !== false &&
+                     usernameAvailability.available !== false &&
+                     password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && 
+                     /\d/.test(password) && /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
   return (
     <div 
       className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto animate-scale-in">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 max-w-md w-full relative shadow-2xl border border-white/10 max-h-[95vh] overflow-y-auto animate-scale-in">
         {/* Close button */}
         <button 
           onClick={handleClose} 
@@ -182,10 +404,7 @@ const SignupModal = ({
               <input
                 type="text" 
                 value={firstName} 
-                onChange={(e) => {
-                  setFirstName(e.target.value);
-                  if (errors.firstName) setErrors(prev => ({ ...prev, firstName: '' }));
-                }}
+                onChange={(e) => handleUsernameChange('firstName', e.target.value)}
                 className={`w-full px-4 py-3 rounded-xl bg-white/10 border text-white placeholder-gray-400 focus:outline-none transition-colors ${
                   errors.firstName 
                     ? 'border-red-500 focus:border-red-400' 
@@ -207,10 +426,7 @@ const SignupModal = ({
               <input
                 type="text" 
                 value={lastName} 
-                onChange={(e) => {
-                  setLastName(e.target.value);
-                  if (errors.lastName) setErrors(prev => ({ ...prev, lastName: '' }));
-                }}
+                onChange={(e) => handleUsernameChange('lastName', e.target.value)}
                 className={`w-full px-4 py-3 rounded-xl bg-white/10 border text-white placeholder-gray-400 focus:outline-none transition-colors ${
                   errors.lastName 
                     ? 'border-red-500 focus:border-red-400' 
@@ -226,6 +442,42 @@ const SignupModal = ({
               )}
             </div>
           </div>
+
+          {/* Username Availability Indicator */}
+          {(firstName || lastName) && (
+            <div className={`p-3 rounded-lg border ${
+              usernameAvailability.checking 
+                ? 'bg-blue-600/20 border-blue-500/50'
+                : usernameAvailability.available === true
+                ? 'bg-green-600/20 border-green-500/50'
+                : usernameAvailability.available === false
+                ? 'bg-red-600/20 border-red-500/50'
+                : 'bg-gray-700/50 border-gray-600/50'
+            }`}>
+              <div className="flex items-center space-x-2">
+                {usernameAvailability.checking ? (
+                  <Clock className="w-4 h-4 text-blue-400 animate-spin" />
+                ) : usernameAvailability.available === true ? (
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                ) : usernameAvailability.available === false ? (
+                  <AlertCircle className="w-4 h-4 text-red-400" />
+                ) : null}
+                <div>
+                  <div className="text-sm font-medium text-white">
+                    Username: {`${firstName} ${lastName}`.trim()}
+                  </div>
+                  <div className={`text-xs ${
+                    usernameAvailability.checking ? 'text-blue-300' :
+                    usernameAvailability.available === true ? 'text-green-300' :
+                    usernameAvailability.available === false ? 'text-red-300' :
+                    'text-gray-400'
+                  }`}>
+                    {usernameAvailability.message || 'Enter your full name to check availability'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Email Field */}
           <div>
@@ -235,13 +487,14 @@ const SignupModal = ({
             <input
               type="email" 
               value={email} 
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
-              }}
+              onChange={handleEmailChange}
               className={`w-full px-4 py-3 rounded-xl bg-white/10 border text-white placeholder-gray-400 focus:outline-none transition-colors ${
                 errors.email 
                   ? 'border-red-500 focus:border-red-400' 
+                  : emailAvailability.available === false
+                  ? 'border-red-500 focus:border-red-400'
+                  : emailAvailability.available === true
+                  ? 'border-green-500 focus:border-green-400'
                   : 'border-white/20 focus:border-blue-500'
               }`}
               placeholder="Enter your email" 
@@ -249,6 +502,26 @@ const SignupModal = ({
               autoComplete="email"
               disabled={loading}
             />
+            
+            {/* Email Availability Indicator */}
+            {emailAvailability.message && (
+              <div className={`flex items-center space-x-2 mt-1 text-xs ${
+                emailAvailability.checking ? 'text-blue-300' :
+                emailAvailability.available === true ? 'text-green-300' :
+                emailAvailability.available === false ? 'text-red-300' :
+                'text-gray-400'
+              }`}>
+                {emailAvailability.checking ? (
+                  <Clock className="w-3 h-3 animate-spin" />
+                ) : emailAvailability.available === true ? (
+                  <CheckCircle className="w-3 h-3" />
+                ) : emailAvailability.available === false ? (
+                  <AlertCircle className="w-3 h-3" />
+                ) : null}
+                <span>{emailAvailability.message}</span>
+              </div>
+            )}
+            
             {errors.email && (
               <p className="text-red-400 text-sm mt-1">{errors.email}</p>
             )}
@@ -323,7 +596,7 @@ const SignupModal = ({
                 }`}
                 placeholder="Create a strong password" 
                 required 
-                minLength="6" 
+                minLength="8" 
                 autoComplete="new-password"
                 disabled={loading}
               />
@@ -339,16 +612,76 @@ const SignupModal = ({
             {errors.password && (
               <p className="text-red-400 text-sm mt-1">{errors.password}</p>
             )}
-            <div className="text-xs text-gray-400 mt-1">
-              Password must be at least 6 characters long
+            
+            {/* Password Policy Indicator */}
+            <PasswordPolicyIndicator password={password} confirmPassword={confirmPassword} />
+          </div>
+
+          {/* Confirm Password Field */}
+          <div>
+            <label className="block text-gray-300 text-sm font-semibold mb-2">
+              Confirm Password *
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"} 
+                value={confirmPassword} 
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: '' }));
+                }}
+                className={`w-full px-4 py-3 rounded-xl bg-white/10 border text-white placeholder-gray-400 focus:outline-none transition-colors pr-12 ${
+                  errors.confirmPassword 
+                    ? 'border-red-500 focus:border-red-400'
+                    : password && confirmPassword && password === confirmPassword
+                    ? 'border-green-500 focus:border-green-400'
+                    : 'border-white/20 focus:border-blue-500'
+                }`}
+                placeholder="Confirm your password" 
+                required 
+                minLength="8" 
+                autoComplete="new-password"
+                disabled={loading}
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                disabled={loading}
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
+            {errors.confirmPassword && (
+              <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>
+            )}
+            
+            {/* Password Match Indicator */}
+            {password && confirmPassword && (
+              <div className={`flex items-center space-x-2 mt-2 text-sm ${
+                password === confirmPassword ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {password === confirmPassword ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <AlertCircle className="w-4 h-4" />
+                )}
+                <span>
+                  {password === confirmPassword ? 'Passwords match!' : 'Passwords do not match'}
+                </span>
+              </div>
+            )}
           </div>
           
           {/* Submit Button */}
           <button 
             type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            disabled={loading || !isFormValid}
+            className={`w-full text-white py-3 px-4 rounded-xl font-semibold transition-all duration-300 shadow-lg disabled:cursor-not-allowed ${
+              loading || !isFormValid
+                ? 'bg-gray-600 opacity-50'
+                : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 transform hover:scale-105'
+            }`}
           >
             {loading ? (
               <div className="flex items-center justify-center space-x-2">
@@ -376,5 +709,18 @@ const SignupModal = ({
     </div>
   );
 };
+
+// Utility function for debouncing
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
 export default SignupModal;

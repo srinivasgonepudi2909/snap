@@ -1,4 +1,5 @@
-// components/Home.jsx - FINAL MODULARIZED VERSION
+// components/Home.jsx - ENHANCED WITH IMPROVED ERROR HANDLING
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -68,7 +69,7 @@ const Home = () => {
       .catch((err) => console.error("Failed to fetch user info:", err));
   }, []);
 
-  // Authentication handlers
+  // Enhanced login handler with detailed error handling
   const handleLogin = async (credentials) => {
     console.log("🔍 Login attempt started");
     setAuthLoading(true);
@@ -122,6 +123,7 @@ const Home = () => {
     }
   };
 
+  // Enhanced signup handler with detailed error handling
   const handleSignup = async (userData) => {
     console.log("🚀 Signup attempt started");
     setAuthLoading(true);
@@ -135,8 +137,9 @@ const Home = () => {
       });
 
       const data = await response.json();
+      console.log("📦 Signup response:", data);
       
-      if (response.ok && data.message) {
+      if (response.ok && data.success) {
         console.log("✅ Signup successful");
         
         hidePopup();
@@ -148,10 +151,48 @@ const Home = () => {
         setIsLoginOpen(true);
         setActiveModal('login');
       } else {
-        console.log("❌ Signup failed");
+        console.log("❌ Signup failed", data);
         hidePopup();
+        
+        // Enhanced error handling for different error types
         setTimeout(() => {
-          showSignupError(data.detail || 'Account creation failed. Please try again with different credentials.');
+          if (data.detail) {
+            const errorDetail = data.detail;
+            
+            // Handle different error types from backend
+            if (typeof errorDetail === 'object') {
+              switch (errorDetail.type) {
+                case 'email_exists':
+                  showSignupError('This email is already registered. Please use a different email or try logging in.');
+                  break;
+                case 'username_exists':
+                  showSignupError('This name combination is already taken. Please try a different name.');
+                  break;
+                case 'password_policy':
+                  const errorMessages = errorDetail.errors || [];
+                  showSignupError(`Password security requirements not met: ${errorMessages.join(', ')}`);
+                  break;
+                default:
+                  showSignupError(errorDetail.message || 'Account creation failed. Please try again.');
+              }
+            } else if (typeof errorDetail === 'string') {
+              // Handle string error messages
+              if (errorDetail.toLowerCase().includes('email')) {
+                showSignupError('Email is already registered. Please use a different email or try logging in.');
+              } else if (errorDetail.toLowerCase().includes('username')) {
+                showSignupError('This name is already taken. Please try a different name.');
+              } else if (errorDetail.toLowerCase().includes('password')) {
+                showSignupError('Password does not meet security requirements. Please check the password policy.');
+              } else {
+                showSignupError(errorDetail);
+              }
+            } else {
+              showSignupError('Account creation failed. Please check your information and try again.');
+            }
+          } else {
+            // Fallback error message
+            showSignupError('Account creation failed. Please try again with different credentials.');
+          }
         }, 200);
       }
     } catch (error) {
@@ -238,7 +279,7 @@ const Home = () => {
       {/* Footer */}
       <Footer />
 
-      {/* Authentication Modals - Using auth folder components */}
+      {/* Enhanced Authentication Modals */}
       <LoginModal
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
@@ -255,7 +296,7 @@ const Home = () => {
         loading={authLoading}
       />
 
-      {/* Authentication Popup */}
+      {/* Enhanced Authentication Popup */}
       <AuthPopup
         isOpen={popup.isOpen}
         onClose={hidePopup}
