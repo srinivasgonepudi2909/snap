@@ -1,5 +1,4 @@
-// components/auth/SignupModal.jsx - ENHANCED WITH PASSWORD POLICY & REAL-TIME VALIDATION
-
+// components/auth/SignupModal.jsx - FIXED VERSION
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Eye, EyeOff, ChevronDown, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
@@ -331,12 +330,23 @@ const SignupModal = ({
     if (!validateForm()) return;
     
     const fullUsername = `${firstName.trim()} ${lastName.trim()}`;
-    onSubmit({
+    
+    // CRITICAL FIX: Ensure all required fields are included
+    const formData = {
       username: fullUsername,
-      email,
-      password,
-      confirm_password: confirmPassword
+      email: email.trim().toLowerCase(), // Normalize email
+      password: password,
+      confirm_password: confirmPassword  // This is critical - backend expects "confirm_password"
+    };
+    
+    // Debug log to see what we're sending
+    console.log('🚀 Sending signup data:', {
+      ...formData,
+      password: '[HIDDEN]',
+      confirm_password: '[HIDDEN]'
     });
+    
+    onSubmit(formData);
   };
 
   const handleClose = () => {
@@ -410,7 +420,7 @@ const SignupModal = ({
                     ? 'border-red-500 focus:border-red-400' 
                     : 'border-white/20 focus:border-blue-500'
                 }`}
-                placeholder="First name" 
+                placeholder="Srinivas" 
                 required 
                 autoComplete="given-name"
                 disabled={loading}
@@ -432,7 +442,7 @@ const SignupModal = ({
                     ? 'border-red-500 focus:border-red-400' 
                     : 'border-white/20 focus:border-blue-500'
                 }`}
-                placeholder="Last name" 
+                placeholder="vasu" 
                 required 
                 autoComplete="family-name"
                 disabled={loading}
@@ -497,7 +507,7 @@ const SignupModal = ({
                   ? 'border-green-500 focus:border-green-400'
                   : 'border-white/20 focus:border-blue-500'
               }`}
-              placeholder="Enter your email" 
+              placeholder="vasu@gmail.com" 
               required 
               autoComplete="email"
               disabled={loading}
@@ -569,7 +579,7 @@ const SignupModal = ({
                 value={phoneNumber} 
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
-                placeholder="Phone number" 
+                placeholder="+919885420538" 
                 autoComplete="tel"
                 disabled={loading}
               />
@@ -617,7 +627,7 @@ const SignupModal = ({
             <PasswordPolicyIndicator password={password} confirmPassword={confirmPassword} />
           </div>
 
-          {/* Confirm Password Field */}
+          {/* Confirm Password Field - CRITICAL FIELD */}
           <div>
             <label className="block text-gray-300 text-sm font-semibold mb-2">
               Confirm Password *
