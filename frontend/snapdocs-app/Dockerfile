@@ -2,49 +2,32 @@
 FROM node:18-alpine AS build
 WORKDIR /app
 
-# Install build deps for native modules
+# Install build deps for native modules (node-gyp, sharp, node-sass, etc.)
 RUN apk add --no-cache python3 make g++ libc6-compat
 
-# Copy package files
+# Copy lockfile if present (faster & reproducible)
 COPY package*.json ./
 
-# Debug: Show package.json content
-RUN echo "=== Package.json content ===" && cat package.json
+# Prefer npm ci when lockfile exists, fallback to npm install
+RUN npm ci  || npm install 
 
-# Install dependencies with verbose logging
-RUN npm ci --verbose || npm install --verbose
-
-# Copy source files
+# Copy app and env (React needs REACT_APP_* at build time)
 COPY . .
+COPY .env .env
 
-# Debug: Show .env content (remove in production)
-RUN echo "=== Environment Variables ===" && cat .env || echo "No .env file found"
-
-# Set build environment variables
+# Helpful if react-scripts is chatty about warnings failing the build in CI
 ENV CI=false
-ENV GENERATE_SOURCEMAP=false
-ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Debug: Show source files
-RUN echo "=== Source files ===" && ls -la src/
-
-# Build with error handling
-RUN echo "=== Starting React build ===" && \
-    npm run build 2>&1 | tee build.log && \
-    echo "=== Build completed ===" && \
-    ls -la build/ || (echo "=== Build failed, showing log ===" && cat build.log && exit 1)
+# Build React app
+RUN npm run build
 
 # ---------- Stage 2: NGINX ----------
 FROM nginx:alpine
-
-# Copy nginx config
+# If you intend to fully override nginx, keep this. Else you can delete it.
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy built files
+# Serve built files
 COPY --from=build /app/build /usr/share/nginx/html
-
-# Debug: Verify files copied
-RUN echo "=== NGINX files ===" && ls -la /usr/share/nginx/html/
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
