@@ -1,4 +1,4 @@
-// components/auth/SignupModal.jsx - FIXED VERSION
+// components/auth/SignupModal.jsx - COMPLETE FIX FOR SIGNUP ISSUES
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Eye, EyeOff, ChevronDown, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
@@ -324,6 +324,7 @@ const SignupModal = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // CRITICAL FIX: The handleSubmit function - this was the main issue
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -331,19 +332,20 @@ const SignupModal = ({
     
     const fullUsername = `${firstName.trim()} ${lastName.trim()}`;
     
-    // CRITICAL FIX: Ensure all required fields are included
+    // FIXED: Backend expects "confirm_password" not "confirmPassword"
     const formData = {
       username: fullUsername,
-      email: email.trim().toLowerCase(), // Normalize email
+      email: email.trim().toLowerCase(),
       password: password,
-      confirm_password: confirmPassword  // This is critical - backend expects "confirm_password"
+      confirm_password: confirmPassword  // CRITICAL: This must match backend expectation
     };
     
-    // Debug log to see what we're sending
-    console.log('🚀 Sending signup data:', {
-      ...formData,
+    console.log('🚀 Sending signup data (structure check):', {
+      username: formData.username,
+      email: formData.email,
       password: '[HIDDEN]',
-      confirm_password: '[HIDDEN]'
+      confirm_password: '[HIDDEN]',
+      allFieldsPresent: !!(formData.username && formData.email && formData.password && formData.confirm_password)
     });
     
     onSubmit(formData);
@@ -420,7 +422,7 @@ const SignupModal = ({
                     ? 'border-red-500 focus:border-red-400' 
                     : 'border-white/20 focus:border-blue-500'
                 }`}
-                placeholder="Srinivas" 
+                placeholder="John" 
                 required 
                 autoComplete="given-name"
                 disabled={loading}
@@ -442,7 +444,7 @@ const SignupModal = ({
                     ? 'border-red-500 focus:border-red-400' 
                     : 'border-white/20 focus:border-blue-500'
                 }`}
-                placeholder="vasu" 
+                placeholder="Doe" 
                 required 
                 autoComplete="family-name"
                 disabled={loading}
@@ -507,7 +509,7 @@ const SignupModal = ({
                   ? 'border-green-500 focus:border-green-400'
                   : 'border-white/20 focus:border-blue-500'
               }`}
-              placeholder="vasu@gmail.com" 
+              placeholder="john@example.com" 
               required 
               autoComplete="email"
               disabled={loading}
@@ -579,7 +581,7 @@ const SignupModal = ({
                 value={phoneNumber} 
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
-                placeholder="+919885420538" 
+                placeholder="9876543210" 
                 autoComplete="tel"
                 disabled={loading}
               />
