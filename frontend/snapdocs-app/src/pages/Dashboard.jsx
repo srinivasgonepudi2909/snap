@@ -172,57 +172,56 @@ const Dashboard = () => {
 
   // UPDATED: Enhanced file action handler with download success/error handling
   const handleFileAction = async (action, file) => {
-    const fileName = file.name || file.original_name;
-    const fileSize = formatFileSize(file.file_size || file.size || 0);
-    
-    switch (action) {
-      case 'view':
-        showNotification(`Viewing ${fileName}`, 'info');
-        break;
-      case 'download':
-        showNotification(`Starting download: ${fileName}`, 'info');
-        break;
-      case 'download-success':
-        // NEW: Show success popup for successful downloads
-        showOperationPopup(
-          'success',
-          'Download Successful! 📥',
-          `"${fileName}" has been saved to your Downloads folder.`,
-          [
-            `📄 File: ${fileName}`,
-            `📦 Size: ${fileSize}`,
-            `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
-            `💾 Location: Downloads folder`,
-            `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-          ],
-          true, // auto-close
-          3000
-        );
-        break;
-      case 'download-error':
-        // NEW: Show error popup for failed downloads
-        showOperationPopup(
-          'error',
-          'Download Failed! ❌',
-          `Unable to download "${fileName}". Please try again or contact support.`,
-          [
-            `📄 File: ${fileName}`,
-            `❌ Reason: Network error or file not accessible`,
-            `🔄 Try: Refresh the page and try again`,
-            `📞 Support: Contact support if problem persists`,
-            `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-          ]
-        );
-        break;
-      case 'delete':
-        // Open custom delete confirmation modal
-        setFileToDelete(file);
-        setDeleteModalOpen(true);
-        break;
-      default:
-        break;
-    }
-  };
+  switch (action) {
+    case 'view':
+      showNotification(`Viewing ${file.name || file.original_name}`, 'info');
+      break;
+    case 'download':
+      showNotification(`Starting download: ${file.name || file.original_name}`, 'info');
+      break;
+    case 'download-success':
+      // NEW: Show success notification for successful downloads
+      const fileName = file.name || file.original_name;
+      showOperationPopup(
+        'success',
+        'Download Successful! 📥',
+        `"${fileName}" has been saved to your Downloads folder.`,
+        [
+          `📄 File: ${fileName}`,
+          `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
+          `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
+          `💾 Location: Downloads folder`,
+          `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+        ],
+        true, // auto-close
+        3000
+      );
+      break;
+    case 'download-error':
+      // NEW: Show error notification for failed downloads
+      const errorFileName = file.name || file.original_name;
+      showOperationPopup(
+        'error',
+        'Download Failed! ❌',
+        `Unable to download "${errorFileName}". Please try again or contact support.`,
+        [
+          `📄 File: ${errorFileName}`,
+          `❌ Reason: Network error or file not accessible`,
+          `🔄 Try: Refresh the page and try again`,
+          `📞 Support: Contact support if problem persists`,
+          `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+        ]
+      );
+      break;
+    case 'delete':
+      // Open custom delete confirmation modal instead of window.confirm
+      setFileToDelete(file);
+      setDeleteModalOpen(true);
+      break;
+    default:
+      break;
+  }
+};
 
   // Handle the actual delete operation
   const handleConfirmDelete = async () => {
