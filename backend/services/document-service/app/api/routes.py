@@ -1,5 +1,7 @@
+# backend/services/document-service/app/api/routes.py - ENHANCED WITH FILE SERVING
 from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from typing import List, Optional, Dict, Any
 import os
 import uuid
@@ -9,8 +11,232 @@ from pathlib import Path
 import traceback
 from bson import ObjectId
 from dateutil.parser import parse as parse_date
+import mimetypes
+import aiofiles.os
 
 documents_router = APIRouter(tags=["documents"])
+
+# ===============================
+# FILE SERVING ENDPOINTS - NEW
+# ===============================
+
+@documents_router.get("/files/{file_name}")
+async def serve_file(file_name: str):
+    """
+    Serve static files directly - PRIMARY FILE SERVING ENDPOINT
+    This endpoint serves files uploaded to the system
+    """
+    try:
+        from app.utils.config import settings
+        
+        # Construct file path
+        file_path = Path(settings.UPLOAD_DIRECTORY) / file_name
+        
+        print(f"📁 Serving file request: {file_name}")
+        print(f"📂 Looking for file at: {file_path}")
+        
+        # Check if file exists
+        if not file_path.exists() or not file_path.is_file():
+            print(f"❌ File not found: {file_path}")
+            raise HTTPException(status_code=404, detail=f"File '{file_name}' not found")
+        
+        # Get file stats
+        file_stat = await aiofiles.os.stat(file_path)
+        file_size = file_stat.st_size
+        
+        # Determine MIME type
+        mime_type, _ = mimetypes.guess_type(str(file_path))
+        if not mime_type:
+            mime_type = 'application/octet-stream'
+        
+        print(f"✅ Serving file: {file_name} ({file_size} bytes, {mime_type})")
+        
+        # Return file response with proper headers
+        return FileResponse(
+            path=str(file_path),
+            media_type=mime_type,
+            filename=file_name,
+            headers={
+                "Content-Length": str(file_size),
+                "Cache-Control": "public, max-age=3600",  # Cache for 1 hour
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+                "Access-Control-Allow-Headers": "Authorization, Content-Type"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error serving file {file_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error serving file: {str(e)}")
+
+@documents_router.get("/documents/{document_id}/download")
+async def download_document(document_id: str):
+    """
+    Download a specific document by ID with authentication
+    """
+    try:
+        from app.utils.config import documents_collection, settings
+        
+        print(f"📥 Download request for document ID: {document_id}")
+        
+        if not documents_collection:
+            raise HTTPException(status_code=500, detail="Database not available")
+        
+        # Validate ObjectId format
+        try:
+            doc_object_id = ObjectId(document_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid document ID format")
+        
+        # Find document in database
+        document = documents_collection.find_one({"_id": doc_object_id})
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Construct file path
+        file_path = Path(document.get("file_path", ""))
+        if not file_path.exists():
+            # Try alternative path using unique_name
+            if document.get("unique_name"):
+                file_path = Path(settings.UPLOAD_DIRECTORY) / document["unique_name"]
+        
+        if not file_path.exists() or not file_path.is_file():
+            print(f"❌ Physical file not found: {file_path}")
+            raise HTTPException(status_code=404, detail="Physical file not found")
+        
+        # Get original filename
+        original_name = document.get("original_name") or document.get("name") or file_path.name
+        
+        # Determine MIME type
+        mime_type = document.get("mime_type")
+        if not mime_type:
+            mime_type, _ = mimetypes.guess_type(str(file_path))
+            if not mime_type:
+                mime_type = 'application/octet-stream'
+        
+        print(f"✅ Downloading: {original_name} from {file_path}")
+        
+        # Return file with download headers
+        return FileResponse(
+            path=str(file_path),
+            media_type=mime_type,
+            filename=original_name,
+            headers={
+                "Content-Disposition": f'attachment; filename="{original_name}"',
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error downloading document {document_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
+
+@documents_router.head("/files/{file_name}")
+async def check_file_exists(file_name: str):
+    """
+    Check if a file exists (HEAD request for testing)
+    """
+    try:
+        from app.utils.config import settings
+        
+        file_path = Path(settings.UPLOAD_DIRECTORY) / file_name
+        
+        if not file_path.exists() or not file_path.is_file():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Get file stats
+        file_stat = await aiofiles.os.stat(file_path)
+        file_size = file_stat.st_size
+        
+        # Determine MIME type
+        mime_type, _ = mimetypes.guess_type(str(file_path))
+        if not mime_type:
+            mime_type = 'application/octet-stream'
+        
+        # Return headers only (no body for HEAD request)
+        return JSONResponse(
+            content={},
+            headers={
+                "Content-Length": str(file_size),
+                "Content-Type": mime_type,
+                "Cache-Control": "public, max-age=3600",
+                "Access-Control-Allow-Origin": "*"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error checking file {file_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error checking file: {str(e)}")
+
+@documents_router.get("/documents/{document_id}/stream")
+async def stream_document(document_id: str):
+    """
+    Stream a document for preview (alternative to direct file serving)
+    """
+    try:
+        from app.utils.config import documents_collection, settings
+        
+        print(f"🎬 Stream request for document ID: {document_id}")
+        
+        if not documents_collection:
+            raise HTTPException(status_code=500, detail="Database not available")
+        
+        # Validate ObjectId format
+        try:
+            doc_object_id = ObjectId(document_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid document ID format")
+        
+        # Find document in database
+        document = documents_collection.find_one({"_id": doc_object_id})
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Construct file path
+        file_path = Path(document.get("file_path", ""))
+        if not file_path.exists():
+            if document.get("unique_name"):
+                file_path = Path(settings.UPLOAD_DIRECTORY) / document["unique_name"]
+        
+        if not file_path.exists() or not file_path.is_file():
+            raise HTTPException(status_code=404, detail="Physical file not found")
+        
+        # Determine MIME type
+        mime_type = document.get("mime_type")
+        if not mime_type:
+            mime_type, _ = mimetypes.guess_type(str(file_path))
+            if not mime_type:
+                mime_type = 'application/octet-stream'
+        
+        print(f"✅ Streaming: {document.get('name')} ({mime_type})")
+        
+        # Stream file
+        async def file_streamer():
+            async with aiofiles.open(file_path, 'rb') as file:
+                while chunk := await file.read(8192):  # 8KB chunks
+                    yield chunk
+        
+        return StreamingResponse(
+            file_streamer(),
+            media_type=mime_type,
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "Access-Control-Allow-Origin": "*"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error streaming document {document_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Stream failed: {str(e)}")
 
 # ===============================
 # GENERAL FOLDER UTILITY FUNCTIONS
@@ -121,6 +347,49 @@ async def test_database_endpoint():
     except Exception as e:
         return {"success": False, "message": f"Database error: {str(e)}", "status": "error"}
 
+@documents_router.get("/test/file-serving")
+async def test_file_serving():
+    """
+    Test file serving capabilities
+    """
+    try:
+        from app.utils.config import settings
+        
+        upload_dir = Path(settings.UPLOAD_DIRECTORY)
+        
+        # Check if upload directory exists
+        if not upload_dir.exists():
+            return {
+                "success": False,
+                "message": "Upload directory does not exist",
+                "upload_directory": str(upload_dir)
+            }
+        
+        # List files in upload directory
+        files = []
+        if upload_dir.exists():
+            files = [f.name for f in upload_dir.iterdir() if f.is_file()]
+        
+        return {
+            "success": True,
+            "message": "File serving is working! 📁",
+            "upload_directory": str(upload_dir),
+            "files_count": len(files),
+            "sample_files": files[:5],  # Show first 5 files
+            "file_serving_endpoints": {
+                "static_files": "/files/{filename}",
+                "download_by_id": "/documents/{id}/download", 
+                "stream_by_id": "/documents/{id}/stream",
+                "check_file": "/files/{filename} (HEAD)"
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"File serving test failed: {str(e)}"
+        }
+
 # ===============================
 # DOCUMENT ENDPOINTS
 # ===============================
@@ -144,6 +413,10 @@ async def list_documents():
             doc.setdefault("created_at", datetime.utcnow())
             doc.setdefault("folder_name", "General")
             doc.setdefault("folder_id", doc.get("folder_name", "General"))
+            
+            # Add file URL for easy access
+            if doc.get("unique_name"):
+                doc["file_url"] = f"/files/{doc['unique_name']}"
 
         return {
             "success": True,
@@ -225,7 +498,8 @@ async def upload_document(file: UploadFile = File(...), folder_name: str = Form(
             "folder_id": target_folder,    # Keep both for compatibility
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
-            "status": "completed"
+            "status": "completed",
+            "file_url": f"/files/{unique_filename}"  # Add direct file URL
         }
 
         result = documents_collection.insert_one(document_data)
@@ -360,6 +634,9 @@ async def get_folder_documents(folder_name: str):
 
         for doc in documents:
             doc["_id"] = str(doc["_id"])
+            # Add file URL if unique_name exists
+            if doc.get("unique_name"):
+                doc["file_url"] = f"/files/{doc['unique_name']}"
 
         return {
             "success": True,
@@ -373,117 +650,6 @@ async def get_folder_documents(folder_name: str):
             "success": False,
             "message": f"Error fetching folder documents: {str(e)}",
             "data": []
-        }
-
-# ===============================
-# SEARCH ENDPOINTS
-# ===============================
-
-@documents_router.get("/search")
-async def search_documents(q: str = Query(..., description="Search query")):
-    try:
-        from app.utils.config import documents_collection
-
-        if documents_collection is None or not q.strip():
-            return {"success": True, "message": "No results", "results": []}
-
-        search_query = {
-            "$or": [
-                {"name": {"$regex": q, "$options": "i"}},
-                {"original_name": {"$regex": q, "$options": "i"}},
-                {"folder_name": {"$regex": q, "$options": "i"}}
-            ]
-        }
-
-        documents = list(documents_collection.find(search_query).limit(20))
-        for doc in documents:
-            doc["_id"] = str(doc["_id"])
-
-        return {
-            "success": True,
-            "message": f"Found {len(documents)} results",
-            "results": documents
-        }
-
-    except Exception as e:
-        print(f"❌ Error in search_documents: {str(e)}")
-        return {
-            "success": False,
-            "message": f"Search failed: {str(e)}",
-            "results": []
-        }
-
-@documents_router.get("/search/advanced")
-async def advanced_search(
-    q: Optional[str] = Query(None),
-    file_types: Optional[List[str]] = Query(None),
-    folders: Optional[List[str]] = Query(None),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
-    min_size: Optional[int] = Query(None),
-    max_size: Optional[int] = Query(None),
-    sort_by: Optional[str] = Query("created_at"),
-    sort_order: Optional[str] = Query("desc")
-):
-    try:
-        from app.utils.config import documents_collection
-
-        if documents_collection is None:
-            return {"success": False, "message": "Database not available", "results": []}
-
-        query: Dict[str, Any] = {}
-
-        if q:
-            query["$or"] = [
-                {"name": {"$regex": q, "$options": "i"}},
-                {"original_name": {"$regex": q, "$options": "i"}},
-                {"folder_name": {"$regex": q, "$options": "i"}}
-            ]
-
-        if file_types:
-            query["file_type"] = {"$in": [ft.lower() for ft in file_types]}
-
-        if folders:
-            query["$or"] = query.get("$or", []) + [
-                {"folder_name": {"$in": folders}},
-                {"folder_id": {"$in": folders}}
-            ]
-
-        if date_from or date_to:
-            date_filter = {}
-            if date_from:
-                date_filter["$gte"] = parse_date(date_from)
-            if date_to:
-                date_filter["$lte"] = parse_date(date_to)
-            query["created_at"] = date_filter
-
-        if min_size is not None or max_size is not None:
-            size_filter = {}
-            if min_size is not None:
-                size_filter["$gte"] = min_size
-            if max_size is not None:
-                size_filter["$lte"] = max_size
-            query["file_size"] = size_filter
-
-        sort_field = sort_by if sort_by in ["created_at", "name", "file_size"] else "created_at"
-        sort_direction = -1 if sort_order == "desc" else 1
-
-        documents = list(documents_collection.find(query).sort(sort_field, sort_direction).limit(100))
-        for doc in documents:
-            doc["_id"] = str(doc["_id"])
-
-        return {
-            "success": True,
-            "message": f"Found {len(documents)} results",
-            "results": documents
-        }
-
-    except Exception as e:
-        print(f"❌ Error in advanced_search: {str(e)}")
-        return {
-            "success": False,
-            "message": f"Advanced search failed: {str(e)}",
-            "results": []
         }
 
 # ===============================
@@ -529,85 +695,15 @@ async def delete_document(document_id: str):
         print(f"❌ Error deleting document: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
 
-@documents_router.delete("/folders/{folder_id}")
-async def delete_folder(folder_id: str):
-    try:
-        from app.utils.config import folders_collection, documents_collection
-
-        if folders_collection is None:
-            raise HTTPException(status_code=500, detail="Database not available")
-
-        # Validate ObjectId format
-        try:
-            folder_object_id = ObjectId(folder_id)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid folder ID format")
-
-        folder = folders_collection.find_one({"_id": folder_object_id})
-        if not folder:
-            raise HTTPException(status_code=404, detail="Folder not found")
-
-        # Prevent deletion of General folder
-        if folder.get("name") == "General" or folder.get("is_default"):
-            raise HTTPException(status_code=400, detail="Cannot delete the default General folder")
-
-        # Move documents from this folder to General folder
-        if documents_collection is not None:
-            update_result = documents_collection.update_many(
-                {"$or": [
-                    {"folder_name": folder["name"]},
-                    {"folder_id": folder["name"]}
-                ]},
-                {"$set": {
-                    "folder_name": "General",
-                    "folder_id": "General",
-                    "updated_at": datetime.utcnow()
-                }}
-            )
-            print(f"📁 Moved {update_result.modified_count} documents to General folder")
-
-        # Delete the folder
-        folders_collection.delete_one({"_id": folder_object_id})
-        print(f"✅ Folder '{folder.get('name', 'Unknown')}' deleted successfully")
-
-        return {
-            "success": True, 
-            "message": f"Folder deleted successfully. {update_result.modified_count if 'update_result' in locals() else 0} documents moved to General folder."
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"❌ Error deleting folder: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
-
 # ===============================
 # UTILITY ENDPOINTS
 # ===============================
 
-@documents_router.post("/initialize-general-folder")
-async def initialize_general_folder():
-    """Manual endpoint to create General folder if needed"""
-    try:
-        result = ensure_general_folder_exists()
-        
-        if result:
-            return {
-                "success": True,
-                "message": "General folder initialized successfully"
-            }
-        else:
-            raise HTTPException(status_code=500, detail="Failed to initialize General folder")
-            
-    except Exception as e:
-        print(f"❌ Error initializing General folder: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Initialization failed: {str(e)}")
-
 @documents_router.get("/info")
 async def service_info():
-    """Service information endpoint"""
+    """Service information endpoint with file serving details"""
     try:
-        from app.utils.config import folders_collection, documents_collection
+        from app.utils.config import folders_collection, documents_collection, settings
         
         # Get stats
         folder_count = folders_collection.estimated_document_count() if folders_collection else 0
@@ -618,26 +714,39 @@ async def service_info():
         if folders_collection:
             general_exists = folders_collection.find_one({"name": "General"}) is not None
         
+        # Check upload directory
+        upload_dir = Path(settings.UPLOAD_DIRECTORY)
+        files_on_disk = 0
+        if upload_dir.exists():
+            files_on_disk = len([f for f in upload_dir.iterdir() if f.is_file()])
+        
         return {
             "service": "document-service",
             "version": "1.0.0",
             "status": "running",
-            "upload_directory": os.path.abspath("./uploads"),
+            "upload_directory": str(upload_dir.absolute()),
             "stats": {
                 "total_documents": doc_count,
                 "total_folders": folder_count,
-                "general_folder_exists": general_exists
+                "general_folder_exists": general_exists,
+                "files_on_disk": files_on_disk
+            },
+            "file_serving": {
+                "static_files_endpoint": "/files/{filename}",
+                "download_endpoint": "/documents/{id}/download",
+                "stream_endpoint": "/documents/{id}/stream",
+                "file_check_endpoint": "/files/{filename} (HEAD)",
+                "max_file_size": f"{settings.MAX_FILE_SIZE} bytes",
+                "supported_formats": settings.ALLOWED_FILE_TYPES
             },
             "endpoints": {
-                "test": "/api/v1/test",
-                "database_test": "/api/v1/test/database",
-                "folders": "/api/v1/folders",
-                "documents": "/api/v1/documents",
-                "upload": "/api/v1/upload",
-                "search": "/api/v1/search",
-                "search_advanced": "/api/v1/search/advanced",
-                "folder_documents": "/api/v1/folders/{folder_name}/documents",
-                "initialize_general": "/api/v1/initialize-general-folder"
+                "test": "/test",
+                "database_test": "/test/database", 
+                "file_serving_test": "/test/file-serving",
+                "folders": "/folders",
+                "documents": "/documents",
+                "upload": "/upload",
+                "folder_documents": "/folders/{folder_name}/documents"
             }
         }
     except Exception as e:
@@ -647,14 +756,3 @@ async def service_info():
             "status": "error",
             "error": str(e)
         }
-
-# ===============================
-# STARTUP EVENT
-# ===============================
-
-@documents_router.on_event("startup")
-async def startup_event():
-    """Ensure General folder exists on service startup"""
-    print("🚀 Document service starting up...")
-    ensure_general_folder_exists()
-    print("✅ Document service startup completed")

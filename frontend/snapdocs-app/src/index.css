@@ -1024,3 +1024,411 @@ html {
     background: rgba(0, 0, 0, 0.8);
   }
 }
+
+/* Add these animations to your frontend/snapdocs-app/src/index.css file */
+
+/* File Preview and Download Animations */
+
+/* Slide in animation for success notifications */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+
+/* File hover effects for better preview indication */
+.file-preview-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.file-preview-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Preview modal entrance animation */
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-entrance {
+  animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Download button loading animation */
+@keyframes downloadPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+  }
+}
+
+.download-loading {
+  animation: downloadPulse 1.5s infinite;
+}
+
+/* File action button hover effects */
+.action-button {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.action-button:hover::before {
+  left: 100%;
+}
+
+/* Preview loading shimmer */
+@keyframes previewShimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.preview-loading {
+  background: linear-gradient(90deg, #f0f0f0 0px, #e0e0e0 40px, #f0f0f0 80px);
+  background-size: 200px 100%;
+  animation: previewShimmer 1.5s infinite;
+}
+
+/* Success notification animations */
+.download-success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  backdrop-filter: blur(16px);
+  animation: slideIn 0.4s ease-out, slideOut 0.4s ease-in 2.6s forwards;
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+}
+
+/* File icon bounce animation on hover */
+.file-icon-hover {
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.file-icon-hover:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Preview button glow effect */
+.preview-button-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-button-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.preview-button-glow:hover::after {
+  opacity: 1;
+}
+
+/* File row hover animation */
+.file-row-hover {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.file-row-hover:hover {
+  transform: translateY(-1px);
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading dots for file operations */
+@keyframes loadingDots {
+  0%, 20% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80%, 100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+.loading-dots span:nth-child(1) { animation-delay: 0s; }
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+.loading-dots span {
+  animation: loadingDots 1.4s infinite ease-in-out;
+  display: inline-block;
+}
+
+/* Preview modal image zoom animation */
+.preview-image {
+  transition: transform 0.3s ease, filter 0.3s ease;
+  cursor: zoom-in;
+}
+
+.preview-image:hover {
+  filter: brightness(1.05);
+}
+
+.preview-image.zoomed {
+  cursor: zoom-out;
+}
+
+/* Download progress bar animation */
+@keyframes downloadProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.download-progress {
+  animation: downloadProgress 2s ease-in-out;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8, #3b82f6);
+  background-size: 200% 100%;
+  animation: downloadProgress 2s ease-in-out, gradientShift 1s infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* File type badge animation */
+.file-type-badge {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-type-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.file-type-badge:hover::before {
+  left: 100%;
+}
+
+/* Folder hover effects */
+.folder-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.folder-hover::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.folder-hover:hover::before {
+  opacity: 1;
+}
+
+.folder-hover:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Preview modal navigation buttons */
+.nav-button {
+  transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+}
+
+.nav-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.nav-button:active {
+  transform: scale(0.95);
+}
+
+/* File status indicators */
+.status-indicator {
+  animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+/* Search results highlight animation */
+.search-highlight {
+  animation: searchHighlight 0.6s ease-out;
+}
+
+@keyframes searchHighlight {
+  0% {
+    background-color: rgba(59, 130, 246, 0.3);
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+/* Error state animations */
+.error-shake {
+  animation: errorShake 0.5s ease-in-out;
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+/* Success checkmark animation */
+.success-checkmark {
+  animation: successCheckmark 0.6s ease-out;
+}
+
+@keyframes successCheckmark {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-45deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(-45deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .file-row-hover:hover {
+    transform: none; /* Disable hover transform on mobile */
+  }
+  
+  .folder-hover:hover {
+    transform: translateY(-4px) scale(1.01); /* Reduced hover effect on mobile */
+  }
+  
+  .action-button {
+    min-height: 44px; /* Ensure touch-friendly size */
+    min-width: 44px;
+  }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+  .preview-loading {
+    background: linear-gradient(90deg, #374151 0px, #4b5563 40px, #374151 80px);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .file-icon-hover,
+  .file-row-hover,
+  .folder-hover,
+  .preview-button-glow,
+  .action-button,
+  .nav-button {
+    transition: none;
+    animation: none;
+  }
+  
+  .status-indicator,
+  .loading-dots span,
+  .download-progress {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .file-row-hover:hover {
+    border-color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .action-button {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .preview-button-glow::after {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}

@@ -1,4 +1,4 @@
-// components/dashboard/DashboardViews.jsx - COMPLETE FILE WITH UNIFIED STORAGE
+// components/dashboard/DashboardViews.jsx - FIXED WITH WORKING PREVIEW & DOWNLOAD
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FileText, Folder, Upload, Plus, Eye, Download, Trash2, AlertCircle } from 'lucide-react';
@@ -20,7 +20,7 @@ const DashboardViews = ({
   recentUploads,
   searchQuery,
   searchResults,
-  stats = {}, // Unified storage stats from parent
+  stats = {},
   onViewModeChange,
   onFolderClick,
   onCreateFolder,
@@ -71,8 +71,10 @@ const DashboardViews = ({
       .slice(0, 10);
   };
 
-  // File action handler with preview support
-  const handleFileAction = (action, file) => {
+  // ENHANCED File action handler with preview support
+  const handleFileAction = async (action, file) => {
+    console.log('🎬 File action:', action, 'for file:', file.name || file.original_name);
+    
     if (action === 'preview' || action === 'view') {
       const fileList = viewMode === 'folder' 
         ? documents.filter(d => (d.folder_name || d.folder_id) === selectedFolder?.name)
@@ -80,72 +82,114 @@ const DashboardViews = ({
           ? recentUploads
           : documents;
           
+      console.log('🔍 Opening preview for:', file.name || file.original_name);
+      openPreview(file, fileList);
+    } else if (action === 'download') {
+      // Let the FilePreviewModal handle download with proper UI feedback
+      console.log('📥 Download action - opening preview modal with download capability');
+      const fileList = viewMode === 'folder' 
+        ? documents.filter(d => (d.folder_name || d.folder_id) === selectedFolder?.name)
+        : viewMode === 'recent-uploads'
+          ? recentUploads
+          : documents;
       openPreview(file, fileList);
     } else {
+      // Pass other actions (like delete) to the parent handler
       onFileAction(action, file);
     }
   };
 
-  // Reusable file actions component
+  // ENHANCED Reusable file actions component
   const FileActions = ({ file }) => (
     <div className="flex items-center space-x-2">
       <button
         onClick={() => handleFileAction('preview', file)}
-        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 
-                   rounded-lg transition-colors"
+        className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-600/20 
+                   rounded-lg transition-all duration-200 group"
         title="Preview file"
       >
-        <Eye className="w-4 h-4" />
+        <Eye className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
       </button>
       <button
         onClick={() => handleFileAction('download', file)}
-        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 
-                   rounded-lg transition-colors"
+        className="p-2 text-gray-400 hover:text-green-400 hover:bg-green-600/20 
+                   rounded-lg transition-all duration-200 group"
         title="Download file"
       >
-        <Download className="w-4 h-4" />
+        <Download className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
       </button>
       <button
         onClick={() => handleFileAction('delete', file)}
-        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 
-                   rounded-lg transition-colors"
+        className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-600/20 
+                   rounded-lg transition-all duration-200 group"
         title="Delete file"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
       </button>
     </div>
   );
 
-  // File row component for consistent display
+  // ENHANCED File row component with better preview integration
   const FileRow = ({ doc, showFolder = true, className = "" }) => (
-    <div className={`group flex items-center space-x-4 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 ${className}`}>
-      <div className="text-3xl flex-shrink-0">
+    <div className={`group flex items-center space-x-4 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 border border-transparent hover:border-white/10 ${className}`}>
+      {/* File Icon - Clickable for preview */}
+      <button 
+        onClick={() => handleFileAction('preview', doc)}
+        className="text-3xl flex-shrink-0 hover:scale-110 transition-transform duration-200 cursor-pointer"
+        title="Click to preview"
+      >
         {getFileIcon(doc.name || doc.original_name)}
-      </div>
+      </button>
+      
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-3 mb-1">
-          <div className="text-white font-medium truncate">
+          {/* File Name - Also clickable for preview */}
+          <button 
+            onClick={() => handleFileAction('preview', doc)}
+            className="text-white font-medium truncate hover:text-blue-300 transition-colors text-left"
+            title="Click to preview"
+          >
             {doc.name || doc.original_name}
-          </div>
+          </button>
           {showFolder && (
             <div className="px-2 py-1 bg-blue-600/20 text-blue-300 text-xs rounded-full flex-shrink-0">
               📁 {doc.folder_name || doc.folder_id || 'General'}
             </div>
           )}
+          
+          {/* File Status Indicators */}
+          <div className="flex items-center space-x-1">
+            {/* Preview Available Indicator */}
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Preview available"></div>
+            
+            {/* Download Available Indicator */}
+            <div className="w-2 h-2 bg-blue-400 rounded-full" title="Download available"></div>
+          </div>
         </div>
+        
         <div className="flex items-center space-x-4 text-sm text-gray-400">
-          <span>{formatFileSize(doc.file_size)}</span>
+          <span>📦 {formatFileSize(doc.file_size)}</span>
           <span>•</span>
-          <span>{formatDate(doc.created_at)}</span>
+          <span>🕒 {formatDate(doc.created_at)}</span>
           {doc.file_type && (
             <>
               <span>•</span>
-              <span className="uppercase">{doc.file_type.replace('.', '')}</span>
+              <span className="uppercase">📄 {doc.file_type.replace('.', '')}</span>
+            </>
+          )}
+          
+          {/* Show file URL for debugging in development */}
+          {process.env.NODE_ENV === 'development' && doc.file_url && (
+            <>
+              <span>•</span>
+              <span className="text-xs text-green-400" title={doc.file_url}>🔗 URL Available</span>
             </>
           )}
         </div>
       </div>
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+      
+      {/* Action Buttons - Always visible on mobile, hover on desktop */}
+      <div className="opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <FileActions file={doc} />
       </div>
     </div>
@@ -194,8 +238,8 @@ const DashboardViews = ({
             <>
               {/* Normal dashboard view with UNIFIED STATS */}
               <StatsCards
-                documents={documents}        // Pass documents array for real-time calculations
-                folders={folders}           // Pass folders array for real-time calculations
+                documents={documents}        
+                folders={folders}           
                 onViewModeChange={onViewModeChange}
               />
 
@@ -219,12 +263,13 @@ const DashboardViews = ({
                     onForceRefresh={onForceRefresh}
                   />
 
-                  {/* Recent Files Section */}
+                  {/* Recent Files Section with Preview Integration */}
                   <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-bold text-white flex items-center space-x-2">
                         <FileText className="w-6 h-6 text-green-400" />
                         <span>Recent Files</span>
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Click to preview files"></div>
                       </h3>
                       {documents.length > 5 && (
                         <button
@@ -241,6 +286,14 @@ const DashboardViews = ({
                         {getRecentFiles().slice(0, 5).map((doc, index) => (
                           <FileRow key={doc._id || index} doc={doc} showFolder={true} />
                         ))}
+                        
+                        {/* Preview/Download Instructions */}
+                        <div className="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                          <div className="flex items-center space-x-2 text-sm text-blue-300">
+                            <Eye className="w-4 h-4" />
+                            <span>Click on file names or icons to preview • Use action buttons to download</span>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center py-8">
@@ -255,8 +308,8 @@ const DashboardViews = ({
                 {/* Right Panel with UNIFIED Storage Stats */}
                 <ActivityPanel
                   recentUploads={recentUploads}
-                  documents={documents}              // Pass documents for unified calculations
-                  folders={folders}                  // Pass folders for unified calculations
+                  documents={documents}              
+                  folders={folders}                  
                 />
               </div>
 
@@ -290,15 +343,30 @@ const DashboardViews = ({
                       : `All Documents (${displayDocuments.length})`
                     }
                   </span>
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="All files support preview and download"></div>
                 </h2>
               </div>
               
               {displayDocuments.length > 0 ? (
-                <div className="space-y-3">
-                  {displayDocuments.map((doc, index) => (
-                    <FileRow key={doc._id || index} doc={doc} showFolder={true} />
-                  ))}
-                </div>
+                <>
+                  {/* Instructions */}
+                  <div className="mb-4 p-3 bg-gradient-to-r from-blue-500/10 to-green-500/10 rounded-lg border border-blue-500/20">
+                    <div className="flex items-center space-x-2 text-sm text-blue-200">
+                      <Eye className="w-4 h-4" />
+                      <span>Click file names to preview • Use </span>
+                      <Download className="w-4 h-4" />
+                      <span> to download • </span>
+                      <Trash2 className="w-4 h-4" />
+                      <span> to delete</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {displayDocuments.map((doc, index) => (
+                      <FileRow key={doc._id || index} doc={doc} showFolder={true} />
+                    ))}
+                  </div>
+                </>
               ) : isSearchActive ? (
                 <div className="text-center py-16">
                   <div className="w-24 h-24 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -370,6 +438,9 @@ const DashboardViews = ({
                       </div>
                       <div className="text-gray-400 text-sm font-medium mb-3">
                         {folderDocCount} file{folderDocCount !== 1 ? 's' : ''}
+                        {folderDocCount > 0 && (
+                          <span className="text-green-400 ml-1">• Previewable</span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-500 bg-white/5 rounded-full px-3 py-1 inline-block">
                         Created {new Date(folder.created_at).toLocaleDateString()}
@@ -396,11 +467,14 @@ const DashboardViews = ({
             </div>
           )}
 
-          {/* Files Not in Folders */}
+          {/* Files Not in Folders with Preview Support */}
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2">
               <FileText className="w-6 h-6 text-orange-400" />
               <span>Files Not in Folders ({getFilesNotInFolders().length})</span>
+              {getFilesNotInFolders().length > 0 && (
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="All files support preview"></div>
+              )}
             </h3>
             
             {getFilesNotInFolders().length > 0 ? (
@@ -435,43 +509,70 @@ const DashboardViews = ({
               <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
                 <Upload className="w-7 h-7 text-green-400" />
                 <span>Recent Uploads ({recentUploads.length})</span>
+                {recentUploads.length > 0 && (
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="All recent files support preview and download"></div>
+                )}
               </h2>
               
               {recentUploads.length > 0 ? (
-                <div className="space-y-4">
-                  {recentUploads.map((doc, index) => (
-                    <div key={doc._id || index} className="group flex items-center space-x-4 p-4 bg-green-600/10 rounded-xl hover:bg-green-600/20 transition-all duration-200">
-                      <div className="text-3xl">
-                        {getFileIcon(doc.name || doc.original_name)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-3 mb-1">
-                          <div className="text-white font-medium truncate">
-                            {doc.name || doc.original_name}
-                          </div>
-                          <div className="px-2 py-1 bg-green-600/30 text-green-200 text-xs rounded-full">
-                            🕒 {new Date(doc.created_at).toLocaleString()}
-                          </div>
-                          <div className="px-2 py-1 bg-blue-600/20 text-blue-300 text-xs rounded-full">
-                            📁 {doc.folder_name || doc.folder_id || 'General'}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-400">
-                          <span>{formatFileSize(doc.file_size)}</span>
-                          {doc.file_type && (
-                            <>
-                              <span>•</span>
-                              <span className="uppercase">{doc.file_type.replace('.', '')}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <FileActions file={doc} />
-                      </div>
+                <>
+                  {/* Preview Instructions */}
+                  <div className="mb-4 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                    <div className="flex items-center space-x-2 text-sm text-green-200">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span>Recent uploads • Click to preview • Download available</span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {recentUploads.map((doc, index) => (
+                      <div key={doc._id || index} className="group flex items-center space-x-4 p-4 bg-green-600/10 rounded-xl hover:bg-green-600/20 transition-all duration-200 border border-green-500/20">
+                        {/* Clickable file icon for preview */}
+                        <button 
+                          onClick={() => handleFileAction('preview', doc)}
+                          className="text-3xl hover:scale-110 transition-transform duration-200 cursor-pointer"
+                          title="Click to preview"
+                        >
+                          {getFileIcon(doc.name || doc.original_name)}
+                        </button>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3 mb-1">
+                            {/* Clickable file name for preview */}
+                            <button 
+                              onClick={() => handleFileAction('preview', doc)}
+                              className="text-white font-medium truncate hover:text-green-300 transition-colors text-left"
+                              title="Click to preview"
+                            >
+                              {doc.name || doc.original_name}
+                            </button>
+                            <div className="px-2 py-1 bg-green-600/30 text-green-200 text-xs rounded-full">
+                              🕒 {new Date(doc.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })}
+                            </div>
+                            <div className="px-2 py-1 bg-blue-600/20 text-blue-300 text-xs rounded-full">
+                              📁 {doc.folder_name || doc.folder_id || 'General'}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-4 text-sm text-gray-400">
+                            <span>📦 {formatFileSize(doc.file_size)}</span>
+                            {doc.file_type && (
+                              <>
+                                <span>•</span>
+                                <span className="uppercase">📄 {doc.file_type.replace('.', '')}</span>
+                              </>
+                            )}
+                            <span>•</span>
+                            <span className="text-green-400">🔍 Preview Available</span>
+                          </div>
+                        </div>
+                        
+                        <div className="opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <FileActions file={doc} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-16">
                   <Upload className="w-24 h-24 text-gray-400 mx-auto mb-4" />
@@ -512,11 +613,22 @@ const DashboardViews = ({
                     {selectedFolder?.icon || '📁'}
                   </div>
                   <div>
-                    <h2 className="text-3xl font-bold text-white mb-2">{selectedFolder?.name}</h2>
+                    <h2 className="text-3xl font-bold text-white mb-2 flex items-center space-x-2">
+                      <span>{selectedFolder?.name}</span>
+                      {folderDocuments.length > 0 && (
+                        <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" title="All files in this folder support preview"></div>
+                      )}
+                    </h2>
                     <div className="flex items-center space-x-4 text-gray-400">
-                      <span>{folderDocuments.length} files</span>
+                      <span>📄 {folderDocuments.length} files</span>
                       <span>•</span>
-                      <span>Created {new Date(selectedFolder?.created_at).toLocaleDateString()}</span>
+                      <span>🕒 Created {new Date(selectedFolder?.created_at).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' })}</span>
+                      {folderDocuments.length > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="text-green-400">🔍 All files previewable</span>
+                        </>
+                      )}
                     </div>
                     {selectedFolder?.description && (
                       <p className="text-gray-300 mt-2">{selectedFolder.description}</p>
@@ -529,25 +641,38 @@ const DashboardViews = ({
             {/* Upload Area for Folder */}
             <FileUploader onFileUpload={onRefetch} selectedFolder={selectedFolder?.name} />
 
-            {/* Files in Folder */}
+            {/* Files in Folder with Preview Support */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-white flex items-center space-x-2">
                   <FileText className="w-6 h-6 text-blue-400" />
                   <span>Files in this folder ({folderDocuments.length})</span>
+                  {folderDocuments.length > 0 && (
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Click files to preview"></div>
+                  )}
                 </h3>
               </div>
 
               {folderDocuments.length > 0 ? (
-                <div className="space-y-3">
-                  {folderDocuments.map((doc, index) => (
-                    <FileRow 
-                      key={doc._id || index} 
-                      doc={doc} 
-                      showFolder={false}
-                    />
-                  ))}
-                </div>
+                <>
+                  {/* Instructions */}
+                  <div className="mb-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                    <div className="flex items-center space-x-2 text-sm text-blue-200">
+                      <Eye className="w-4 h-4" />
+                      <span>Click file names or icons to preview • Use action buttons for download and delete</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {folderDocuments.map((doc, index) => (
+                      <FileRow 
+                        key={doc._id || index} 
+                        doc={doc} 
+                        showFolder={false}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-16">
                   <div className="w-24 h-24 bg-gray-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
