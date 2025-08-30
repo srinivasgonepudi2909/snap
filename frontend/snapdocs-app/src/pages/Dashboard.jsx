@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx - COMPLETE FIX FOR DOWNLOAD & NAVIGATION ISSUES
+// pages/Dashboard.jsx - COMPLETE VERSION WITH BACK TO DASHBOARD SUPPORT
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -6,7 +6,6 @@ import { Menu, X } from 'lucide-react';
 import { useDocuments } from '../hooks/useDocuments';
 import useMobile from '../hooks/useMobile';
 import { useStorageCalculator } from '../utils/storageUtils';
-import { formatDateIST, formatDateByContext, getCurrentDateIST } from '../utils/dateUtils';
 
 import Sidebar from '../components/dashboard/Sidebar';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
@@ -56,19 +55,7 @@ const Dashboard = () => {
     setShowPopup(true);
   };
 
-  // Log unified storage stats for debugging
-  useEffect(() => {
-    console.log('📊 Dashboard unified storage stats:', {
-      totalFiles: storageStats.totalFiles,
-      totalFolders: folders.length,
-      recentUploads: storageStats.recentUploadsCount,
-      usedStorage: storageStats.usedFormatted,
-      usagePercentage: storageStats.usagePercentage.toFixed(1) + '%',
-      statusText: storageStats.statusText,
-      warningLevel: storageStats.warningLevel
-    });
-  }, [storageStats, folders.length]);
-
+  // Initialize user session
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUsername = localStorage.getItem('username');
@@ -106,6 +93,7 @@ const Dashboard = () => {
     fetchUserInfo();
   }, [navigate]);
 
+  // Handle search results
   const handleSearchResults = (results) => {
     console.log('🔍 Dashboard received search results:', results.length);
     setSearchResults(results);
@@ -163,65 +151,89 @@ const Dashboard = () => {
   };
 
   const handleBackToDashboard = () => {
-    console.log('🏠 Going back to dashboard');
+    console.log('🏠 Going back to dashboard from preview');
     setSelectedFolder(null);
     setViewMode('dashboard');
     setSearchResults([]);
     setIsSearchActive(false);
+    if (isMobile) setSidebarOpen(false);
   };
 
-  // UPDATED: Enhanced file action handler with download success/error handling
+  // Enhanced file action handler with download success/error feedback
   const handleFileAction = async (action, file) => {
-  switch (action) {
-    case 'view':
-      showNotification(`Viewing ${file.name || file.original_name}`, 'info');
-      break;
-    case 'download':
-      showNotification(`Starting download: ${file.name || file.original_name}`, 'info');
-      break;
-    case 'download-success':
-      // NEW: Show success notification for successful downloads
-      const fileName = file.name || file.original_name;
-      showOperationPopup(
-        'success',
-        'Download Successful! 📥',
-        `"${fileName}" has been saved to your Downloads folder.`,
-        [
-          `📄 File: ${fileName}`,
-          `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
-          `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
-          `💾 Location: Downloads folder`,
-          `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-        ],
-        true, // auto-close
-        3000
-      );
-      break;
-    case 'download-error':
-      // NEW: Show error notification for failed downloads
-      const errorFileName = file.name || file.original_name;
-      showOperationPopup(
-        'error',
-        'Download Failed! ❌',
-        `Unable to download "${errorFileName}". Please try again or contact support.`,
-        [
-          `📄 File: ${errorFileName}`,
-          `❌ Reason: Network error or file not accessible`,
-          `🔄 Try: Refresh the page and try again`,
-          `📞 Support: Contact support if problem persists`,
-          `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-        ]
-      );
-      break;
-    case 'delete':
-      // Open custom delete confirmation modal instead of window.confirm
-      setFileToDelete(file);
-      setDeleteModalOpen(true);
-      break;
-    default:
-      break;
-  }
-};
+    switch (action) {
+      case 'view':
+        showNotification(`Viewing ${file.name || file.original_name}`, 'info');
+        break;
+        
+      case 'download':
+        showNotification(`Starting download: ${file.name || file.original_name}`, 'info');
+        
+        // Trigger actual download through FilePreviewModal
+        try {
+          const fileName = file.name || file.original_name;
+          console.log('📥 Dashboard handling download for:', fileName);
+          
+          // The download will be handled by the FilePreviewModal component
+          // We just show the initial notification here
+          
+        } catch (error) {
+          console.error('❌ Download initiation error:', error);
+          showOperationPopup(
+            'error',
+            'Download Failed! ❌',
+            `Unable to start download for "${file.name || file.original_name}".`,
+            [`Error: ${error.message}`]
+          );
+        }
+        break;
+        
+      case 'download-success':
+        // Success feedback from FilePreviewModal
+        const fileName = file.name || file.original_name;
+        showOperationPopup(
+          'success',
+          'Download Successful! 📥',
+          `"${fileName}" has been saved to your Downloads folder.`,
+          [
+            `📄 File: ${fileName}`,
+            `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
+            `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
+            `💾 Location: Downloads folder`,
+            `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+          ],
+          true,
+          3000
+        );
+        break;
+        
+      case 'download-error':
+        // Error feedback from FilePreviewModal
+        const errorFileName = file.name || file.original_name;
+        showOperationPopup(
+          'error',
+          'Download Failed! ❌',
+          `Unable to download "${errorFileName}". Please try again or contact support.`,
+          [
+            `📄 File: ${errorFileName}`,
+            `❌ Reason: Network error or file not accessible`,
+            `🔄 Try: Refresh the page and try again`,
+            `📞 Support: Contact support if problem persists`,
+            `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+          ]
+        );
+        break;
+        
+      case 'delete':
+        // Open custom delete confirmation modal
+        setFileToDelete(file);
+        setDeleteModalOpen(true);
+        break;
+        
+      default:
+        break;
+    }
+  };
 
   // Handle the actual delete operation
   const handleConfirmDelete = async () => {
@@ -318,7 +330,6 @@ const Dashboard = () => {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
-  // Updated formatDate function to use IST timezone
   const formatDate = (date) => {
     if (!date) return 'Unknown date';
     
@@ -370,12 +381,13 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
-      {/* Grafana-style background overlay */}
+      {/* Background overlays */}
       <div className="absolute inset-0 bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-blue-900/40"></div>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-600/20 via-transparent to-transparent"></div>
       
       <Notifications notifications={notifications} />
 
+      {/* Mobile backdrop */}
       {isMobile && sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/70 backdrop-blur-sm z-30"
@@ -384,6 +396,7 @@ const Dashboard = () => {
       )}
 
       <div className="flex h-screen relative z-10">
+        {/* Sidebar */}
         <div
           className={`
             fixed z-40 inset-y-0 left-0 transform 
@@ -405,10 +418,12 @@ const Dashboard = () => {
             isMobile={isMobile}
             sidebarOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
+            onFolderClick={handleFolderClick}
           />
         </div>
 
         <main className="flex-1 flex flex-col overflow-hidden">
+          {/* Mobile header */}
           {isMobile && (
             <div className="p-4 flex items-center justify-between bg-gray-900/80 backdrop-blur-md text-white shadow-xl border-b border-gray-700/50">
               <button 
@@ -504,7 +519,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Main Content - Fixed with proper file actions */}
+              {/* Main Content - UPDATED with back to dashboard support */}
               <div className="space-y-6 relative z-30">
                 <DashboardViews
                   viewMode={viewMode}
@@ -521,7 +536,8 @@ const Dashboard = () => {
                   onCreateFolder={() => setCreateFolderOpen(true)}
                   onRefetch={refetch}
                   onForceRefresh={forceRefresh}
-                  onFileAction={handleFileAction} // This now handles download-success and download-error
+                  onFileAction={handleFileAction}
+                  onBackToDashboard={handleBackToDashboard}
                   formatFileSize={formatFileSize}
                   formatDate={formatDate}
                   getFileIcon={getFileIcon}
@@ -533,14 +549,13 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* Create Folder Modal */}
+      {/* Modals */}
       <CreateFolderModal
         isOpen={createFolderOpen}
         onClose={() => setCreateFolderOpen(false)}
         onFolderCreated={handleFolderCreated}
       />
 
-      {/* Custom Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={deleteModalOpen}
         onClose={handleDeleteModalClose}
@@ -549,7 +564,6 @@ const Dashboard = () => {
         formatFileSize={formatFileSize}
       />
 
-      {/* Operation Popup Modal - Enhanced with auto-close support */}
       <PopupModal
         isOpen={showPopup}
         onClose={() => setShowPopup(false)}
