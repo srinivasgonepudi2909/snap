@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx - COMPLETE VERSION WITH CUSTOM DELETE CONFIRMATION MODAL
+// pages/Dashboard.jsx - COMPLETE FIX FOR DOWNLOAD & NAVIGATION ISSUES
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -12,7 +12,7 @@ import Sidebar from '../components/dashboard/Sidebar';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import DashboardViews from '../components/dashboard/DashboardViews';
 import CreateFolderModal from '../components/dashboard/CreateFolderModal';
-import DeleteConfirmationModal from '../components/dashboard/DeleteConfirmationModal'; // NEW IMPORT
+import DeleteConfirmationModal from '../components/dashboard/DeleteConfirmationModal';
 import Notifications from '../components/dashboard/Notifications';
 import SearchComponent from '../components/dashboard/SearchComponent';
 import PopupModal from '../components/dashboard/PopupModal';
@@ -36,7 +36,7 @@ const Dashboard = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupConfig, setPopupConfig] = useState({});
 
-  // NEW: Delete confirmation modal states
+  // Delete confirmation modal states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
 
@@ -44,13 +44,14 @@ const Dashboard = () => {
   const storageStats = useStorageCalculator(documents, 15);
 
   // Show popup notification
-  const showOperationPopup = (type, title, message, details = null, autoClose = false) => {
+  const showOperationPopup = (type, title, message, details = null, autoClose = false, autoCloseDelay = 4000) => {
     setPopupConfig({
       type,
       title,
       message,
       details,
-      autoClose
+      autoClose,
+      autoCloseDelay
     });
     setShowPopup(true);
   };
@@ -169,17 +170,52 @@ const Dashboard = () => {
     setIsSearchActive(false);
   };
 
-  // UPDATED: File action handler - no more window.confirm()
+  // UPDATED: Enhanced file action handler with download success/error handling
   const handleFileAction = async (action, file) => {
+    const fileName = file.name || file.original_name;
+    const fileSize = formatFileSize(file.file_size || file.size || 0);
+    
     switch (action) {
       case 'view':
-        showNotification(`Viewing ${file.name || file.original_name}`, 'info');
+        showNotification(`Viewing ${fileName}`, 'info');
         break;
       case 'download':
-        showNotification(`Downloading ${file.name || file.original_name}`, 'info');
+        showNotification(`Starting download: ${fileName}`, 'info');
+        break;
+      case 'download-success':
+        // NEW: Show success popup for successful downloads
+        showOperationPopup(
+          'success',
+          'Download Successful! 📥',
+          `"${fileName}" has been saved to your Downloads folder.`,
+          [
+            `📄 File: ${fileName}`,
+            `📦 Size: ${fileSize}`,
+            `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
+            `💾 Location: Downloads folder`,
+            `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+          ],
+          true, // auto-close
+          3000
+        );
+        break;
+      case 'download-error':
+        // NEW: Show error popup for failed downloads
+        showOperationPopup(
+          'error',
+          'Download Failed! ❌',
+          `Unable to download "${fileName}". Please try again or contact support.`,
+          [
+            `📄 File: ${fileName}`,
+            `❌ Reason: Network error or file not accessible`,
+            `🔄 Try: Refresh the page and try again`,
+            `📞 Support: Contact support if problem persists`,
+            `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+          ]
+        );
         break;
       case 'delete':
-        // Open custom delete confirmation modal instead of window.confirm
+        // Open custom delete confirmation modal
         setFileToDelete(file);
         setDeleteModalOpen(true);
         break;
@@ -188,7 +224,7 @@ const Dashboard = () => {
     }
   };
 
-  // NEW: Handle the actual delete operation
+  // Handle the actual delete operation
   const handleConfirmDelete = async () => {
     if (!fileToDelete) return;
 
@@ -266,7 +302,7 @@ const Dashboard = () => {
     }
   };
 
-  // NEW: Handle delete modal close
+  // Handle delete modal close
   const handleDeleteModalClose = () => {
     setDeleteModalOpen(false);
     setFileToDelete(null);
@@ -469,7 +505,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Main Content */}
+              {/* Main Content - Fixed with proper file actions */}
               <div className="space-y-6 relative z-30">
                 <DashboardViews
                   viewMode={viewMode}
@@ -486,7 +522,7 @@ const Dashboard = () => {
                   onCreateFolder={() => setCreateFolderOpen(true)}
                   onRefetch={refetch}
                   onForceRefresh={forceRefresh}
-                  onFileAction={handleFileAction}
+                  onFileAction={handleFileAction} // This now handles download-success and download-error
                   formatFileSize={formatFileSize}
                   formatDate={formatDate}
                   getFileIcon={getFileIcon}
@@ -505,7 +541,7 @@ const Dashboard = () => {
         onFolderCreated={handleFolderCreated}
       />
 
-      {/* NEW: Custom Delete Confirmation Modal */}
+      {/* Custom Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={deleteModalOpen}
         onClose={handleDeleteModalClose}
@@ -514,7 +550,7 @@ const Dashboard = () => {
         formatFileSize={formatFileSize}
       />
 
-      {/* Operation Popup Modal */}
+      {/* Operation Popup Modal - Enhanced with auto-close support */}
       <PopupModal
         isOpen={showPopup}
         onClose={() => setShowPopup(false)}
@@ -523,8 +559,8 @@ const Dashboard = () => {
         message={popupConfig.message}
         details={popupConfig.details}
         showOkButton={true}
-        autoClose={popupConfig.autoClose}
-        autoCloseDelay={3000}
+        autoClose={popupConfig.autoClose || false}
+        autoCloseDelay={popupConfig.autoCloseDelay || 4000}
       />
     </div>
   );
