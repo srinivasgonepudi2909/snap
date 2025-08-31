@@ -74,12 +74,12 @@ async def serve_file(file_name: str):
 @documents_router.get("/documents/{document_id}/download")
 async def download_document(document_id: str):
     """
-    Download a specific document by ID with authentication
+    FIXED: Download a specific document by ID with FORCED download headers
     """
     try:
         from app.utils.config import documents_collection, settings
         
-        print(f"📥 Download request for document ID: {document_id}")
+        print(f"📥 FORCED Download request for document ID: {document_id}")
         
         if not documents_collection:
             raise HTTPException(status_code=500, detail="Database not available")
@@ -116,17 +116,25 @@ async def download_document(document_id: str):
             if not mime_type:
                 mime_type = 'application/octet-stream'
         
-        print(f"✅ Downloading: {original_name} from {file_path}")
+        print(f"✅ FORCED Download: {original_name} from {file_path}")
         
-        # Return file with download headers
+        # CRITICAL FIX: Return file with FORCED download headers
         return FileResponse(
             path=str(file_path),
-            media_type=mime_type,
+            media_type='application/octet-stream',  # FORCE binary download
             filename=original_name,
             headers={
+                # CRITICAL: These headers FORCE download instead of preview
                 "Content-Disposition": f'attachment; filename="{original_name}"',
+                "Content-Type": "application/octet-stream",  # Override MIME type
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                # CORS headers for frontend
                 "Access-Control-Allow-Origin": "*",
-                "Access-Control-Expose-Headers": "Content-Disposition"
+                "Access-Control-Expose-Headers": "Content-Disposition, Content-Type, Content-Length",
+                "Access-Control-Allow-Headers": "Authorization, Content-Type",
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS"
             }
         )
         
@@ -136,6 +144,62 @@ async def download_document(document_id: str):
         print(f"❌ Error downloading document {document_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
 
+@documents_router.get("/files/{file_name}/download")
+async def download_file_direct(file_name: str):
+    """
+    FIXED: Direct file download with forced download headers
+    """
+    try:
+        from app.utils.config import settings
+        
+        # Construct file path
+        file_path = Path(settings.UPLOAD_DIRECTORY) / file_name
+        
+        print(f"📁 FORCED Direct file download: {file_name}")
+        print(f"📂 Looking for file at: {file_path}")
+        
+        # Check if file exists
+        if not file_path.exists() or not file_path.is_file():
+            print(f"❌ File not found: {file_path}")
+            raise HTTPException(status_code=404, detail=f"File '{file_name}' not found")
+        
+        # Get file stats
+        file_stat = await aiofiles.os.stat(file_path)
+        file_size = file_stat.st_size
+        
+        # Extract original filename (remove UUID prefix if present)
+        original_name = file_name
+        if '-' in file_name and len(file_name.split('-')[0]) == 36:  # UUID length
+            original_name = '-'.join(file_name.split('-')[1:])
+        
+        print(f"✅ FORCED Direct download: {original_name} ({file_size} bytes)")
+        
+        # CRITICAL FIX: Force download with proper headers
+        return FileResponse(
+            path=str(file_path),
+            media_type='application/octet-stream',  # FORCE binary download
+            filename=original_name,
+            headers={
+                # CRITICAL: Force download headers
+                "Content-Disposition": f'attachment; filename="{original_name}"',
+                "Content-Type": "application/octet-stream",
+                "Content-Length": str(file_size),
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                # CORS headers
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Expose-Headers": "Content-Disposition, Content-Type, Content-Length",
+                "Access-Control-Allow-Headers": "Authorization, Content-Type",
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error serving file {file_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"File serving failed: {str(e)}")    
 @documents_router.head("/files/{file_name}")
 async def check_file_exists(file_name: str):
     """

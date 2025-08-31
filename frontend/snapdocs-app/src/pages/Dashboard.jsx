@@ -98,199 +98,198 @@ const Dashboard = () => {
 
   // ENHANCED DOWNLOAD HANDLER - Multiple methods for maximum compatibility
   const handleDownloadFile = async (file) => {
-    const fileName = file.name || file.original_name;
-    const fileId = file._id;
+  const fileName = file.name || file.original_name;
+  const fileId = file._id;
+  
+  if (downloadingFiles.has(fileId)) {
+    console.log('⏳ Download already in progress for:', fileName);
+    return;
+  }
+
+  console.log('📥 Starting ENHANCED download for:', fileName);
+  setDownloadingFiles(prev => new Set([...prev, fileId]));
+  
+  try {
+    const token = localStorage.getItem('token');
+    const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
     
-    if (downloadingFiles.has(fileId)) {
-      console.log('⏳ Download already in progress for:', fileName);
-      return;
-    }
+    // ENHANCED: Multiple download methods for maximum compatibility
+    const downloadMethods = [
+      {
+        name: 'API Download Endpoint',
+        url: `${baseUrl}/api/v1/documents/${file._id}/download`,
+        requiresAuth: true,
+        method: 'blob'
+      },
+      {
+        name: 'Direct File Download',
+        url: `${baseUrl}/api/v1/files/${file.unique_name}/download`,
+        requiresAuth: false,
+        method: 'blob'
+      },
+      {
+        name: 'Static File Forced Download',
+        url: `${baseUrl}/files/${file.unique_name}`,
+        requiresAuth: false,
+        method: 'link'
+      }
+    ].filter(method => method.url.includes('undefined') === false);
 
-    console.log('📥 Starting download for:', fileName);
-    setDownloadingFiles(prev => new Set([...prev, fileId]));
+    console.log(`🔗 Available download methods: ${downloadMethods.length}`);
     
-    try {
-      const token = localStorage.getItem('token');
-      const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
-      
-      // Generate multiple download URLs for fallback
-      const downloadUrls = [];
-      
-      // Method 1: Direct download API endpoint (primary)
-      if (file._id) {
-        downloadUrls.push({
-          url: `${baseUrl}/api/v1/documents/${file._id}/download`,
-          method: 'API Download',
-          requiresAuth: true
-        });
-      }
-      
-      // Method 2: Direct file serving (fallback)
-      if (file.unique_name) {
-        downloadUrls.push({
-          url: `${baseUrl}/files/${file.unique_name}`,
-          method: 'Static File',
-          requiresAuth: false
-        });
-      }
+    let downloadSuccess = false;
+    let lastError = null;
 
-      // Method 3: Stream endpoint (alternative)
-      if (file._id) {
-        downloadUrls.push({
-          url: `${baseUrl}/api/v1/documents/${file._id}/stream`,
-          method: 'Stream Download',
-          requiresAuth: true
-        });
-      }
+    // Try each download method
+    for (let i = 0; i < downloadMethods.length; i++) {
+      const method = downloadMethods[i];
+      console.log(`🔄 Attempting method ${i + 1}: ${method.name}`);
 
-      console.log('🔗 Available download URLs:', downloadUrls.length);
-      
-      let downloadSuccess = false;
-      let lastError = null;
-
-      // Try each download method
-      for (let i = 0; i < downloadUrls.length; i++) {
-        const urlInfo = downloadUrls[i];
-        console.log(`🔄 Attempting download method ${i + 1}: ${urlInfo.method}`);
-
-        try {
-          // Prepare fetch options
+      try {
+        if (method.method === 'blob') {
+          // Method A: Blob download with forced headers
           const fetchOptions = {
             method: 'GET',
-            headers: {}
+            headers: {
+              'Accept': 'application/octet-stream', // Force binary
+              'Cache-Control': 'no-cache'
+            }
           };
 
-          // Add authorization if required
-          if (urlInfo.requiresAuth && token) {
+          if (method.requiresAuth && token) {
             fetchOptions.headers['Authorization'] = `Bearer ${token}`;
           }
 
-          // Test URL accessibility first
-          console.log('🧪 Testing URL accessibility:', urlInfo.url);
-          const testResponse = await fetch(urlInfo.url, {
-            ...fetchOptions,
-            method: 'HEAD' // Just test, don't download yet
-          });
-
-          if (!testResponse.ok) {
-            console.warn(`⚠️ URL test failed for ${urlInfo.method}:`, testResponse.status);
-            lastError = new Error(`${urlInfo.method} returned ${testResponse.status}`);
-            continue;
+          const response = await fetch(method.url, fetchOptions);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
 
-          console.log(`✅ URL accessible via ${urlInfo.method}, starting download...`);
-
-          // Method A: Blob download (preferred for API endpoints)
-          if (urlInfo.requiresAuth || urlInfo.method === 'API Download') {
-            const response = await fetch(urlInfo.url, fetchOptions);
-            
-            if (!response.ok) {
-              throw new Error(`Download failed: ${response.status} ${response.statusText}`);
-            }
-
-            const blob = await response.blob();
-            
-            if (blob.size === 0) {
-              throw new Error('Downloaded file is empty');
-            }
-
-            // Create download link
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = fileName;
-            link.style.display = 'none';
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Clean up
-            setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 1000);
-            
-            downloadSuccess = true;
-            console.log(`✅ Download successful via ${urlInfo.method}`);
-            break;
-          } 
-          // Method B: Direct link download (for static files)
-          else {
-            const link = document.createElement('a');
-            link.href = urlInfo.url;
-            link.download = fileName;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.style.display = 'none';
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            downloadSuccess = true;
-            console.log(`✅ Download initiated via ${urlInfo.method}`);
-            break;
+          // Check if response is actually a file (not an error page)
+          const contentType = response.headers.get('content-type') || '';
+          const contentLength = response.headers.get('content-length');
+          
+          console.log(`📦 Response: ${contentType}, Length: ${contentLength}`);
+          
+          // Get the blob
+          const blob = await response.blob();
+          
+          if (blob.size === 0) {
+            throw new Error('Received empty file');
           }
 
-        } catch (methodError) {
-          console.warn(`❌ Download method ${urlInfo.method} failed:`, methodError.message);
-          lastError = methodError;
-          continue;
+          // CRITICAL: Create download with forced filename
+          const blobUrl = URL.createObjectURL(blob);
+          
+          // Create invisible download link
+          const downloadLink = document.createElement('a');
+          downloadLink.style.display = 'none';
+          downloadLink.href = blobUrl;
+          downloadLink.download = fileName; // Force download with correct filename
+          downloadLink.setAttribute('download', fileName); // Extra enforcement
+          
+          // Add to DOM and trigger download
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          
+          // Cleanup
+          document.body.removeChild(downloadLink);
+          URL.revokeObjectURL(blobUrl);
+          
+          console.log(`✅ Blob download successful via ${method.name}`);
+          downloadSuccess = true;
+          break;
+          
+        } else if (method.method === 'link') {
+          // Method B: Direct link download
+          const downloadLink = document.createElement('a');
+          downloadLink.style.display = 'none';
+          downloadLink.href = method.url;
+          downloadLink.download = fileName;
+          downloadLink.setAttribute('download', fileName);
+          downloadLink.target = '_blank';
+          downloadLink.rel = 'noopener noreferrer';
+          
+          // Force download by setting special attributes
+          downloadLink.type = 'application/octet-stream';
+          
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          
+          console.log(`✅ Link download initiated via ${method.name}`);
+          downloadSuccess = true;
+          break;
         }
+
+      } catch (methodError) {
+        console.warn(`❌ Method ${method.name} failed:`, methodError.message);
+        lastError = methodError;
+        continue;
       }
+    }
 
-      if (downloadSuccess) {
-        // Show success notification
-        showOperationPopup(
-          'success',
-          'Download Started! 📥',
-          `"${fileName}" download has been initiated successfully.`,
-          [
-            `📄 File: ${fileName}`,
-            `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
-            `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
-            `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
-            `💾 Check your Downloads folder`
-          ],
-          true,
-          4000
-        );
-
-        // Show temporary notification
-        showNotification(`Successfully initiated download: ${fileName}`, 'success');
-        
-      } else {
-        throw lastError || new Error('All download methods failed');
-      }
-
-    } catch (error) {
-      console.error('❌ Download failed:', error);
-      
-      // Show error popup with troubleshooting info
+    if (downloadSuccess) {
+      // Show success notification
       showOperationPopup(
-        'error',
-        'Download Failed! ❌',
-        `Unable to download "${fileName}". Please try the alternative methods below.`,
+        'success',
+        'Download Started! 📥',
+        `"${fileName}" is being downloaded to your computer.`,
         [
           `📄 File: ${fileName}`,
-          `❌ Error: ${error.message}`,
-          `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
-          ``,
-          `🔧 Troubleshooting:`,
-          `• Check your internet connection`,
-          `• Try right-click → "Save link as..." on the file`,
-          `• Clear browser cache and try again`,
-          `• Try opening file in new tab first, then download`
-        ]
+          `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
+          `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
+          `💾 Check your browser's Downloads folder`,
+          `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+        ],
+        true,
+        4000
       );
 
-      showNotification(`Download failed: ${fileName}`, 'error');
-    } finally {
-      setDownloadingFiles(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(fileId);
-        return newSet;
-      });
+      showNotification(`Download started: ${fileName}`, 'success');
+      
+    } else {
+      // All methods failed - show comprehensive error
+      throw new Error(`All download methods failed. Last error: ${lastError?.message || 'Unknown error'}`);
     }
-  };
+
+  } catch (error) {
+    console.error('❌ Download completely failed:', error);
+    
+    // Show error with alternative solutions
+    showOperationPopup(
+      'error',
+      'Download Failed! ❌',
+      `Unable to download "${fileName}". Try these alternatives:`,
+      [
+        `📄 File: ${fileName}`,
+        `❌ Error: ${error.message}`,
+        ``,
+        `🔧 Alternative Solutions:`,
+        `1. Right-click the file → "Save link as..."`,
+        `2. Try opening file in new tab, then Ctrl+S`,
+        `3. Check browser's download settings`,
+        `4. Disable popup blockers for this site`,
+        `5. Try using a different browser`,
+        ``,
+        `💡 File URLs for manual download:`,
+        file.unique_name ? `• ${process.env.REACT_APP_DOCUMENT_API}/files/${file.unique_name}` : '',
+        file._id ? `• ${process.env.REACT_APP_DOCUMENT_API}/api/v1/documents/${file._id}/download` : ''
+      ].filter(Boolean)
+    );
+
+    showNotification(`Download failed: ${fileName}`, 'error');
+    
+  } finally {
+    // Remove from downloading set
+    setDownloadingFiles(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(fileId);
+      return newSet;
+    });
+  }
+};
 
   // Handle search results
   const handleSearchResults = (results) => {
@@ -363,47 +362,56 @@ const Dashboard = () => {
 
   // ENHANCED FILE ACTION HANDLER with improved download integration
   const handleFileAction = async (action, file) => {
-    switch (action) {
-      case 'preview':
-      case 'view':
-        // Open file in new tab
-        const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
-        let previewUrl;
+  console.log('🎬 File action triggered:', action, 'for file:', file.name || file.original_name);
+  
+  switch (action) {
+    case 'preview':
+    case 'view':
+      // FIXED: Preview opens file in new tab for viewing
+      console.log('👁️ Opening file in new tab for preview:', file.name || file.original_name);
+      
+      const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
+      let previewUrl;
+      
+      if (file.unique_name) {
+        previewUrl = `${baseUrl}/files/${file.unique_name}`;
+      } else if (file._id) {
+        previewUrl = `${baseUrl}/api/v1/documents/${file._id}/stream`;
+      }
+      
+      if (previewUrl) {
+        console.log('🔗 Preview URL:', previewUrl);
         
-        if (file.unique_name) {
-          previewUrl = `${baseUrl}/files/${file.unique_name}`;
-        } else if (file._id) {
-          previewUrl = `${baseUrl}/api/v1/documents/${file._id}/download`;
-        }
-        
-        if (previewUrl) {
-          const newWindow = window.open(previewUrl, '_blank', 'noopener,noreferrer');
-          if (!newWindow) {
-            showNotification('Please allow popups to preview files', 'error');
-          } else {
-            showNotification(`Opening ${file.name || file.original_name} in new tab`, 'info');
-          }
+        const newWindow = window.open(previewUrl, '_blank', 'noopener,noreferrer');
+        if (!newWindow) {
+          showNotification('Please allow popups to preview files in new tabs', 'error');
         } else {
-          showNotification('Preview not available for this file', 'error');
+          showNotification(`Opened ${file.name || file.original_name} in new tab`, 'info');
         }
-        break;
+      } else {
+        showNotification('Preview not available for this file', 'error');
+      }
+      break;
         
-      case 'download':
-        // Use enhanced download handler
-        await handleDownloadFile(file);
-        break;
+    case 'download':
+      // FIXED: Download forces file download to browser's download folder
+      console.log('📥 FORCING file download:', file.name || file.original_name);
+      await handleDownloadFile(file);
+      break;
         
-      case 'delete':
-        // Open custom delete confirmation modal
-        setFileToDelete(file);
-        setDeleteModalOpen(true);
-        break;
+    case 'delete':
+      // Open delete confirmation modal
+      console.log('🗑️ Opening delete confirmation for:', file.name || file.original_name);
+      setFileToDelete(file);
+      setDeleteModalOpen(true);
+      break;
         
-      default:
-        console.warn('Unknown file action:', action);
-        break;
-    }
-  };
+    default:
+      console.warn('❓ Unknown file action:', action);
+      showNotification(`Unknown action: ${action}`, 'error');
+      break;
+  }
+};
 
   // Handle the actual delete operation
   const handleConfirmDelete = async () => {

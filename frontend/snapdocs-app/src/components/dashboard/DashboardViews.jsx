@@ -13,37 +13,16 @@ import FilePreviewModal from './FilePreviewModal';
 // Enhanced FileCard Component with FIXED Actions
 const FileCard = ({ doc, onPreview, onDownload, onDelete, formatFileSize, formatDate, getFileIcon }) => {
   
-  // FIXED: Separate handlers for each action
+  // FIXED: Separate handlers for each action - no confusion
   const handlePreviewClick = (e) => {
     e.stopPropagation();
-    console.log('👁️ Eye button clicked - Opening file in new tab:', doc.name || doc.original_name);
-    
-    // Generate file URL for new tab
-    const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
-    let fileUrl;
-    
-    if (doc.unique_name) {
-      fileUrl = `${baseUrl}/files/${doc.unique_name}`;
-    } else if (doc._id) {
-      fileUrl = `${baseUrl}/api/v1/documents/${doc._id}/download`;
-    } else {
-      console.error('❌ No file URL available for preview');
-      return;
-    }
-    
-    // Open file in new tab
-    const newWindow = window.open(fileUrl, '_blank', 'noopener,noreferrer');
-    if (!newWindow) {
-      console.error('❌ Failed to open new tab - popup blocked?');
-      alert('Please allow popups for this site to preview files');
-    } else {
-      console.log('✅ File opened in new tab successfully');
-    }
+    console.log('👁️ Preview button clicked - Opening file in new tab:', doc.name || doc.original_name);
+    onPreview(doc);
   };
 
   const handleDownloadClick = (e) => {
     e.stopPropagation();
-    console.log('📥 Download button clicked:', doc.name || doc.original_name);
+    console.log('📥 Download button clicked - FORCING file download:', doc.name || doc.original_name);
     onDownload(doc);
   };
 
@@ -54,99 +33,101 @@ const FileCard = ({ doc, onPreview, onDownload, onDelete, formatFileSize, format
   };
 
   const handleCardClick = (e) => {
-    // FIXED: Card click now does nothing or shows info, not preview
+    // Card click does nothing to avoid confusion
     console.log('📄 File card clicked (no action):', doc.name || doc.original_name);
   };
 
   return (
-    <div className="group relative bg-white/5 rounded-xl border border-white/10 hover:border-white/30 transition-all duration-300 overflow-hidden hover:transform hover:scale-[1.02] hover:shadow-2xl">
-      {/* Main clickable area - FIXED: Now just for selection/info */}
+    <div className="group relative bg-white/5 rounded-xl border border-white/10 hover:border-white/30 transition-all duration-300 overflow-hidden hover:transform hover:scale-[1.02] hover:shadow-2xl file-card-square">
+      {/* FIXED: Square container with proper aspect ratio */}
       <div 
-        className="aspect-square p-4 cursor-pointer flex flex-col items-center justify-center text-center relative"
+        className="file-card-container cursor-pointer"
         onClick={handleCardClick}
       >
-        {/* File Icon */}
-        <div className="text-6xl mb-3 group-hover:scale-110 transition-transform duration-300">
-          {getFileIcon(doc.name || doc.original_name)}
+        {/* FIXED: Icon container - perfect centering */}
+        <div className="file-card-icon-container">
+          <div className="file-card-icon group-hover:scale-110 transition-transform duration-300">
+            {getFileIcon(doc.name || doc.original_name)}
+          </div>
         </div>
         
-        {/* File Name */}
-        <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-blue-300 transition-colors leading-tight">
-          {doc.name || doc.original_name}
-        </h3>
-        
-        {/* File Info */}
-        <div className="text-xs text-gray-400 mt-2 space-y-1">
-          <div>📦 {formatFileSize(doc.file_size)}</div>
-          <div>🕒 {formatDate(doc.created_at)}</div>
+        {/* FIXED: Text container - proper spacing, no overlapping */}
+        <div className="file-card-text-container">
+          {/* File Name - FIXED: Proper line clamping */}
+          <h3 className="file-card-name text-white font-medium group-hover:text-blue-300 transition-colors">
+            {doc.name || doc.original_name}
+          </h3>
+          
+          {/* File Info - FIXED: Small, non-overlapping text */}
+          <div className="file-card-info space-y-0.5">
+            <div>📦 {formatFileSize(doc.file_size)}</div>
+            <div>🕒 {formatDate(doc.created_at)}</div>
+          </div>
         </div>
       </div>
       
-      {/* FIXED: Action Buttons with Proper Event Handlers */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-1">
-        {/* FIXED: Eye button opens new tab */}
+      {/* FIXED: Action Buttons - top right, smaller size */}
+      <div className="file-card-actions">
+        {/* FIXED: Preview button - opens in new tab */}
         <button
           onClick={handlePreviewClick}
-          className="p-2 bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-lg"
+          className="file-card-action-btn bg-blue-600/80 hover:bg-blue-600 text-white"
           title="Open in New Tab"
         >
-          <ExternalLink className="w-4 h-4" />
+          <ExternalLink />
         </button>
         
-        {/* FIXED: Download button downloads file */}
+        {/* FIXED: Download button - forces download */}
         <button
           onClick={handleDownloadClick}
-          className="p-2 bg-green-600/80 hover:bg-green-600 text-white rounded-lg transition-colors shadow-lg"
+          className="file-card-action-btn bg-green-600/80 hover:bg-green-600 text-white"
           title="Download File"
         >
-          <Download className="w-4 h-4" />
+          <Download />
         </button>
         
         {/* Delete button */}
         <button
           onClick={handleDeleteClick}
-          className="p-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition-colors shadow-lg"
+          className="file-card-action-btn bg-red-600/80 hover:bg-red-600 text-white"
           title="Delete File"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 />
         </button>
       </div>
       
-      {/* Folder Badge */}
+      {/* FIXED: Folder Badge - bottom left, smaller */}
       {doc.folder_name && (
-        <div className="absolute bottom-2 left-2 px-2 py-1 bg-purple-600/20 text-purple-300 text-xs rounded-full border border-purple-500/30">
+        <div className="file-card-folder-badge bg-purple-600/20 text-purple-300 border-purple-500/30">
           📁 {doc.folder_name}
         </div>
       )}
       
-      {/* File Status Indicators */}
-      <div className="absolute bottom-2 right-2 flex space-x-1">
-        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Preview available"></div>
-        <div className="w-2 h-2 bg-blue-400 rounded-full" title="Download available"></div>
+      {/* FIXED: Status Indicators - bottom right, smaller */}
+      <div className="file-card-status-indicators">
+        <div className="file-card-status-dot bg-green-400" title="Preview available"></div>
+        <div className="file-card-status-dot bg-blue-400" title="Download available"></div>
       </div>
     </div>
   );
 };
 
-// Enhanced FileGrid Component with FIXED Actions
+// FIXED: FileGrid Component with proper square grid layout
 const FileGrid = ({ documents, onFileAction, formatFileSize, formatDate, getFileIcon, title = "Files", showCreateHint = false }) => {
   
-  // FIXED: Separate handlers for different actions
+  // FIXED: Proper action handlers with clear distinction
   const handlePreview = (file) => {
     console.log('🔍 FileGrid preview action:', file.name || file.original_name);
-    // This will open file in new tab
     onFileAction('preview', file);
   };
   
   const handleDownload = (file) => {
-    console.log('📥 FileGrid download action:', file.name || file.original_name);
-    // This will download the file
+    console.log('📥 FileGrid download action - FORCING DOWNLOAD:', file.name || file.original_name);
     onFileAction('download', file);
   };
   
   const handleDelete = (file) => {
     console.log('🗑️ FileGrid delete action:', file.name || file.original_name);
-    // This will show delete confirmation
     onFileAction('delete', file);
   };
 
@@ -170,14 +151,14 @@ const FileGrid = ({ documents, onFileAction, formatFileSize, formatDate, getFile
             <FileText className="w-6 h-6 text-blue-400" />
             <span>{title} ({documents.length})</span>
             {documents.length > 0 && (
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Click eye icon to preview files"></div>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Click actions to interact with files"></div>
             )}
           </h3>
         </div>
       )}
       
-      {/* Grid Layout for Files */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {/* FIXED: Grid Layout with perfect squares */}
+      <div className="file-card-grid">
         {documents.map((doc, index) => (
           <FileCard
             key={doc._id || index}
@@ -192,12 +173,12 @@ const FileGrid = ({ documents, onFileAction, formatFileSize, formatDate, getFile
         ))}
       </div>
       
-      {/* Usage Instructions */}
+      {/* FIXED: Updated usage instructions */}
       {documents.length > 0 && (
         <div className="mt-4 p-3 bg-gradient-to-r from-blue-500/10 to-green-500/10 rounded-lg border border-blue-500/20">
           <div className="flex items-center space-x-2 text-sm text-blue-200">
             <ExternalLink className="w-4 h-4" />
-            <span>Click the eye icon (🔗) to open files in new tab • Use download (📥) and delete (🗑️) buttons for respective actions</span>
+            <span>Click 🔗 to preview in new tab • Click 📥 to download file • Click 🗑️ to delete</span>
           </div>
         </div>
       )}
