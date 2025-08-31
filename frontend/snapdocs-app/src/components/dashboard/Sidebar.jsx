@@ -1,4 +1,4 @@
-// components/dashboard/Sidebar.jsx - GRAFANA THEMED WITH REAL-TIME STORAGE
+// components/dashboard/Sidebar.jsx - FIXED NAVIGATION ACTIONS
 import React from 'react';
 import { Home, FileText, Folder, Star, Share, Trash2, User, LogOut, TrendingUp } from 'lucide-react';
 import { useStorageCalculator } from '../../utils/storageUtils';
@@ -7,8 +7,8 @@ const Sidebar = ({
   viewMode, 
   documentsCount, 
   foldersCount, 
-  documents = [], // NEW: Accept documents array for real-time calculations
-  folders = [],   // NEW: Accept folders array
+  documents = [], 
+  folders = [],   
   username, 
   userEmail, 
   onViewModeChange, 
@@ -38,11 +38,20 @@ const Sidebar = ({
     </div>
   );
 
-  const handleNavClick = (callback) => {
-    callback();
-    if (isMobile) setSidebarOpen(false);
+  // FIXED: Proper navigation handlers
+  const handleNavClick = (mode) => {
+    console.log('🧭 Sidebar navigation clicked:', mode);
+    
+    // Call the view mode change handler
+    onViewModeChange(mode);
+    
+    // Close mobile sidebar after navigation
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
   };
 
+  // FIXED: Navigation items with proper actions
   const navItems = [
     {
       id: 'dashboard',
@@ -50,7 +59,10 @@ const Sidebar = ({
       label: 'Dashboard',
       count: null,
       color: 'text-blue-400',
-      onClick: () => handleNavClick(() => onViewModeChange('dashboard'))
+      onClick: () => {
+        console.log('🏠 Dashboard clicked - navigating to dashboard view');
+        handleNavClick('dashboard');
+      }
     },
     {
       id: 'all-documents',
@@ -58,7 +70,10 @@ const Sidebar = ({
       label: 'Files',
       count: storageStats.totalFiles, // Use real-time count
       color: 'text-green-400',
-      onClick: () => handleNavClick(() => onViewModeChange('all-documents'))
+      onClick: () => {
+        console.log('📄 Files clicked - navigating to all documents view');
+        handleNavClick('all-documents');
+      }
     },
     {
       id: 'all-folders',
@@ -66,7 +81,21 @@ const Sidebar = ({
       label: 'Folders',
       count: folders.length, // Use real-time folders count
       color: 'text-purple-400',
-      onClick: () => handleNavClick(() => onViewModeChange('all-folders'))
+      onClick: () => {
+        console.log('📁 Folders clicked - navigating to all folders view');
+        handleNavClick('all-folders');
+      }
+    },
+    {
+      id: 'recent-uploads',
+      icon: TrendingUp,
+      label: 'Recent',
+      count: storageStats.recentUploadsCount,
+      color: 'text-orange-400',
+      onClick: () => {
+        console.log('📤 Recent clicked - navigating to recent uploads view');
+        handleNavClick('recent-uploads');
+      }
     },
     {
       id: 'favorites',
@@ -74,7 +103,11 @@ const Sidebar = ({
       label: 'Starred',
       count: null,
       color: 'text-yellow-400',
-      onClick: () => handleNavClick(() => console.log('Favorites clicked'))
+      onClick: () => {
+        console.log('⭐ Favorites clicked - feature coming soon');
+        // For now, show a placeholder or navigate to dashboard
+        handleNavClick('dashboard');
+      }
     },
     {
       id: 'shared',
@@ -82,7 +115,11 @@ const Sidebar = ({
       label: 'Shared',
       count: null,
       color: 'text-cyan-400',
-      onClick: () => handleNavClick(() => console.log('all-folders'))
+      onClick: () => {
+        console.log('🔗 Shared clicked - feature coming soon');
+        // For now, show a placeholder or navigate to dashboard
+        handleNavClick('dashboard');
+      }
     },
     {
       id: 'trash',
@@ -90,7 +127,11 @@ const Sidebar = ({
       label: 'Trash',
       count: null,
       color: 'text-red-400',
-      onClick: () => handleNavClick(() => console.log('Trash clicked'))
+      onClick: () => {
+        console.log('🗑️ Trash clicked - feature coming soon');
+        // For now, show a placeholder or navigate to dashboard
+        handleNavClick('dashboard');
+      }
     }
   ];
 
@@ -135,7 +176,7 @@ const Sidebar = ({
                   <span className="font-medium">{label}</span>
                 </div>
                 
-                {count !== null && (
+                {count !== null && count !== undefined && (
                   <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
                     isActive 
                       ? 'bg-white/20 text-white' 
@@ -248,6 +289,7 @@ const Sidebar = ({
         
         <button
           onClick={() => {
+            console.log('🚪 Logout clicked');
             onLogout();
             if (isMobile) setSidebarOpen(false);
           }}
