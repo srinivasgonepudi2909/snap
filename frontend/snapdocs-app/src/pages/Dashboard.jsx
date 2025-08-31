@@ -1,7 +1,7 @@
-// pages/Dashboard.jsx - UPDATED WITH NEW TAB PREVIEW SUPPORT
+// pages/Dashboard.jsx - FIXED WITH ENHANCED DOWNLOAD FUNCTIONALITY
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Download, AlertCircle, CheckCircle } from 'lucide-react';
 
 import { useDocuments } from '../hooks/useDocuments';
 import useMobile from '../hooks/useMobile';
@@ -38,6 +38,9 @@ const Dashboard = () => {
   // Delete confirmation modal states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
+
+  // Download states
+  const [downloadingFiles, setDownloadingFiles] = useState(new Set());
 
   const { documents, folders, loading, error, refetch, forceRefresh } = useDocuments();
   const storageStats = useStorageCalculator(documents, 15);
@@ -92,6 +95,202 @@ const Dashboard = () => {
 
     fetchUserInfo();
   }, [navigate]);
+
+  // ENHANCED DOWNLOAD HANDLER - Multiple methods for maximum compatibility
+  const handleDownloadFile = async (file) => {
+    const fileName = file.name || file.original_name;
+    const fileId = file._id;
+    
+    if (downloadingFiles.has(fileId)) {
+      console.log('⏳ Download already in progress for:', fileName);
+      return;
+    }
+
+    console.log('📥 Starting download for:', fileName);
+    setDownloadingFiles(prev => new Set([...prev, fileId]));
+    
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
+      
+      // Generate multiple download URLs for fallback
+      const downloadUrls = [];
+      
+      // Method 1: Direct download API endpoint (primary)
+      if (file._id) {
+        downloadUrls.push({
+          url: `${baseUrl}/api/v1/documents/${file._id}/download`,
+          method: 'API Download',
+          requiresAuth: true
+        });
+      }
+      
+      // Method 2: Direct file serving (fallback)
+      if (file.unique_name) {
+        downloadUrls.push({
+          url: `${baseUrl}/files/${file.unique_name}`,
+          method: 'Static File',
+          requiresAuth: false
+        });
+      }
+
+      // Method 3: Stream endpoint (alternative)
+      if (file._id) {
+        downloadUrls.push({
+          url: `${baseUrl}/api/v1/documents/${file._id}/stream`,
+          method: 'Stream Download',
+          requiresAuth: true
+        });
+      }
+
+      console.log('🔗 Available download URLs:', downloadUrls.length);
+      
+      let downloadSuccess = false;
+      let lastError = null;
+
+      // Try each download method
+      for (let i = 0; i < downloadUrls.length; i++) {
+        const urlInfo = downloadUrls[i];
+        console.log(`🔄 Attempting download method ${i + 1}: ${urlInfo.method}`);
+
+        try {
+          // Prepare fetch options
+          const fetchOptions = {
+            method: 'GET',
+            headers: {}
+          };
+
+          // Add authorization if required
+          if (urlInfo.requiresAuth && token) {
+            fetchOptions.headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          // Test URL accessibility first
+          console.log('🧪 Testing URL accessibility:', urlInfo.url);
+          const testResponse = await fetch(urlInfo.url, {
+            ...fetchOptions,
+            method: 'HEAD' // Just test, don't download yet
+          });
+
+          if (!testResponse.ok) {
+            console.warn(`⚠️ URL test failed for ${urlInfo.method}:`, testResponse.status);
+            lastError = new Error(`${urlInfo.method} returned ${testResponse.status}`);
+            continue;
+          }
+
+          console.log(`✅ URL accessible via ${urlInfo.method}, starting download...`);
+
+          // Method A: Blob download (preferred for API endpoints)
+          if (urlInfo.requiresAuth || urlInfo.method === 'API Download') {
+            const response = await fetch(urlInfo.url, fetchOptions);
+            
+            if (!response.ok) {
+              throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            
+            if (blob.size === 0) {
+              throw new Error('Downloaded file is empty');
+            }
+
+            // Create download link
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName;
+            link.style.display = 'none';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up
+            setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 1000);
+            
+            downloadSuccess = true;
+            console.log(`✅ Download successful via ${urlInfo.method}`);
+            break;
+          } 
+          // Method B: Direct link download (for static files)
+          else {
+            const link = document.createElement('a');
+            link.href = urlInfo.url;
+            link.download = fileName;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.style.display = 'none';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            downloadSuccess = true;
+            console.log(`✅ Download initiated via ${urlInfo.method}`);
+            break;
+          }
+
+        } catch (methodError) {
+          console.warn(`❌ Download method ${urlInfo.method} failed:`, methodError.message);
+          lastError = methodError;
+          continue;
+        }
+      }
+
+      if (downloadSuccess) {
+        // Show success notification
+        showOperationPopup(
+          'success',
+          'Download Started! 📥',
+          `"${fileName}" download has been initiated successfully.`,
+          [
+            `📄 File: ${fileName}`,
+            `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
+            `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
+            `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
+            `💾 Check your Downloads folder`
+          ],
+          true,
+          4000
+        );
+
+        // Show temporary notification
+        showNotification(`Successfully initiated download: ${fileName}`, 'success');
+        
+      } else {
+        throw lastError || new Error('All download methods failed');
+      }
+
+    } catch (error) {
+      console.error('❌ Download failed:', error);
+      
+      // Show error popup with troubleshooting info
+      showOperationPopup(
+        'error',
+        'Download Failed! ❌',
+        `Unable to download "${fileName}". Please try the alternative methods below.`,
+        [
+          `📄 File: ${fileName}`,
+          `❌ Error: ${error.message}`,
+          `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`,
+          ``,
+          `🔧 Troubleshooting:`,
+          `• Check your internet connection`,
+          `• Try right-click → "Save link as..." on the file`,
+          `• Clear browser cache and try again`,
+          `• Try opening file in new tab first, then download`
+        ]
+      );
+
+      showNotification(`Download failed: ${fileName}`, 'error');
+    } finally {
+      setDownloadingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fileId);
+        return newSet;
+      });
+    }
+  };
 
   // Handle search results
   const handleSearchResults = (results) => {
@@ -162,78 +361,36 @@ const Dashboard = () => {
     console.log('✅ Successfully navigated back to dashboard home');
   };
 
-  // UPDATED: Enhanced file action handler with new tab preview support
+  // ENHANCED FILE ACTION HANDLER with improved download integration
   const handleFileAction = async (action, file) => {
     switch (action) {
       case 'preview':
       case 'view':
-        // NEW TAB PREVIEW - Show success notification
-        const fileName = file.name || file.original_name;
-        showNotification(`Opening ${fileName} in new tab`, 'info');
+        // Open file in new tab
+        const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
+        let previewUrl;
         
-        // Optional: Track file view analytics
-        console.log('📊 File opened in new tab:', fileName);
+        if (file.unique_name) {
+          previewUrl = `${baseUrl}/files/${file.unique_name}`;
+        } else if (file._id) {
+          previewUrl = `${baseUrl}/api/v1/documents/${file._id}/download`;
+        }
         
-        // You can add analytics tracking here
-        // analytics.track('file_previewed', { file_name: fileName, file_type: getFileType(fileName) });
+        if (previewUrl) {
+          const newWindow = window.open(previewUrl, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            showNotification('Please allow popups to preview files', 'error');
+          } else {
+            showNotification(`Opening ${file.name || file.original_name} in new tab`, 'info');
+          }
+        } else {
+          showNotification('Preview not available for this file', 'error');
+        }
         break;
         
       case 'download':
-        showNotification(`Starting download: ${file.name || file.original_name}`, 'info');
-        
-        try {
-          const fileName = file.name || file.original_name;
-          console.log('📥 Dashboard handling download for:', fileName);
-          
-          // Generate download URL
-          const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
-          let downloadUrl;
-          
-          if (file._id) {
-            downloadUrl = `${baseUrl}/api/v1/documents/${file._id}/download`;
-          } else if (file.unique_name) {
-            downloadUrl = `${baseUrl}/files/${file.unique_name}`;
-          } else {
-            throw new Error('No download URL available');
-          }
-          
-          // Create temporary link for download
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = fileName;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          
-          // Show success notification
-          setTimeout(() => {
-            showOperationPopup(
-              'success',
-              'Download Started! 📥',
-              `"${fileName}" download has been initiated.`,
-              [
-                `📄 File: ${fileName}`,
-                `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
-                `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
-                `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-              ],
-              true,
-              3000
-            );
-          }, 1000);
-          
-        } catch (error) {
-          console.error('❌ Download error:', error);
-          showOperationPopup(
-            'error',
-            'Download Failed! ❌',
-            `Unable to download "${file.name || file.original_name}".`,
-            [`Error: ${error.message}`]
-          );
-        }
+        // Use enhanced download handler
+        await handleDownloadFile(file);
         break;
         
       case 'delete':
@@ -243,6 +400,7 @@ const Dashboard = () => {
         break;
         
       default:
+        console.warn('Unknown file action:', action);
         break;
     }
   };
@@ -531,24 +689,36 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* NEW TAB PREVIEW INFO BANNER */}
+              {/* ENHANCED DOWNLOAD INFO BANNER */}
               <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-400/30 rounded-xl p-4 shadow-lg relative z-40">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-lg">🎯</span>
+                    <Download className="w-5 h-5 text-green-400" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-green-200 font-semibold mb-1">New Tab Preview Enabled!</div>
+                    <div className="text-green-200 font-semibold mb-1">Enhanced Download System Enabled!</div>
                     <div className="text-green-300 text-sm">
-                      Click on any file to open it in a new tab for better viewing experience. 
-                      Files will open directly without leaving your dashboard.
+                      🔗 Click any file to open in new tab • 📥 Use download button for direct downloads with multiple fallback methods • 
+                      Files will be saved to your default downloads folder
                     </div>
                   </div>
-                  <div className="text-green-400 animate-pulse">🔗</div>
+                  <div className="text-green-400 animate-pulse">📥</div>
                 </div>
+                
+                {/* Active Downloads Indicator */}
+                {downloadingFiles.size > 0 && (
+                  <div className="mt-3 p-2 bg-blue-600/20 border border-blue-400/30 rounded-lg">
+                    <div className="flex items-center space-x-2 text-blue-200 text-sm">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent"></div>
+                      <span>
+                        {downloadingFiles.size} download{downloadingFiles.size > 1 ? 's' : ''} in progress...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Main Content with new tab preview support */}
+              {/* Main Content with enhanced download support */}
               <div className="space-y-6 relative z-30">
                 <DashboardViews
                   viewMode={viewMode}
