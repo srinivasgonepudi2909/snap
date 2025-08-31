@@ -2785,3 +2785,517 @@ html {
     display: none;
   }
 }
+
+/* ADD THESE ENHANCED STYLES TO: frontend/snapdocs-app/src/index.css */
+
+/* ================================
+   ENHANCED FOLDER VISIBILITY STYLES
+   ================================ */
+
+/* Folder Grid - Better spacing and sizing */
+.all-folders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+}
+
+/* Enhanced Folder Cards - Better visibility */
+.folder-card-enhanced {
+  background: rgba(255, 255, 255, 0.12); /* Increased opacity */
+  backdrop-filter: blur(16px);
+  border: 2px solid rgba(255, 255, 255, 0.15); /* Thicker border */
+  border-radius: 20px; /* More rounded */
+  padding: 2rem 1.5rem; /* Better padding */
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  min-height: 180px; /* Smaller minimum height */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Enhanced folder icons - Much bigger and more visible */
+.folder-icon-enhanced {
+  font-size: 4rem; /* Much bigger icons */
+  margin-bottom: 1rem;
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  display: block;
+  line-height: 1;
+}
+
+.folder-card-enhanced:hover .folder-icon-enhanced {
+  transform: scale(1.15) rotate(5deg);
+  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.6));
+}
+
+/* Enhanced folder text - Better readability */
+.folder-card-enhanced .folder-name {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  line-height: 1.2;
+}
+
+.folder-card-enhanced .folder-info {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.folder-card-enhanced .folder-date {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  font-weight: 400;
+}
+
+/* Enhanced hover effects */
+.folder-card-enhanced::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    rgba(147, 51, 234, 0.2) 0%, 
+    rgba(59, 130, 246, 0.1) 50%,
+    rgba(16, 185, 129, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+}
+
+.folder-card-enhanced:hover::before {
+  opacity: 1;
+}
+
+.folder-card-enhanced:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 3px rgba(147, 51, 234, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border-color: rgba(147, 51, 234, 0.6);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Default folder special styling */
+.folder-card-enhanced.default-folder {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 
+    0 8px 32px rgba(59, 130, 246, 0.2),
+    inset 0 1px 0 rgba(59, 130, 246, 0.15);
+}
+
+.folder-card-enhanced.default-folder:hover {
+  border-color: rgba(59, 130, 246, 0.8);
+  background: rgba(59, 130, 246, 0.15);
+  box-shadow: 
+    0 20px 60px rgba(59, 130, 246, 0.3),
+    0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* ================================
+   ENHANCED FILE CARD VISIBILITY STYLES
+   ================================ */
+
+/* File Grid - Smaller and more compact */
+.file-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+/* Enhanced file cards - Smaller but more visible */
+.file-card-square {
+  aspect-ratio: 1 / 1;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0.75rem;
+  min-height: 140px;
+  max-height: 140px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.file-card-square:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(59, 130, 246, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Enhanced file icons - Bigger and more visible */
+.file-card-icon {
+  font-size: 2.75rem; /* Bigger icons for files */
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.file-card-square:hover .file-card-icon {
+  transform: scale(1.15);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+/* Enhanced file text - Better readability on smaller cards */
+.file-card-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1;
+  font-weight: 600;
+  transition: color 0.3s ease;
+  text-align: center;
+  font-size: 0.7rem;
+  max-height: 2.2em;
+  margin-bottom: 0.25rem;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.file-card-square:hover .file-card-name {
+  color: rgb(147 197 253);
+}
+
+.file-card-info {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  line-height: 1.1;
+  margin-top: auto;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Enhanced action buttons - Smaller but more visible */
+.file-card-actions {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  display: flex;
+  gap: 0.125rem;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.file-card-square:hover .file-card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.file-card-action-btn {
+  padding: 0.25rem;
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.file-card-action-btn svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.file-card-action-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* ================================
+   MOBILE RESPONSIVE STYLES
+   ================================ */
+
+@media (max-width: 768px) {
+  /* Mobile folder grid */
+  .all-folders-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+  
+  .folder-card-enhanced {
+    min-height: 140px;
+    padding: 1.5rem 1rem;
+  }
+  
+  .folder-icon-enhanced {
+    font-size: 3rem;
+  }
+  
+  .folder-card-enhanced .folder-name {
+    font-size: 0.95rem;
+  }
+  
+  /* Mobile file grid */
+  .file-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .file-card-square {
+    min-height: 110px;
+    max-height: 110px;
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .file-card-icon {
+    font-size: 2.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  
+  .file-card-name {
+    font-size: 0.625rem;
+  }
+  
+  .file-card-info {
+    font-size: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .all-folders-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .file-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ================================
+   ENHANCED VISIBILITY IMPROVEMENTS
+   ================================ */
+
+/* Better contrast for all text */
+.folder-card-enhanced,
+.file-card-square {
+  color: white;
+}
+
+/* Enhanced shadows for better depth perception */
+.folder-card-enhanced,
+.file-card-square {
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Better focus states for accessibility */
+.folder-card-enhanced:focus,
+.file-card-square:focus {
+  outline: 3px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
+}
+
+/* Enhanced loading states */
+.folder-skeleton,
+.file-card-skeleton {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.15) 50%, 
+    rgba(255, 255, 255, 0.08) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border-radius: inherit;
+}
+
+/* Better shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Enhanced status indicators */
+.file-card-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Better folder badges */
+.file-card-folder-badge {
+  position: absolute;
+  bottom: 0.375rem;
+  left: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(147, 51, 234, 0.4);
+  max-width: calc(100% - 1.5rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(147, 51, 234, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Enhanced grid layouts for better visual hierarchy */
+.dashboard-grid-section {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Section headers */
+.dashboard-section-header {
+  display: flex;
+  items-center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-section-title {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  display: flex;
+  items-center;
+  gap: 0.75rem;
+}
+
+.dashboard-section-count {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: rgb(147, 197, 253);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Enhanced empty states */
+.empty-state-container {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.6;
+  filter: grayscale(50%);
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.empty-state-description {
+  font-size: 0.95rem;
+  opacity: 0.8;
+  margin-bottom: 2rem;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .folder-card-enhanced,
+  .file-card-square,
+  .folder-icon-enhanced,
+  .file-card-icon {
+    transition: none;
+    animation: none;
+  }
+  
+  .folder-card-enhanced:hover,
+  .file-card-square:hover {
+    transform: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .folder-card-enhanced,
+  .file-card-square {
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .folder-card-enhanced .folder-name,
+  .file-card-name {
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 1);
+  }
+}
+
+/* Enhanced print styles */
+@media print {
+  .folder-card-enhanced,
+  .file-card-square {
+    background: white;
+    border: 2px solid #333;
+    color: #333;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  
+  .file-card-actions,
+  .folder-card-enhanced::before {
+    display: none;
+  }
+  
+  .folder-icon-enhanced,
+  .file-card-icon {
+    filter: none;
+  }
+}
