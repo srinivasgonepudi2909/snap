@@ -367,7 +367,7 @@ const Dashboard = () => {
   switch (action) {
     case 'preview':
     case 'view':
-      // FIXED: Preview opens file in new tab WITHOUT popup warnings
+      // FIXED: Preview opens file in new tab for viewing
       console.log('👁️ Opening file in new tab for preview:', file.name || file.original_name);
       
       const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
@@ -382,54 +382,11 @@ const Dashboard = () => {
       if (previewUrl) {
         console.log('🔗 Preview URL:', previewUrl);
         
-        try {
-          // FIXED: Use direct window.open in immediate user interaction context
-          // This prevents popup blocker warnings
-          const newWindow = window.open(previewUrl, '_blank', 
-            'noopener,noreferrer,width=1200,height=800,scrollbars=yes,resizable=yes'
-          );
-          
-          if (newWindow) {
-            // SUCCESS: Window opened successfully
-            console.log('✅ File opened in new tab successfully');
-            showNotification(`📁 Opened "${file.name || file.original_name}" in new tab`, 'info');
-            
-            // FIXED: Optional - Track window focus to handle return
-            // This prevents the popup warning when user returns
-            const handleWindowFocus = () => {
-              console.log('🏠 User returned to dashboard');
-              window.removeEventListener('focus', handleWindowFocus);
-            };
-            
-            // Set up focus listener for when user returns
-            setTimeout(() => {
-              window.addEventListener('focus', handleWindowFocus);
-            }, 1000);
-            
-          } else {
-            // FALLBACK: If popup blocker is active
-            console.warn('⚠️ Popup was blocked, showing instructions');
-            showOperationPopup(
-              'info',
-              'File Preview Blocked 🚫',
-              'Your browser blocked the popup. You can still access the file:',
-              [
-                `📄 File: ${file.name || file.original_name}`,
-                `🔗 URL: ${previewUrl}`,
-                ``,
-                `📋 Copy this link to open manually:`,
-                previewUrl,
-                ``,
-                `💡 Tips to enable popups:`,
-                `• Click the popup icon in your address bar`,
-                `• Add this site to popup exceptions`,
-                `• Try Ctrl+Click on the preview button`,
-              ]
-            );
-          }
-        } catch (error) {
-          console.error('❌ Failed to open file preview:', error);
-          showNotification('Failed to open file preview', 'error');
+        const newWindow = window.open(previewUrl, '_blank', 'noopener,noreferrer');
+        if (!newWindow) {
+          showNotification('Please allow popups to preview files in new tabs', 'error');
+        } else {
+          showNotification(`Opened ${file.name || file.original_name} in new tab`, 'info');
         }
       } else {
         showNotification('Preview not available for this file', 'error');
