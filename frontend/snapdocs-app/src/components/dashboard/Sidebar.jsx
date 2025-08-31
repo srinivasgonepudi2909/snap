@@ -82,7 +82,7 @@ const Sidebar = ({
       label: 'Shared',
       count: null,
       color: 'text-cyan-400',
-      onClick: () => handleNavClick(() => console.log('Shared clicked'))
+      onClick: () => handleNavClick(() => console.log('all-folders'))
     },
     {
       id: 'trash',

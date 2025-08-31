@@ -2051,3 +2051,404 @@ html {
     display: none;
   }
 }
+/* Add these styles to your frontend/snapdocs-app/src/index.css file */
+
+/* New Tab Preview Animations and Styles */
+
+/* File card new tab hover effects */
+.file-card-new-tab-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-card-new-tab-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* New tab indicator overlay */
+.new-tab-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.2) 0%,
+    rgba(147, 51, 234, 0.2) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(2px);
+  border-radius: inherit;
+}
+
+.file-card-new-tab-hover:hover .new-tab-overlay {
+  opacity: 1;
+}
+
+/* External link icon animation */
+.external-link-icon {
+  transition: all 0.3s ease;
+  transform: scale(0.9) rotate(-5deg);
+}
+
+.file-card-new-tab-hover:hover .external-link-icon {
+  transform: scale(1.1) rotate(0deg);
+}
+
+/* New tab preview badge */
+.new-tab-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(59, 130, 246, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.8);
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.file-card-new-tab-hover:hover .new-tab-badge {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* New tab click animation */
+.new-tab-click-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.new-tab-click-effect::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.6s ease;
+  pointer-events: none;
+}
+
+.new-tab-click-effect:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* New tab opening animation */
+@keyframes newTabOpen {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.new-tab-opening {
+  animation: newTabOpen 0.6s ease-out;
+}
+
+/* External link button styles */
+.external-link-button {
+  background: rgba(59, 130, 246, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.external-link-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.external-link-button:hover::before {
+  left: 100%;
+}
+
+.external-link-button:hover {
+  background: rgba(59, 130, 246, 1);
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+/* Preview status indicators */
+.preview-status-indicator {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.status-dot.new-tab {
+  background: #3b82f6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+
+.status-dot.downloadable {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.file-card-new-tab-hover:hover .status-dot {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px currentColor;
+}
+
+/* New tab preview instructions */
+.new-tab-instructions {
+  background: linear-gradient(90deg, 
+    rgba(59, 130, 246, 0.1) 0%, 
+    rgba(16, 185, 129, 0.1) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.new-tab-instructions::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 100%);
+  animation: instructionsShimmer 3s infinite;
+}
+
+@keyframes instructionsShimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* All Folders view specific styles */
+.all-folders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.folder-card-enhanced {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.folder-card-enhanced::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.folder-card-enhanced:hover::before {
+  opacity: 1;
+}
+
+.folder-card-enhanced:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(147, 51, 234, 0.3);
+  border-color: rgba(147, 51, 234, 0.5);
+}
+
+/* Folder icon animation */
+.folder-icon-enhanced {
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.folder-card-enhanced:hover .folder-icon-enhanced {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Success banner animations */
+.new-tab-success-banner {
+  background: linear-gradient(90deg, 
+    rgba(16, 185, 129, 0.1) 0%, 
+    rgba(59, 130, 246, 0.1) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  animation: bannerSlideIn 0.5s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes bannerSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.new-tab-success-banner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 100%);
+  animation: successShimmer 2s infinite;
+}
+
+@keyframes successShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .file-card-new-tab-hover:hover {
+    transform: translateY(-2px) scale(1.01);
+  }
+  
+  .all-folders-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  .folder-card-enhanced:hover {
+    transform: translateY(-4px) scale(1.01);
+  }
+  
+  .new-tab-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+  .file-card-new-tab-hover {
+    cursor: pointer;
+  }
+  
+  .external-link-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .new-tab-badge {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .new-tab-overlay {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
+  .external-link-button {
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+  
+  .folder-card-enhanced:hover {
+    border: 3px solid rgba(255, 255, 255, 0.8);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .file-card-new-tab-hover,
+  .external-link-icon,
+  .new-tab-badge,
+  .folder-icon-enhanced,
+  .folder-card-enhanced {
+    transition: none;
+    animation: none;
+  }
+  
+  .file-card-new-tab-hover:hover {
+    transform: none;
+  }
+  
+  .folder-card-enhanced:hover {
+    transform: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .new-tab-overlay,
+  .external-link-button,
+  .new-tab-badge,
+  .preview-status-indicator {
+    display: none;
+  }
+  
+  .file-card-new-tab-hover,
+  .folder-card-enhanced {
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: none;
+  }
+}

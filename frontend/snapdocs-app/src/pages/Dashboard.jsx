@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx - FIXED BACK NAVIGATION FROM PREVIEW
+// pages/Dashboard.jsx - UPDATED WITH NEW TAB PREVIEW SUPPORT
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -150,88 +150,90 @@ const Dashboard = () => {
     if (isMobile) setSidebarOpen(false);
   };
 
-  // FIXED: Enhanced back to dashboard handler
   const handleBackToDashboard = () => {
-    console.log('🏠 Navigating back to dashboard home from preview/file view');
-    
-    // Clear any selected folder
+    console.log('🏠 Navigating back to dashboard home');
     setSelectedFolder(null);
-    
-    // Set view mode to dashboard home
     setViewMode('dashboard');
-    
-    // Clear search state
     setSearchResults([]);
     setIsSearchActive(false);
-    
-    // Close sidebar on mobile
     if (isMobile) {
       setSidebarOpen(false);
     }
-    
     console.log('✅ Successfully navigated back to dashboard home');
   };
 
-  // Enhanced file action handler with download success/error feedback
+  // UPDATED: Enhanced file action handler with new tab preview support
   const handleFileAction = async (action, file) => {
     switch (action) {
+      case 'preview':
       case 'view':
-        showNotification(`Viewing ${file.name || file.original_name}`, 'info');
+        // NEW TAB PREVIEW - Show success notification
+        const fileName = file.name || file.original_name;
+        showNotification(`Opening ${fileName} in new tab`, 'info');
+        
+        // Optional: Track file view analytics
+        console.log('📊 File opened in new tab:', fileName);
+        
+        // You can add analytics tracking here
+        // analytics.track('file_previewed', { file_name: fileName, file_type: getFileType(fileName) });
         break;
         
       case 'download':
         showNotification(`Starting download: ${file.name || file.original_name}`, 'info');
         
-        // The actual download is handled by the FilePreviewModal
         try {
           const fileName = file.name || file.original_name;
           console.log('📥 Dashboard handling download for:', fileName);
           
+          // Generate download URL
+          const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
+          let downloadUrl;
+          
+          if (file._id) {
+            downloadUrl = `${baseUrl}/api/v1/documents/${file._id}/download`;
+          } else if (file.unique_name) {
+            downloadUrl = `${baseUrl}/files/${file.unique_name}`;
+          } else {
+            throw new Error('No download URL available');
+          }
+          
+          // Create temporary link for download
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = fileName;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Show success notification
+          setTimeout(() => {
+            showOperationPopup(
+              'success',
+              'Download Started! 📥',
+              `"${fileName}" download has been initiated.`,
+              [
+                `📄 File: ${fileName}`,
+                `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
+                `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
+                `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
+              ],
+              true,
+              3000
+            );
+          }, 1000);
+          
         } catch (error) {
-          console.error('❌ Download initiation error:', error);
+          console.error('❌ Download error:', error);
           showOperationPopup(
             'error',
             'Download Failed! ❌',
-            `Unable to start download for "${file.name || file.original_name}".`,
+            `Unable to download "${file.name || file.original_name}".`,
             [`Error: ${error.message}`]
           );
         }
-        break;
-        
-      case 'download-success':
-        // Success feedback from FilePreviewModal
-        const fileName = file.name || file.original_name;
-        showOperationPopup(
-          'success',
-          'Download Successful! 📥',
-          `"${fileName}" has been saved to your Downloads folder.`,
-          [
-            `📄 File: ${fileName}`,
-            `📦 Size: ${formatFileSize(file.file_size || file.size || 0)}`,
-            `📁 From: ${file.folder_name || file.folder_id || 'General'} folder`,
-            `💾 Location: Downloads folder`,
-            `🕒 Downloaded: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-          ],
-          true,
-          3000
-        );
-        break;
-        
-      case 'download-error':
-        // Error feedback from FilePreviewModal
-        const errorFileName = file.name || file.original_name;
-        showOperationPopup(
-          'error',
-          'Download Failed! ❌',
-          `Unable to download "${errorFileName}". Please try again or contact support.`,
-          [
-            `📄 File: ${errorFileName}`,
-            `❌ Reason: Network error or file not accessible`,
-            `🔄 Try: Refresh the page and try again`,
-            `📞 Support: Contact support if problem persists`,
-            `🕒 Attempted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} IST`
-          ]
-        );
         break;
         
       case 'delete':
@@ -529,7 +531,24 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* FIXED: Main Content with proper back navigation */}
+              {/* NEW TAB PREVIEW INFO BANNER */}
+              <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-400/30 rounded-xl p-4 shadow-lg relative z-40">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <span className="text-lg">🎯</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-green-200 font-semibold mb-1">New Tab Preview Enabled!</div>
+                    <div className="text-green-300 text-sm">
+                      Click on any file to open it in a new tab for better viewing experience. 
+                      Files will open directly without leaving your dashboard.
+                    </div>
+                  </div>
+                  <div className="text-green-400 animate-pulse">🔗</div>
+                </div>
+              </div>
+
+              {/* Main Content with new tab preview support */}
               <div className="space-y-6 relative z-30">
                 <DashboardViews
                   viewMode={viewMode}
