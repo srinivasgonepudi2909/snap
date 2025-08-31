@@ -1,4 +1,4 @@
-// pages/Dashboard.jsx - COMPLETE VERSION WITH BACK TO DASHBOARD SUPPORT
+// pages/Dashboard.jsx - FIXED BACK NAVIGATION FROM PREVIEW
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -150,13 +150,26 @@ const Dashboard = () => {
     if (isMobile) setSidebarOpen(false);
   };
 
+  // FIXED: Enhanced back to dashboard handler
   const handleBackToDashboard = () => {
-    console.log('🏠 Going back to dashboard from preview');
+    console.log('🏠 Navigating back to dashboard home from preview/file view');
+    
+    // Clear any selected folder
     setSelectedFolder(null);
+    
+    // Set view mode to dashboard home
     setViewMode('dashboard');
+    
+    // Clear search state
     setSearchResults([]);
     setIsSearchActive(false);
-    if (isMobile) setSidebarOpen(false);
+    
+    // Close sidebar on mobile
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+    
+    console.log('✅ Successfully navigated back to dashboard home');
   };
 
   // Enhanced file action handler with download success/error feedback
@@ -169,13 +182,10 @@ const Dashboard = () => {
       case 'download':
         showNotification(`Starting download: ${file.name || file.original_name}`, 'info');
         
-        // Trigger actual download through FilePreviewModal
+        // The actual download is handled by the FilePreviewModal
         try {
           const fileName = file.name || file.original_name;
           console.log('📥 Dashboard handling download for:', fileName);
-          
-          // The download will be handled by the FilePreviewModal component
-          // We just show the initial notification here
           
         } catch (error) {
           console.error('❌ Download initiation error:', error);
@@ -519,7 +529,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Main Content - UPDATED with back to dashboard support */}
+              {/* FIXED: Main Content with proper back navigation */}
               <div className="space-y-6 relative z-30">
                 <DashboardViews
                   viewMode={viewMode}

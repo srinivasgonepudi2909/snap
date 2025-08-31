@@ -1,10 +1,10 @@
-// components/dashboard/FilePreviewModal.jsx - FIXED WITH WORKING PREVIEW & DOWNLOAD
+// components/dashboard/FilePreviewModal.jsx - FIXED BACK NAVIGATION & DOWNLOAD
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { 
   X, Download, ZoomIn, ZoomOut, RotateCw, 
   ChevronLeft, ChevronRight, FileText, Music, Video, 
-  AlertCircle, CheckCircle, Home, Trash2, Eye
+  AlertCircle, CheckCircle, ArrowLeft, Trash2, Eye
 } from 'lucide-react';
 
 const FilePreviewModal = ({
@@ -14,8 +14,8 @@ const FilePreviewModal = ({
   allFiles,
   currentIndex,
   onNavigate,
-  onBackToDashboard, // NEW: Add back to dashboard function
-  onDeleteFile       // NEW: Add delete function
+  onBackToDashboard, // This should navigate back to dashboard home
+  onDeleteFile
 }) => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -71,7 +71,7 @@ const FilePreviewModal = ({
 
   if (!isOpen || !file) return null;
 
-  // ENHANCED: Generate proper file URL with multiple fallback methods
+  // Generate proper file URL with multiple fallback methods
   const generateFileUrl = (fileData) => {
     console.log('🔗 Generating URL for file:', fileData);
     
@@ -91,13 +91,6 @@ const FilePreviewModal = ({
       return apiUrl;
     }
     
-    // Method 3: Try streaming endpoint
-    if (fileData._id) {
-      const streamUrl = `${baseUrl}/api/v1/documents/${fileData._id}/stream`;
-      console.log('🎬 Using streaming URL:', streamUrl);
-      return streamUrl;
-    }
-    
     console.error('❌ Could not generate file URL for:', fileData);
     return '';
   };
@@ -113,47 +106,27 @@ const FilePreviewModal = ({
     try {
       console.log('🧪 Testing file access:', url);
       
-      // Try both HEAD and GET requests
-      let response;
-      try {
-        response = await fetch(url, { 
-          method: 'HEAD',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          }
-        });
-      } catch (headError) {
-        console.log('⚠️ HEAD request failed, trying GET request');
-        response = await fetch(url, { 
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          }
-        });
-      }
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        }
+      });
       
       console.log('📊 File access test result:', response.status, response.statusText);
+      setPreviewLoading(false);
       
-      if (response.ok) {
-        console.log('✅ File is accessible');
-        setPreviewLoading(false);
-      } else {
-        console.warn('⚠️ File access failed, but will still try to display');
-        setPreviewLoading(false);
-      }
     } catch (error) {
       console.warn('⚠️ File access test failed:', error.message);
       setPreviewLoading(false);
     }
   };
 
-  // ENHANCED: Determine file type with better detection
+  // Determine file type with better detection
   const getFileType = () => {
     const fileName = file.name || file.original_name || '';
     const mimeType = file.mime_type || file.type || '';
     const extension = fileName.split('.').pop()?.toLowerCase() || '';
-
-    console.log('🔍 Determining file type:', { fileName, mimeType, extension });
 
     if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(extension)) {
       return 'image';
@@ -170,18 +143,11 @@ const FilePreviewModal = ({
     if (mimeType.startsWith('text/') || ['txt', 'md', 'json', 'csv', 'log', 'js', 'html', 'css'].includes(extension)) {
       return 'text';
     }
-    if (['doc', 'docx'].includes(extension)) {
-      return 'document';
-    }
-    if (['xls', 'xlsx'].includes(extension)) {
-      return 'spreadsheet';
-    }
     
     return 'other';
   };
 
   const fileType = getFileType();
-  console.log('📄 File type determined:', fileType);
 
   const handleZoom = (delta) => {
     setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
@@ -191,7 +157,7 @@ const FilePreviewModal = ({
     setRotation(prev => (prev + 90) % 360);
   };
 
-  // ENHANCED: Better download handler with multiple methods
+  // FIXED: Enhanced download handler that actually downloads files
   const handleDownload = async () => {
     try {
       setDownloading(true);
@@ -206,81 +172,97 @@ const FilePreviewModal = ({
         throw new Error('No download URL available');
       }
 
-      // Method 1: Try authenticated fetch with blob download
+      // Method 1: Try direct blob download with authentication
       const token = localStorage.getItem('token');
       const baseUrl = process.env.REACT_APP_DOCUMENT_API || 'http://localhost:8001';
       
-      // Use the download endpoint specifically
-      const downloadUrl = file._id 
-        ? `${baseUrl}/api/v1/documents/${file._id}/download`
-        : fileUrl;
+      // FIXED: Use proper download endpoint
+      let downloadUrl;
+      if (file._id) {
+        downloadUrl = `${baseUrl}/api/v1/documents/${file._id}/download`;
+      } else if (file.unique_name) {
+        downloadUrl = `${baseUrl}/files/${file.unique_name}`;
+      } else {
+        downloadUrl = fileUrl;
+      }
       
-      console.log('🔐 Attempting authenticated download from:', downloadUrl);
+      console.log('🔐 Attempting download from:', downloadUrl);
       
+      // FIXED: Use proper fetch with authentication
       const response = await fetch(downloadUrl, {
         method: 'GET',
         headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        }
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Accept': '*/*'
+        },
+        credentials: 'include'
       });
 
-      console.log('📊 Download response status:', response.status);
+      console.log('📊 Download response:', response.status, response.statusText);
+      console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
 
-      if (response.ok) {
-        const blob = await response.blob();
-        console.log('📦 Blob created, size:', blob.size, 'bytes');
-        
-        if (blob.size === 0) {
-          throw new Error('Downloaded file is empty');
-        }
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        
-        // Trigger download
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Clean up
-        window.URL.revokeObjectURL(url);
-        
-        console.log('✅ Download completed successfully');
-        setDownloadSuccess(true);
-        
-        // Show success message for 3 seconds
-        setTimeout(() => {
-          setDownloadSuccess(false);
-        }, 3000);
-        
-      } else {
-        // Method 2: Try direct link download as fallback
-        console.log('🔄 Fetch download failed, trying direct link...');
-        
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = fileName;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        console.log('✅ Direct download initiated');
-        setDownloadSuccess(true);
-        
-        setTimeout(() => {
-          setDownloadSuccess(false);
-        }, 3000);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
       }
+
+      // FIXED: Get the actual file blob
+      const blob = await response.blob();
+      console.log('📦 Blob created, size:', blob.size, 'bytes, type:', blob.type);
+      
+      if (blob.size === 0) {
+        throw new Error('Downloaded file is empty');
+      }
+      
+      // FIXED: Create and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.style.display = 'none';
+      
+      // Add to DOM, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up object URL
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log('✅ Download completed successfully');
+      setDownloadSuccess(true);
+      
+      // Show success message for 3 seconds
+      setTimeout(() => {
+        setDownloadSuccess(false);
+      }, 3000);
       
     } catch (error) {
       console.error('❌ Download error:', error);
       setDownloadError(error.message);
+      
+      // FIXED: Fallback download method - open in new tab
+      if (fileUrl) {
+        console.log('🔄 Trying fallback download method...');
+        try {
+          const link = document.createElement('a');
+          link.href = fileUrl;
+          link.download = file.name || file.original_name || 'download';
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          setDownloadSuccess(true);
+          setTimeout(() => setDownloadSuccess(false), 3000);
+          
+        } catch (fallbackError) {
+          console.error('❌ Fallback download also failed:', fallbackError);
+        }
+      }
       
       // Show error for 5 seconds
       setTimeout(() => {
@@ -298,12 +280,20 @@ const FilePreviewModal = ({
     }
   };
 
-  // Handle back to dashboard
+  // FIXED: Handle back to dashboard - close modal first, then navigate
   const handleBackToDashboard = () => {
-    onClose(); // Close the modal first
-    if (onBackToDashboard) {
-      setTimeout(() => onBackToDashboard(), 100); // Small delay to ensure smooth transition
-    }
+    console.log('🏠 Back to dashboard clicked');
+    
+    // Close the modal first
+    onClose();
+    
+    // Small delay to ensure modal closes smoothly, then navigate
+    setTimeout(() => {
+      if (onBackToDashboard) {
+        console.log('🔄 Calling onBackToDashboard');
+        onBackToDashboard();
+      }
+    }, 100);
   };
 
   // Helper functions
@@ -362,7 +352,7 @@ const FilePreviewModal = ({
 
       {/* Modal content */}
       <div className="relative h-full flex flex-col max-w-7xl mx-auto">
-        {/* Header with Back to Dashboard Button */}
+        {/* FIXED: Header with proper back button */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800/90 backdrop-blur-sm">
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-semibold text-white truncate flex items-center space-x-2">
@@ -380,13 +370,13 @@ const FilePreviewModal = ({
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2 ml-4">
-            {/* Back to Dashboard */}
+            {/* FIXED: Back to Dashboard with proper icon and navigation */}
             <button 
               onClick={handleBackToDashboard}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium"
               title="Back to Dashboard"
             >
-              <Home className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4" />
               <span>Dashboard</span>
             </button>
             
@@ -417,7 +407,7 @@ const FilePreviewModal = ({
               </>
             )}
             
-            {/* Download Button */}
+            {/* FIXED: Download Button with proper functionality */}
             <button 
               onClick={handleDownload}
               disabled={downloading}
@@ -512,7 +502,6 @@ const FilePreviewModal = ({
                     }}
                     onError={(e) => {
                       console.error('❌ Image failed to load:', fileUrl);
-                      console.error('❌ Error details:', e);
                       setImageError(true);
                     }}
                     onLoad={() => {
@@ -574,6 +563,14 @@ const FilePreviewModal = ({
                     <div>Type: {fileType} • Size: {formatFileSize(file.file_size || file.size)}</div>
                     <div>Created: {formatDate(file.created_at)}</div>
                   </div>
+                  <button 
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2 mx-auto"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{downloading ? 'Downloading...' : 'Download File'}</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -587,24 +584,12 @@ const FilePreviewModal = ({
 FilePreviewModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  file: PropTypes.shape({
-    _id: PropTypes.string,
-    name: PropTypes.string,
-    original_name: PropTypes.string,
-    unique_name: PropTypes.string,
-    file_path: PropTypes.string,
-    mime_type: PropTypes.string,
-    type: PropTypes.string,
-    file_size: PropTypes.number,
-    size: PropTypes.number,
-    url: PropTypes.string,
-    created_at: PropTypes.string
-  }),
+  file: PropTypes.object,
   allFiles: PropTypes.array,
   currentIndex: PropTypes.number,
   onNavigate: PropTypes.func,
-  onBackToDashboard: PropTypes.func, // NEW: Back to dashboard function
-  onDeleteFile: PropTypes.func       // NEW: Delete function
+  onBackToDashboard: PropTypes.func,
+  onDeleteFile: PropTypes.func
 };
 
 FilePreviewModal.defaultProps = {
